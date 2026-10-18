@@ -74,9 +74,9 @@ namespace KayanERP.Api.Controllers
         {
             if (id != dynamicForm.Id) return BadRequest(new { Message = "معرف النموذج غير متطابق." });
 
-            if (dynamicForm.CreatedAt.HasValue)
+            if (dynamicForm.CreatedAt.Has)
             {
-                dynamicForm.CreatedAt = dynamicForm.CreatedAt.Value.ToUniversalTime();
+                dynamicForm.CreatedAt = dynamicForm.CreatedAt..ToUniversalTime();
             }
 
             _context.Entry(dynamicForm).State = EntityState.Modified;

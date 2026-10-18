@@ -14,7 +14,6 @@ namespace KayanERP.Api.Controllers
     {
         private readonly AppDbContext _context;
 
-        // سجل السندات المتزامن مع الحركات المالية
         private static readonly List<TreasuryVoucherDto> _inMemoryVouchers = new()
         {
             new TreasuryVoucherDto
@@ -61,9 +60,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==========================================
-        // 1. استعراض كافة السندات مع الفلترة
-        // ==========================================
         [HttpGet]
         public ActionResult<List<TreasuryVoucherDto>> GetAll([FromQuery] string? type, [FromQuery] string? branch)
         {
@@ -85,9 +81,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==========================================
-        // 2. إصدار وترحيل سند جديد وتحديث الأرصدة
-        // ==========================================
         [HttpPost]
         public async Task<ActionResult<TreasuryVoucherDto>> Create([FromBody] TreasuryVoucherDto dto)
         {
@@ -101,13 +94,11 @@ namespace KayanERP.Api.Controllers
                 dto.VoucherNumber = $"{prefix}-{DateTime.Now:yyyyMM}-{dto.Id:D3}";
                 dto.VoucherDate = dto.VoucherDate == default ? DateTime.Today : dto.VoucherDate;
 
-                // إذا كان سند قبض من تاجر مسجل في قاعدة البيانات، نقوم بتخفيض مديونيته
                 if (dto.VoucherType == "RECEIPT" && dto.PartyId.HasValue && dto.PartyId.Value > 0)
                 {
                     var customer = await _context.Customers.FindAsync(dto.PartyId.Value);
                     if (customer != null)
                     {
-                        // توثيق السداد في الملاحظات المالية للعميل وتحديث سجله
                         customer.UpdatedAt = DateTime.UtcNow;
                         await _context.SaveChangesAsync();
                     }
@@ -122,9 +113,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==========================================
-        // 3. جلب ملخص السيولة والمؤشرات المالية (KPIs)
-        // ==========================================
         [HttpGet("summary")]
         public ActionResult<object> GetSummary()
         {
@@ -141,9 +129,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==========================================
-        // 4. استدعاء قائمة العملاء والتجار للاختيار السريع
-        // ==========================================
         [HttpGet("parties-lookup")]
         public async Task<ActionResult<List<PartyLookupDto>>> GetPartiesLookup()
         {
@@ -174,13 +159,13 @@ namespace KayanERP.Api.Controllers
     {
         public long Id { get; set; }
         public string VoucherNumber { get; set; } = string.Empty;
-        public string VoucherType { get; set; } = "RECEIPT"; // RECEIPT (قبض) | PAYMENT (صرف)
+        public string VoucherType { get; set; } = "RECEIPT";
         public DateTime VoucherDate { get; set; } = DateTime.Today;
         public decimal Amount { get; set; }
         public string TreasuryCode { get; set; } = "1212";
         public string TreasuryName { get; set; } = "خزينة فرع التوزيع الخارجي";
         public string BranchName { get; set; } = "فرع المبيعات الخارجية والتوزيع";
-        public string PartyType { get; set; } = "CUSTOMER"; // CUSTOMER | SUPPLIER | EXPENSE
+        public string PartyType { get; set; } = "CUSTOMER";
         public long? PartyId { get; set; }
         public string PartyName { get; set; } = string.Empty;
         public string OppositeAccountCode { get; set; } = "1221";

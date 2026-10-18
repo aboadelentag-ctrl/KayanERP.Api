@@ -2,7 +2,7 @@
 @layout KayanERP.UI.Pages.EmptyLayout
 @using System.Net.Http.Json
 @using System.Text
-@using KayanERP.UI.DTOs
+@using KayanERP.Shared.DTOs
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -74,10 +74,10 @@
             <div class="row g-2 align-items-center">
                 <div class="col-md-5">
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedSupplierId" @bind:after="LoadInvoices">
-                        <option value="0">كافة الموردين</option>
+                        <option ="0">كافة الموردين</option>
                         @foreach (var s in lookups.Suppliers)
                         {
-                            <option value="@s.Id">@s.SupplierName</option>
+                            <option ="@s.Id">@s.SupplierName</option>
                         }
                     </select>
                 </div>
@@ -181,7 +181,7 @@
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="receiptPostDto.WarehouseId">
                                 @foreach (var w in lookups.Warehouses)
                                 {
-                                    <option value="@w.Id">@w.WarehouseName</option>
+                                    <option ="@w.Id">@w.WarehouseName</option>
                                 }
                             </select>
                         </div>

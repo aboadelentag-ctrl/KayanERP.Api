@@ -14,7 +14,6 @@ namespace KayanERP.Api.Controllers
     {
         private readonly AppDbContext _context;
 
-        // سجل الفواتير مع الربط المباشر بالموردين والفروع
         private static readonly List<ExpensePayableDto> _billsStore = new()
         {
             new ExpensePayableDto
@@ -65,9 +64,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==========================================
-        // 1. جلب الموردين الفعليين المسجلين بالنظام (Lookup)
-        // ==========================================
         [HttpGet("suppliers-lookup")]
         public async Task<ActionResult<List<SupplierLookupItem>>> GetSuppliersLookup()
         {
@@ -90,7 +86,6 @@ namespace KayanERP.Api.Controllers
             }
             catch
             {
-                // في حال عدم وجود سجلات موردين بعد في الداتابيز
                 return Ok(new List<SupplierLookupItem>
                 {
                     new() { Id = 1, SupplierCode = "SUPP-001", SupplierName = "شركة الأمل للتوريدات الغذائية والزيوت", Phone = "01099887766" },
@@ -100,9 +95,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==========================================
-        // 2. استعراض الفواتير والمطالبات المالية
-        // ==========================================
         [HttpGet]
         public ActionResult<List<ExpensePayableDto>> GetAll([FromQuery] string? category, [FromQuery] string? status)
         {
@@ -117,16 +109,12 @@ namespace KayanERP.Api.Controllers
             return Ok(query.OrderByDescending(b => b.Id).ToList());
         }
 
-        // ==========================================
-        // 3. تسجيل استحقاق جديد مرتبط بمورد أو جهة رسمية
-        // ==========================================
         [HttpPost]
         public async Task<ActionResult<ExpensePayableDto>> Create([FromBody] ExpensePayableDto dto)
         {
             if (dto == null || dto.TotalAmount <= 0)
                 return BadRequest("بيانات الفاتورة غير صحيحة والمبلغ يجب أن يكون أكبر من صفر.");
 
-            // إذا كان الالتزام خاصاً بمورد، نتأكد من ربطه بالمورد الفعلي
             if (dto.Category == "SUPPLIER_PURCHASE" && dto.SupplierId.HasValue && dto.SupplierId.Value > 0)
             {
                 try
@@ -160,9 +148,6 @@ namespace KayanERP.Api.Controllers
             return Ok(dto);
         }
 
-        // ==========================================
-        // 4. سداد دفعة وتحديث رصيد المورد الفعلي
-        // ==========================================
         [HttpPost("{id:long}/pay")]
         public ActionResult<object> PayBill(long id, [FromBody] decimal paymentAmount)
         {
@@ -192,9 +177,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==========================================
-        // 5. المؤشرات اللحظية
-        // ==========================================
         [HttpGet("summary")]
         public ActionResult<object> GetSummary()
         {
@@ -213,8 +195,8 @@ namespace KayanERP.Api.Controllers
         public long Id { get; set; }
         public string BillNumber { get; set; } = string.Empty;
         public string Category { get; set; } = "SUPPLIER_PURCHASE";
-        public long? SupplierId { get; set; } // الربط بالمورد الفعلي
-        public long? BranchId { get; set; }   // الربط بالفرع الفعلي
+        public long? SupplierId { get; set; }
+        public long? BranchId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string PartyName { get; set; } = string.Empty;
         public string CostCenterName { get; set; } = string.Empty;

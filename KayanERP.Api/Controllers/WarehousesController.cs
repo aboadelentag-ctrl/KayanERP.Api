@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayanERP.Api.Models;
+using KayanERP.Shared.DTOs;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,9 +20,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==============================================================
-        // 1. جلب قائمة الفروع النشطة لمستودعات النظام
-        // ==============================================================
         [HttpGet("branches")]
         public async Task<IActionResult> GetBranches()
         {
@@ -57,9 +55,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. جلب كافة المخازن (مع دعم الفلترة بالفرع والشجرة الهرمية)
-        // ==============================================================
         [HttpGet]
         public async Task<IActionResult> GetWarehouses([FromQuery] long? branchId = null)
         {
@@ -101,9 +96,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 3. جلب مخزن محدد
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetWarehouse(long id)
         {
@@ -138,9 +130,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 4. إضافة مخزن جديد (مربوط بالفرع)
-        // ==============================================================
         [HttpPost]
         public async Task<IActionResult> PostWarehouse([FromBody] WarehouseDto dto)
         {
@@ -186,9 +175,6 @@ namespace KayanERP.Api.Controllers
             return Ok(dto);
         }
 
-        // ==============================================================
-        // 5. تعديل بيانات مخزن
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> PutWarehouse(long id, [FromBody] WarehouseDto dto)
         {
@@ -224,9 +210,6 @@ namespace KayanERP.Api.Controllers
             return Ok(existing);
         }
 
-        // ==============================================================
-        // 6. حذف مستودع (محصن ضد كسر القيود المحاسبية والتاريخية)
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> DeleteWarehouse(long id)
         {
@@ -266,9 +249,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 7. استيراد وتحديث المخازن دفعة واحدة (Bulk Import مع الفروع)
-        // ==============================================================
         [HttpPost("bulk-import")]
         public async Task<IActionResult> BulkImportWarehouses([FromBody] List<WarehouseImportDto> items)
         {
@@ -385,9 +365,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 8. جلب رصيد المستودع مجمعاً مع المستودعات التابعة هرمياً
-        // ==============================================================
         [HttpGet("{id:long}/stock-balance")]
         public async Task<IActionResult> GetWarehouseStockBalance(long id)
         {
@@ -423,38 +400,5 @@ namespace KayanERP.Api.Controllers
                 return StatusCode(500, $"خطأ في جلب رصيد المستودع: {ex.GetBaseException().Message}");
             }
         }
-    }
-
-    public class WarehouseBranchLookupDto
-    {
-        public long Id { get; set; }
-        public string BranchCode { get; set; } = string.Empty;
-        public string BranchName { get; set; } = string.Empty;
-    }
-
-    public class WarehouseDto
-    {
-        public long Id { get; set; }
-        public long? BranchId { get; set; } = 1;
-        public string? BranchName { get; set; } = string.Empty;
-        public string WarehouseCode { get; set; } = string.Empty;
-        public string WarehouseName { get; set; } = string.Empty;
-        public string WarehouseType { get; set; } = string.Empty;
-        public long? ParentWarehouseId { get; set; }
-        public string? ParentWarehouseName { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public bool Active { get; set; } = true;
-    }
-
-    public class WarehouseImportDto
-    {
-        public long? BranchId { get; set; }
-        public string? BranchCodeOrName { get; set; }
-        public string WarehouseCode { get; set; } = string.Empty;
-        public string WarehouseName { get; set; } = string.Empty;
-        public string WarehouseType { get; set; } = "خامات";
-        public string? ParentWarehouseCodeOrName { get; set; }
-        public string? Description { get; set; }
-        public bool Active { get; set; } = true;
     }
 }

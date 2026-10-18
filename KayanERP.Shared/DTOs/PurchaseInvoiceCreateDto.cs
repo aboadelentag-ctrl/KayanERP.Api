@@ -1,27 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace KayanERP.Shared.DTOs;
-
-public class PurchaseInvoiceCreateDto
+namespace KayanERP.Shared.DTOs
 {
-    [Required]
-    public long SupplierId { get; set; } // رقم مورد الخامات
+    public class PurchaseInvoiceCreateDto
+    {
+        [Required]
+        public long SupplierId { get; set; }
 
-    [Required]
-    public List<PurchaseInvoiceLineDto> InvoiceLines { get; set; } = new List<PurchaseInvoiceLineDto>();
-}
+        public string? InvoiceNumber { get; set; }
+        public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
+        public string? Notes { get; set; }
 
-public class PurchaseInvoiceLineDto
-{
-    [Required]
-    public long ItemId { get; set; } // رقم الخامة (دقيق، سكر..)
+        [Required]
+        [MinLength(1)]
+        public List<PurchaseInvoiceLineDto> InvoiceLines { get; set; } = new();
+    }
 
-    [Required]
-    [Range(0.01, double.MaxValue, ErrorMessage = "الكمية يجب أن تكون أكبر من صفر")]
-    public decimal Quantity { get; set; }
+    public class PurchaseInvoiceLineDto
+    {
+        [Required]
+        public long ItemId { get; set; }
 
-    [Required]
-    [Range(0.01, double.MaxValue, ErrorMessage = "السعر يجب أن يكون أكبر من صفر")]
-    public decimal UnitPrice { get; set; }
+        [Range(0.01, double.MaxValue)]
+        public decimal Quantity { get; set; }
+
+        [Range(0.01, double.MaxValue)]
+        public decimal UnitPrice { get; set; }
+    }
 }

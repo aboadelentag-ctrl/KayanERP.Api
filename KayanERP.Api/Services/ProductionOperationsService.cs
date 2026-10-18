@@ -31,27 +31,15 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ========================================================
-        // 1. الدورة المغلقة: سحب صالات الإنتاج ومخازنها وعمالها
-        // ========================================================
         public async Task<ProductionOperationsLookupsDto> GetInitialLookupsAsync()
         {
             var departments = await _context.Departments
                 .AsNoTracking()
-                .Where(d => d.DepartmentName.Contains("قسم")
-                         || d.DepartmentName.Contains("صالة")
-                         || d.DepartmentName.Contains("تورت")
-                         || d.DepartmentName.Contains("جاتوه")
-                         || d.DepartmentName.Contains("شرقي")
-                         || d.DepartmentName.Contains("اسبشيال")
-                         || d.DepartmentName.Contains("مخبوزات")
-                         || d.DepartmentName.Contains("كرواسون"))
-                .Where(d => !d.DepartmentName.Contains("إدارة")
-                         && !d.DepartmentName.Contains("العليا")
-                         && !d.DepartmentName.Contains("المالية")
-                         && !d.DepartmentName.Contains("الموارد")
-                         && !d.DepartmentName.Contains("المشتريات")
-                         && !d.DepartmentName.Contains("المبيعات"))
+                .Where(d => d.DepartmentName.Contains("قسم") || d.DepartmentName.Contains("صالة") || d.DepartmentName.Contains("تورت") ||
+                            d.DepartmentName.Contains("جاتوه") || d.DepartmentName.Contains("شرقي") || d.DepartmentName.Contains("اسبشيال") ||
+                            d.DepartmentName.Contains("مخبوزات") || d.DepartmentName.Contains("كرواسون"))
+                .Where(d => !d.DepartmentName.Contains("إدارة") && !d.DepartmentName.Contains("العليا") && !d.DepartmentName.Contains("المالية") &&
+                            !d.DepartmentName.Contains("الموارد") && !d.DepartmentName.Contains("المشتريات") && !d.DepartmentName.Contains("المبيعات"))
                 .OrderBy(d => d.DepartmentName)
                 .Select(d => new ProductionDepartmentLookupDto
                 {
@@ -65,14 +53,9 @@ namespace KayanERP.Api.Services
 
             var warehouses = await _context.Warehouses
                 .AsNoTracking()
-                .Where(w => w.Active &&
-                           (w.WarehouseName.Contains("صالة")
-                         || w.WarehouseName.Contains("تشغيل")
-                         || w.WarehouseName.Contains("قسم")
-                         || w.WarehouseName.Contains("شرقي")
-                         || w.WarehouseName.Contains("جاتوه")
-                         || w.WarehouseName.Contains("تورت")
-                         || w.WarehouseName.Contains("اسبشيال")))
+                .Where(w => w.Active && (w.WarehouseName.Contains("صالة") || w.WarehouseName.Contains("تشغيل") || w.WarehouseName.Contains("قسم") ||
+                                         w.WarehouseName.Contains("شرقي") || w.WarehouseName.Contains("جاتوه") || w.WarehouseName.Contains("تورت") ||
+                                         w.WarehouseName.Contains("اسبشيال")))
                 .OrderBy(w => w.WarehouseName)
                 .Select(w => new ProductionWarehouseLookupDto
                 {
@@ -131,9 +114,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ========================================================
-        // 2. استعراض أوامر التشغيل المفتوحة
-        // ========================================================
         public async Task<List<ActiveProductionOrderDto>> GetActiveOrdersAsync()
         {
             var orders = await _context.ProductionOrders
@@ -177,9 +157,6 @@ namespace KayanERP.Api.Services
             }).ToList();
         }
 
-        // ========================================================
-        // 3. إصدار أمر تشغيل صالة جديد
-        // ========================================================
         public async Task<(bool Success, string Message, long OrderId, string OrderNumber)> CreateOrderAsync(CreateBatchOrderDto dto)
         {
             if (dto.Items == null || !dto.Items.Any())
@@ -243,9 +220,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 4. استدعاء تفاصيل التنفيذ الميداني وشجرة المواد
-        // ========================================================
         public async Task<OrderExecutionFullDto?> GetOrderExecutionFullAsync(long orderId)
         {
             var order = await _context.ProductionOrders
@@ -300,9 +274,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ========================================================
-        // 5. تقفيل أمر التشغيل والترصيد المخزني وخصم الخامات بالمعيار (BOM)
-        // ========================================================
         public async Task<bool> FinalizeOrderCompleteAsync(CompleteOrderFinalizeDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -330,7 +301,6 @@ namespace KayanERP.Api.Services
                         detail.Status = "Completed";
                         detail.Notes = itemDto.BatchNumber;
 
-                        // 1. تسجيل الهالك في سجلات الجودة WasteRecords
                         if (detail.WasteQuantity > 0)
                         {
                             var waste = new WasteRecord
@@ -349,7 +319,6 @@ namespace KayanERP.Api.Services
                             _context.WasteRecords.Add(waste);
                         }
 
-                        // 2. الترصيد الفعلي للمنتج المصنع في مستودع الصالة (StockBalances)
                         if (detail.ProducedQuantity > 0)
                         {
                             var balance = await _context.StockBalances
@@ -375,7 +344,6 @@ namespace KayanERP.Api.Services
                                 });
                             }
 
-                            // 3. إثبات حركة كارت الصنف الرسمية (PRODUCTION_RECEIPT)
                             decimal unitCost = detail.Item?.BasePrice ?? 0m;
                             _context.StockMovements.Add(new StockMovement
                             {
@@ -393,7 +361,6 @@ namespace KayanERP.Api.Services
                             });
                         }
 
-                        // 4. خصم الخامات الأولية المستهلكة آلياً بناءً على بطاقة المقادير (BOM)
                         if (detail.ProducedQuantity > 0 && detail.Recipe != null && detail.Recipe.RecipeLines != null && detail.Recipe.RecipeLines.Any())
                         {
                             decimal batchMult = detail.Recipe.BatchQuantity > 0
@@ -461,9 +428,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 6. ترصيد إنتاجية الوردية وحفظ الحضور وساعات العمل
-        // ========================================================
         public async Task<string> SubmitShiftProductivityAsync(ShiftProductivityDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -559,9 +523,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 7. مركز التقارير والـ KPIs
-        // ========================================================
         public async Task<List<DepartmentKpiDto>> GetDepartmentKPIsAsync(DateTime startDate, DateTime endDate, long? departmentId)
         {
             var startUtc = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
@@ -668,9 +629,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ========================================================
-        // 8. احتساب تكلفة الوجبة وتفجير معايير الـ BOM
-        // ========================================================
         public async Task<BatchCostCalculationResultDto?> CalculateBatchCostAsync(BatchCostCalculationRequestDto req)
         {
             var order = await _context.ProductionOrders

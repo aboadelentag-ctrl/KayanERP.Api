@@ -30,9 +30,6 @@ namespace KayanERP.Api.Controllers
             _tenantContext = tenantContext;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية (العملاء + الأصناف + المخازن)
-        // ==============================================================
         [HttpGet("lookups")]
         public async Task<ActionResult<SalesLookupsDto>> GetLookups()
         {
@@ -40,9 +37,6 @@ namespace KayanERP.Api.Controllers
             return Ok(result);
         }
 
-        // ==============================================================
-        // 2. استعراض كافة فواتير المبيعات
-        // ==============================================================
         [HttpGet]
         public async Task<ActionResult<List<SalesInvoiceViewDto>>> GetAllInvoices()
         {
@@ -50,9 +44,6 @@ namespace KayanERP.Api.Controllers
             return Ok(invoices);
         }
 
-        // ==============================================================
-        // 3. تفاصيل فاتورة مبيعات محددة
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<ActionResult<SalesInvoiceViewDto>> GetInvoiceById(long id)
         {
@@ -64,9 +55,6 @@ namespace KayanERP.Api.Controllers
             return Ok(invoice);
         }
 
-        // ==============================================================
-        // 4. إنشاء فاتورة مبيعات
-        // ==============================================================
         [HttpPost("create-invoice")]
         public async Task<ActionResult<SalesInvoiceResultDto>> CreateInvoice(
             [FromBody] ExtendedSalesInvoiceCreateDto dto)
@@ -76,7 +64,6 @@ namespace KayanERP.Api.Controllers
 
             var companyId = _tenantContext.CompanyId;
 
-            // ⚠️ تأكيد إن العميل يخص نفس الشركة
             var customer = await _context.Customers.FindAsync(dto.CustomerId);
             if (customer == null)
                 return BadRequest(new { error = "العميل المحدد غير موجود." });
@@ -84,7 +71,6 @@ namespace KayanERP.Api.Controllers
             if (customer.CompanyId != companyId)
                 return Forbid();
 
-            // ⚠️ تأكيد إن الفرع يخص نفس الشركة
             var branch = await _context.Branches.FindAsync(dto.BranchId);
             if (branch == null)
                 return BadRequest(new { error = "الفرع المحدد غير موجود." });
@@ -92,7 +78,6 @@ namespace KayanERP.Api.Controllers
             if (branch.CompanyId != companyId)
                 return Forbid();
 
-            // فحص السقف الائتماني (للبيع الآجل)
             decimal invoiceTotal = dto.InvoiceLines.Sum(l => l.Quantity * l.UnitPrice);
 
             if (dto.PaymentMethod == "CREDIT" && customer.CreditLimit > 0)
@@ -106,12 +91,10 @@ namespace KayanERP.Api.Controllers
                 }
             }
 
-            // ترحيل الفاتورة عبر الخدمة
             var result = await _salesService.CreateInvoiceAsync(dto);
             if (!result.Success)
                 return BadRequest(new { error = result.Message });
 
-            // الترحيل المالي
             string branchName = branch.BranchName;
             bool isDistBranch = branchName.Contains("توزيع") || branchName.Contains("خارجي");
             string revenueAccountName = isDistBranch
@@ -122,16 +105,21 @@ namespace KayanERP.Api.Controllers
                 ? (isDistBranch ? "خزينة فرع التوزيع الخارجي" : "الخزينة الرئيسية - المصنع")
                 : $"حسابات التجار والعملاء ({customer.CustomerName})";
 
-            // تحديث آخر تعامل للعميل (للبيع الآجل)
             if (dto.PaymentMethod != "CASH")
             {
                 customer.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
 
-            result.Message = $"{result.Message} | تم الترحيل المالي آلياً: [من حـ/ {debitAccountName}] إلى [حـ/ {revenueAccountName}] متزناً 100%.";
-
-            return Ok(result);
+            return Ok(new SalesInvoiceResultDto
+            {
+                Success = result.Success,
+                InvoiceId = result.InvoiceId,
+                InvoiceNumber = result.InvoiceNumber,
+                TotalAmount = result.TotalAmount,
+                ItemsCount = result.ItemsCount,
+                Message = $"{result.Message} | تم الترحيل المالي آلياً: [من حـ/ {debitAccountName}] إلى [حـ/ {revenueAccountName}] متزناً 100%."
+            });
         }
     }
 }

@@ -25,9 +25,6 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. استعلام كافة أسعار التوريد مع الفلترة
-        // ==============================================================
         public async Task<List<SupplierItemPriceDto>> GetAllPricesAsync(long? supplierId = null, long? itemId = null)
         {
             var query = _context.SupplierItemPrices
@@ -65,9 +62,6 @@ namespace KayanERP.Api.Services
                 .ToListAsync();
         }
 
-        // ==============================================================
-        // 2. تسجيل أو تحديث سعر التوريد مع ضبط المورد المفضل ذرياً
-        // ==============================================================
         public async Task<SupplierPriceOperationResultDto> AddOrUpdatePriceAsync(CreateSupplierPriceDto dto)
         {
             var supplier = await _context.Suppliers.FindAsync(dto.SupplierId);
@@ -83,7 +77,6 @@ namespace KayanERP.Api.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // إذا تم تعيينه كمورد مفضل، إلغاء التفضيل عن بقية الموردين لنفس الصنف
                 if (dto.IsPreferred)
                 {
                     var existingPreferred = await _context.SupplierItemPrices
@@ -150,9 +143,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ==============================================================
-        // 3. تعديل سعر توريد قائم
-        // ==============================================================
         public async Task<bool> UpdatePriceAsync(long id, CreateSupplierPriceDto dto)
         {
             var record = await _context.SupplierItemPrices.FindAsync(id);
@@ -196,9 +186,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ==============================================================
-        // 4. حذف سعر توريد
-        // ==============================================================
         public async Task<bool> DeletePriceAsync(long id)
         {
             var record = await _context.SupplierItemPrices.FindAsync(id);

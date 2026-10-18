@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using KayanERP.Shared.DTOs;
 using KayanERP.Api.Services;
 
-namespace KayanERP.Api.Controllers
+namespace KayanERP.Shared.DTOs
 {
     [Route("api/[controller]")]
     [ApiController]

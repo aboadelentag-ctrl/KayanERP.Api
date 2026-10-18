@@ -25,9 +25,6 @@ namespace KayanERP.Api.Controllers
             _tenantContext = tenantContext;
         }
 
-        // ==============================================================
-        // 1. عرض كافة العملاء مع الفلترة
-        // ==============================================================
         [HttpGet]
         public async Task<ActionResult<List<CustomerItemDto>>> GetAll(
             [FromQuery] string? customerType,
@@ -64,9 +61,6 @@ namespace KayanERP.Api.Controllers
             return Ok(customers);
         }
 
-        // ==============================================================
-        // 2. عرض عميل محدد
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<ActionResult<CustomerItemDto>> GetById(long id)
         {
@@ -97,9 +91,6 @@ namespace KayanERP.Api.Controllers
             return Ok(customer);
         }
 
-        // ==============================================================
-        // 3. إضافة عميل جديد
-        // ==============================================================
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] CreateCustomerDto dto)
         {
@@ -108,7 +99,6 @@ namespace KayanERP.Api.Controllers
 
             var companyId = _tenantContext.CompanyId;
 
-            // توليد أو التحقق من الكود
             string customerCode;
             if (string.IsNullOrWhiteSpace(dto.CustomerCode))
             {
@@ -163,9 +153,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==============================================================
-        // 4. تعديل بيانات العميل
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] UpdateCustomerDto dto)
         {
@@ -173,11 +160,9 @@ namespace KayanERP.Api.Controllers
             if (customer == null)
                 return NotFound(new { message = "العميل غير موجود." });
 
-            // تأكيد ملكية العميل للشركة
             if (customer.CompanyId != _tenantContext.CompanyId)
                 return Forbid();
 
-            // التحقق من الكود (لو تم تعديله)
             if (!string.IsNullOrWhiteSpace(dto.CustomerCode))
             {
                 var trimmedCode = dto.CustomerCode.Trim();
@@ -192,7 +177,6 @@ namespace KayanERP.Api.Controllers
                 customer.CustomerCode = trimmedCode;
             }
 
-            // نحدّث الحقول المسموح بها
             customer.CustomerName = dto.CustomerName?.Trim() ?? customer.CustomerName;
             customer.CustomerType = string.IsNullOrWhiteSpace(dto.CustomerType) ? customer.CustomerType : dto.CustomerType;
             customer.Phone = dto.Phone?.Trim();
@@ -209,9 +193,6 @@ namespace KayanERP.Api.Controllers
             return NoContent();
         }
 
-        // ==============================================================
-        // 5. تبديل حالة التفعيل
-        // ==============================================================
         [HttpPatch("{id:long}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(long id)
         {
@@ -236,9 +217,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==============================================================
-        // 6. حذف العميل (Soft Delete دايمًا)
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
@@ -253,7 +231,6 @@ namespace KayanERP.Api.Controllers
             bool hasCrateBalance = await _context.AssetBalances
                 .AnyAsync(b => b.PartyType == "CUSTOMER" && b.PartyId == id && b.Quantity != 0);
 
-            // Soft Delete دايمًا — أأمن من Hard Delete
             customer.Active = false;
             customer.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();

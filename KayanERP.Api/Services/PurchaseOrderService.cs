@@ -26,22 +26,16 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية الموحدة (موردين، مستودعات بالفروع، وخامات)
-        // ==============================================================
         public async Task<PurchaseOrderLookupsDto> GetLookupsAsync()
         {
             var suppliers = await _context.Suppliers
                 .AsNoTracking()
                 .Where(s => s.Active)
                 .OrderBy(s => s.SupplierName)
-                .Select(s => new PoSupplierLookupDto
+                .Select(s => new SupplierLookupDto
                 {
                     Id = s.Id,
-                    SupplierCode = s.SupplierCode,
-                    SupplierName = s.SupplierName,
-                    Phone = s.Phone,
-                    PaymentTerms = s.PaymentTerms
+                    SupplierName = s.SupplierName
                 })
                 .ToListAsync();
 
@@ -50,29 +44,21 @@ namespace KayanERP.Api.Services
                 .AsNoTracking()
                 .Where(w => w.Active)
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new PoWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    WarehouseCode = w.WarehouseCode,
-                    WarehouseName = w.Branch != null
-                        ? $"{w.WarehouseName} - [{w.Branch.BranchName}]"
-                        : w.WarehouseName
+                    Name = w.Branch != null ? $"{w.WarehouseName} - [{w.Branch.BranchName}]" : w.WarehouseName
                 })
                 .ToListAsync();
 
             var items = await _context.Items
-                .Include(i => i.ItemCategory)
                 .AsNoTracking()
                 .Where(i => i.Active)
                 .OrderBy(i => i.ItemName)
-                .Select(i => new PoItemLookupDto
+                .Select(i => new ItemLookupDto
                 {
                     Id = i.Id,
-                    ItemCode = i.ItemCode,
-                    ItemName = i.ItemName,
-                    Unit = i.Unit ?? "وحدة",
-                    BasePrice = i.BasePrice,
-                    CategoryName = i.ItemCategory != null ? i.ItemCategory.CategoryName : "عام"
+                    Name = i.ItemName
                 })
                 .ToListAsync();
 
@@ -84,9 +70,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ==============================================================
-        // 2. جلب كافة أوامر الشراء
-        // ==============================================================
         public async Task<List<PurchaseOrderDto>> GetAllOrdersAsync()
         {
             return await _context.PurchaseOrders
@@ -98,39 +81,23 @@ namespace KayanERP.Api.Services
                 .Select(po => new PurchaseOrderDto
                 {
                     Id = po.Id,
-                    CompanyId = po.CompanyId,
-                    SupplierId = po.SupplierId,
-                    SupplierName = po.Supplier != null ? po.Supplier.SupplierName : "قيد التحديد في الفاتورة",
-                    WarehouseId = po.WarehouseId,
                     OrderNumber = po.OrderNumber,
-                    OrderDate = po.OrderDate.ToDateTime(TimeOnly.MinValue),
+                    OrderDate = po.OrderDate.ToDateTime(TimeOnly.Min),
+                    SupplierName = po.Supplier != null ? po.Supplier.SupplierName : "قيد التحديد",
                     Status = po.Status,
-                    Subtotal = po.Subtotal,
-                    DiscountAmount = po.DiscountAmount,
-                    TaxAmount = po.TaxAmount,
                     TotalAmount = po.TotalAmount,
-                    Lines = po.PurchaseOrderLines.Select(l => new PurchaseOrderDetailDto
+                    Lines = po.PurchaseOrderLines.Select(l => new PurchaseOrderLineDto
                     {
-                        Id = l.Id,
-                        PurchaseOrderId = l.PurchaseOrderId,
-                        ItemId = l.ItemId,
-                        ItemCode = l.Item != null ? l.Item.ItemCode : string.Empty,
+                        LineId = l.Id,
                         ItemName = l.Item != null ? l.Item.ItemName : string.Empty,
-                        Unit = l.Item != null ? (l.Item.Unit ?? string.Empty) : string.Empty,
                         Quantity = l.Quantity,
                         UnitPrice = l.UnitPrice,
-                        DiscountAmount = l.DiscountAmount,
-                        TaxAmount = l.TaxAmount,
-                        ReceivedQuantity = l.ReceivedQuantity,
-                        Notes = l.Notes
+                        Total = l.LineTotal
                     }).ToList()
                 })
                 .ToListAsync();
         }
 
-        // ==============================================================
-        // 3. جلب أمر شراء محدد
-        // ==============================================================
         public async Task<PurchaseOrderDto?> GetOrderByIdAsync(long id)
         {
             var po = await _context.PurchaseOrders
@@ -145,81 +112,46 @@ namespace KayanERP.Api.Services
             return new PurchaseOrderDto
             {
                 Id = po.Id,
-                CompanyId = po.CompanyId,
-                SupplierId = po.SupplierId,
-                SupplierName = po.Supplier != null ? po.Supplier.SupplierName : "قيد التحديد في الفاتورة",
-                WarehouseId = po.WarehouseId,
                 OrderNumber = po.OrderNumber,
-                OrderDate = po.OrderDate.ToDateTime(TimeOnly.MinValue),
+                OrderDate = po.OrderDate.ToDateTime(TimeOnly.Min),
+                SupplierName = po.Supplier?.SupplierName ?? "قيد التحديد",
                 Status = po.Status,
-                Subtotal = po.Subtotal,
-                DiscountAmount = po.DiscountAmount,
-                TaxAmount = po.TaxAmount,
                 TotalAmount = po.TotalAmount,
-                Lines = po.PurchaseOrderLines.Select(l => new PurchaseOrderDetailDto
+                Lines = po.PurchaseOrderLines.Select(l => new PurchaseOrderLineDto
                 {
-                    Id = l.Id,
-                    PurchaseOrderId = l.PurchaseOrderId,
-                    ItemId = l.ItemId,
-                    ItemCode = l.Item != null ? l.Item.ItemCode : string.Empty,
+                    LineId = l.Id,
                     ItemName = l.Item != null ? l.Item.ItemName : string.Empty,
-                    Unit = l.Item != null ? (l.Item.Unit ?? string.Empty) : string.Empty,
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
-                    DiscountAmount = l.DiscountAmount,
-                    TaxAmount = l.TaxAmount,
-                    ReceivedQuantity = l.ReceivedQuantity,
-                    Notes = l.Notes
+                    Total = l.LineTotal
                 }).ToList()
             };
         }
 
-        // ==============================================================
-        // 4. إصدار أمر شراء جديد
-        // ==============================================================
         public async Task<PurchaseOrderResultDto> CreateOrderAsync(PurchaseOrderCreateDto dto)
         {
             if (dto == null || dto.Lines == null || !dto.Lines.Any())
                 throw new ArgumentException("يجب إضافة بنود للطلب أولاً.");
 
             decimal subtotal = dto.Lines.Sum(l => l.Quantity * l.UnitPrice);
-            decimal discount = dto.Lines.Sum(l => l.DiscountAmount);
-            decimal tax = dto.Lines.Sum(l => l.TaxAmount);
-            decimal total = subtotal - discount + tax;
 
-            string generatedOrderNumber = !string.IsNullOrWhiteSpace(dto.OrderNumber)
-                ? dto.OrderNumber.Trim()
-                : $"PO-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(100, 999)}";
-
-            long resolvedSupplierId = dto.SupplierId;
-            bool supplierExists = await _context.Suppliers.AnyAsync(s => s.Id == resolvedSupplierId);
-            if (!supplierExists)
-            {
-                resolvedSupplierId = await _context.Suppliers.Select(s => s.Id).FirstOrDefaultAsync();
-            }
-
-            long resolvedWarehouseId = dto.WarehouseId;
-            bool warehouseExists = await _context.Warehouses.AnyAsync(w => w.Id == resolvedWarehouseId);
-            if (!warehouseExists)
-            {
-                resolvedWarehouseId = await _context.Warehouses.Select(w => w.Id).FirstOrDefaultAsync();
-            }
+            string generatedOrderNumber = $"PO-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(100, 999)}";
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var po = new PurchaseOrder
                 {
-                    CompanyId = dto.CompanyId <= 0 ? 1 : dto.CompanyId,
-                    SupplierId = resolvedSupplierId,
-                    WarehouseId = resolvedWarehouseId,
+                    CompanyId = 1,
+                    SupplierId = dto.SupplierId,
+                    WarehouseId = dto.WarehouseId,
                     OrderNumber = generatedOrderNumber,
-                    OrderDate = DateOnly.FromDateTime(dto.OrderDate),
-                    Status = string.IsNullOrWhiteSpace(dto.Status) ? "Pending_Procurement" : dto.Status,
+                    OrderDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    Status = "Pending_Procurement",
                     Subtotal = subtotal,
-                    DiscountAmount = discount,
-                    TaxAmount = tax,
-                    TotalAmount = total,
+                    DiscountAmount = 0,
+                    TaxAmount = 0,
+                    TotalAmount = subtotal,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -235,11 +167,10 @@ namespace KayanERP.Api.Services
                         ItemId = line.ItemId,
                         Quantity = line.Quantity,
                         UnitPrice = line.UnitPrice,
-                        DiscountAmount = line.DiscountAmount,
-                        TaxAmount = line.TaxAmount,
+                        DiscountAmount = 0,
+                        TaxAmount = 0,
                         ReceivedQuantity = 0,
-                        LineTotal = (line.Quantity * line.UnitPrice) - line.DiscountAmount + line.TaxAmount,
-                        Notes = line.Notes?.Trim()
+                        LineTotal = line.Quantity * line.UnitPrice
                     };
                     _context.PurchaseOrderLines.Add(poLine);
                 }
@@ -250,7 +181,7 @@ namespace KayanERP.Api.Services
                 return new PurchaseOrderResultDto
                 {
                     Success = true,
-                    Id = po.Id,
+                    OrderId = po.Id,
                     OrderNumber = po.OrderNumber,
                     Message = "تم إنشاء أمر الشراء بنجاح."
                 };
@@ -262,53 +193,18 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ==============================================================
-        // 5. اعتماد أمر الشراء والفاتورة وتحديث الأسعار (مُعدلة ومُحصنة)
-        // ==============================================================
         public async Task<bool> ApproveInvoiceAsync(PoApproveDto dto)
         {
-            if (dto == null || dto.OrderId <= 0 || dto.Lines == null || !dto.Lines.Any())
-                throw new ArgumentException("بيانات غير صالحة للاعتماد.");
+            if (dto == null || dto.OrderId <= 0) return false;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var order = await _context.PurchaseOrders
-                    .Include(p => p.PurchaseOrderLines)
-                    .FirstOrDefaultAsync(p => p.Id == dto.OrderId);
-
+                var order = await _context.PurchaseOrders.FindAsync(dto.OrderId);
                 if (order == null) return false;
 
-                order.Status = string.IsNullOrWhiteSpace(dto.Status) ? "Approved" : dto.Status;
+                order.Status = "Approved";
                 order.UpdatedAt = DateTime.UtcNow;
-
-                decimal subtotal = 0;
-                decimal totalDiscount = 0;
-                decimal totalTax = 0;
-
-                foreach (var editLine in dto.Lines)
-                {
-                    var existingLine = order.PurchaseOrderLines.FirstOrDefault(l => l.Id == editLine.LineId || l.ItemId == editLine.ItemId);
-                    if (existingLine != null)
-                    {
-                        existingLine.UnitPrice = editLine.UnitPrice;
-                        existingLine.Quantity = editLine.Quantity;
-                        existingLine.LineTotal = (editLine.Quantity * editLine.UnitPrice) - existingLine.DiscountAmount + existingLine.TaxAmount;
-
-                        if (!string.IsNullOrWhiteSpace(editLine.Notes))
-                            existingLine.Notes = editLine.Notes;
-
-                        subtotal += (editLine.Quantity * editLine.UnitPrice);
-                        totalDiscount += existingLine.DiscountAmount;
-                        totalTax += existingLine.TaxAmount;
-                    }
-                }
-
-                // تحديث القيم المحاسبية بدقة
-                order.Subtotal = subtotal;
-                order.DiscountAmount = totalDiscount;
-                order.TaxAmount = totalTax;
-                order.TotalAmount = subtotal - totalDiscount + totalTax;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -320,41 +216,5 @@ namespace KayanERP.Api.Services
                 throw;
             }
         }
-    }
-
-    // ==============================================================
-    // DTOs المرجعية لأوامر الشراء داخل نفس الـ Namespace
-    // ==============================================================
-    public class PurchaseOrderLookupsDto
-    {
-        public List<PoSupplierLookupDto> Suppliers { get; set; } = new();
-        public List<PoWarehouseLookupDto> Warehouses { get; set; } = new();
-        public List<PoItemLookupDto> Items { get; set; } = new();
-    }
-
-    public class PoSupplierLookupDto
-    {
-        public long Id { get; set; }
-        public string SupplierCode { get; set; } = string.Empty;
-        public string SupplierName { get; set; } = string.Empty;
-        public string? Phone { get; set; }
-        public string? PaymentTerms { get; set; }
-    }
-
-    public class PoWarehouseLookupDto
-    {
-        public long Id { get; set; }
-        public string WarehouseCode { get; set; } = string.Empty;
-        public string WarehouseName { get; set; } = string.Empty;
-    }
-
-    public class PoItemLookupDto
-    {
-        public long Id { get; set; }
-        public string ItemCode { get; set; } = string.Empty;
-        public string ItemName { get; set; } = string.Empty;
-        public string Unit { get; set; } = string.Empty;
-        public decimal BasePrice { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
     }
 }

@@ -2,7 +2,7 @@
 @layout KayanERP.UI.Pages.EmptyLayout
 @using System.Net.Http.Json
 @using System.Text
-@using KayanERP.UI.DTOs
+@using KayanERP.Shared.DTOs
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -53,10 +53,10 @@
                 <div class="col-md-4">
                     <label class="form-label small fw-bold text-muted mb-1">فلترة حسب الفرع:</label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedBranchId" @bind:after="LoadWarehouses">
-                        <option value="0">كافة الفروع والمراكز الرئيسية</option>
+                        <option ="0">كافة الفروع والمراكز الرئيسية</option>
                         @foreach (var b in branches)
                         {
-                            <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                            <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
                         }
                     </select>
                 </div>
@@ -188,7 +188,7 @@
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="currentWarehouse.BranchId">
                                 @foreach (var b in branches)
                                 {
-                                    <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                                    <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
                                 }
                             </select>
                         </div>
@@ -204,21 +204,21 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-dark">نوع المستودع</label>
                             <select class="form-select form-select-sm" @bind="currentWarehouse.WarehouseType">
-                                <option value="خامات">مستودع خامات وتعبئة</option>
-                                <option value="منتج تام">مستودع منتج تام (حلويات/مخبوزات)</option>
-                                <option value="معرض">مستودع بيع ومعارض</option>
-                                <option value="صالة تشغيل">مستودع صالة إنتاج (وسيط)</option>
-                                <option value="تالف وهوالك">مستودع تالف ومردودات</option>
+                                <option ="خامات">مستودع خامات وتعبئة</option>
+                                <option ="منتج تام">مستودع منتج تام (حلويات/مخبوزات)</option>
+                                <option ="معرض">مستودع بيع ومعارض</option>
+                                <option ="صالة تشغيل">مستودع صالة إنتاج (وسيط)</option>
+                                <option ="تالف وهوالك">مستودع تالف ومردودات</option>
                             </select>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-dark">المستودع الأب (الشجرة الهرمية)</label>
                             <select class="form-select form-select-sm" @bind="currentWarehouse.ParentWarehouseId">
-                                <option value="">-- مستودع رئيسي مستقل (بدون أب) --</option>
+                                <option ="">-- مستودع رئيسي مستقل (بدون أب) --</option>
                                 @foreach (var p in warehouses.Where(w => w.Id != currentWarehouse.Id))
                                 {
-                                    <option value="@p.Id">@p.WarehouseName (@p.WarehouseCode)</option>
+                                    <option ="@p.Id">@p.WarehouseName (@p.WarehouseCode)</option>
                                 }
                             </select>
                         </div>

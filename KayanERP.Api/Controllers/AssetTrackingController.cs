@@ -109,7 +109,7 @@ namespace KayanERP.Api.Controllers
                 long companyId = dto.CompanyId > 0 ? dto.CompanyId : (await _context.Companies.FirstOrDefaultAsync())?.Id ?? 1;
 
                 DateTime safeMovementDate = dto.MovementDate != default
-                    ? DateTime.SpecifyKind(dto.MovementDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
+                    ? DateTime.SpecifyKind(dto.MovementDate.ToDateTime(TimeOnly.Min), DateTimeKind.Utc)
                     : DateTime.UtcNow;
 
                 var movement = new AssetMovement

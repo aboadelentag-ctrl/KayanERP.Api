@@ -105,8 +105,8 @@ namespace KayanERP.Api.Controllers
                 if (await _context.FixedAssets.AnyAsync(a => a.AssetCode.ToLower() == dto.AssetCode.Trim().ToLower()))
                     return BadRequest(new { message = "كود الأصل مسجل مسبقاً لمعدة أخرى!" });
 
-                var empCode = User.FindFirstValue("EmployeeCode") ?? "EMP";
-                var empName = User.FindFirstValue(ClaimTypes.Name) ?? "مسؤول النظام";
+                var empCode = User.FindFirst("EmployeeCode") ?? "EMP";
+                var empName = User.FindFirst(ClaimTypes.Name) ?? "مسؤول النظام";
 
                 var asset = new FixedAsset
                 {
@@ -165,8 +165,8 @@ namespace KayanERP.Api.Controllers
 
                 if (asset == null) return NotFound(new { message = "الأصل غير موجود" });
 
-                var empCode = User.FindFirstValue("EmployeeCode") ?? "EMP";
-                var empName = User.FindFirstValue(ClaimTypes.Name) ?? "المشرف";
+                var empCode = User.FindFirst("EmployeeCode") ?? "EMP";
+                var empName = User.FindFirst(ClaimTypes.Name) ?? "المشرف";
 
                 if (asset.Department != dto.Department || asset.CustodianCode != dto.CustodianCode)
                 {

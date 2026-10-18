@@ -36,7 +36,7 @@ namespace KayanERP.Api.Services
                 decimal totalCost = 0;
                 foreach (var line in r.RecipeLines.Where(l => l.Quantity > 0))
                 {
-                    decimal cost = latestCosts.TryGetValue(line.ComponentItemId, out var unitCost) ? unitCost : 0;
+                    decimal cost = latestCosts.TryGet(line.ComponentItemId, out var unitCost) ? unitCost : 0;
                     decimal waste = line.WastePercentage;
                     totalCost += (line.Quantity * (1m + (waste / 100m))) * cost;
                 }
@@ -91,7 +91,7 @@ namespace KayanERP.Api.Services
                 .Where(l => l.Quantity > 0)
                 .Select(l =>
                 {
-                    decimal unitCost = latestCosts.TryGetValue(l.ComponentItemId, out var cost) ? cost : 0;
+                    decimal unitCost = latestCosts.TryGet(l.ComponentItemId, out var cost) ? cost : 0;
                     return new RecipeLineDto
                     {
                         Id = l.Id,

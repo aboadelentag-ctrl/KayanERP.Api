@@ -18,7 +18,6 @@ namespace KayanERP.Api.Services
     {
         private readonly AppDbContext _context;
 
-        // قائمة الحركات المعتمدة رسمياً كوارد لكافة العمليات
         private static readonly HashSet<string> IncomingTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             "PURCHASE_RECEIPT",
@@ -138,7 +137,6 @@ namespace KayanERP.Api.Services
             decimal running = 0;
             var ledger = new List<StockMovementLedgerDto>();
 
-            // حساب رصيد أول المدة
             decimal openingBalance = 0;
             if (fromUtc.HasValue)
             {
@@ -214,7 +212,6 @@ namespace KayanERP.Api.Services
                 });
             }
 
-            // تحليل تتبع اللوطات
             var receiptMovements = allMovements.Where(m =>
                 string.Equals(m.MovementType, "PURCHASE_RECEIPT", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(m.MovementType, "PRODUCTION_IN", StringComparison.OrdinalIgnoreCase) ||
@@ -231,14 +228,14 @@ namespace KayanERP.Api.Services
             {
                 if (string.IsNullOrWhiteSpace(rm.Notes)) continue;
 
-                string batchNo = ExtractValue(rm.Notes, "تشغيلة:", "|");
-                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = ExtractValue(rm.Notes, "لوط:", "|");
-                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = ExtractValue(rm.Notes, "LOT:", "|");
-                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = ExtractValue(rm.Notes, "تشغيلة/تتبع:", "|");
+                string batchNo = Extract(rm.Notes, "تشغيلة:", "|");
+                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = Extract(rm.Notes, "لوط:", "|");
+                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = Extract(rm.Notes, "LOT:", "|");
+                if (string.IsNullOrWhiteSpace(batchNo)) batchNo = Extract(rm.Notes, "تشغيلة/تتبع:", "|");
                 if (string.IsNullOrWhiteSpace(batchNo)) batchNo = $"تشغيلة-{rm.Id}";
                 batchNo = batchNo.Trim();
 
-                string expDate = ExtractValue(rm.Notes, "صلاحية:", "|").Trim();
+                string expDate = Extract(rm.Notes, "صلاحية:", "|").Trim();
 
                 if (!batchMap.ContainsKey(batchNo))
                 {
@@ -328,7 +325,7 @@ namespace KayanERP.Api.Services
             };
         }
 
-        private static string ExtractValue(string text, string key, string separator)
+        private static string Extract(string text, string key, string separator)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key)) return string.Empty;
             int startIdx = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);

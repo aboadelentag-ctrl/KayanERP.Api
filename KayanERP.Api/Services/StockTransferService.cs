@@ -132,21 +132,21 @@ namespace KayanERP.Api.Services
             foreach (var r in receipts)
             {
                 if (string.IsNullOrWhiteSpace(r.Notes)) continue;
-                string batch = ExtractValue(r.Notes, "تشغيلة:", "|");
+                string batch = Extract(r.Notes, "تشغيلة:", "|");
                 if (string.IsNullOrWhiteSpace(batch))
                 {
-                    batch = ExtractValue(r.Notes, "تشغيلة/تتبع:", "|");
+                    batch = Extract(r.Notes, "تشغيلة/تتبع:", "|");
                 }
                 if (string.IsNullOrWhiteSpace(batch))
                 {
-                    batch = ExtractValue(r.Notes, "لوط:", "|");
+                    batch = Extract(r.Notes, "لوط:", "|");
                 }
                 if (string.IsNullOrWhiteSpace(batch))
                 {
-                    batch = ExtractValue(r.Notes, "LOT:", "|");
+                    batch = Extract(r.Notes, "LOT:", "|");
                 }
 
-                string expStr = ExtractValue(r.Notes, "صلاحية:", "|");
+                string expStr = Extract(r.Notes, "صلاحية:", "|");
                 DateTime? expDate = null;
                 if (DateTime.TryParse(expStr, out DateTime p)) expDate = p;
 
@@ -179,7 +179,7 @@ namespace KayanERP.Api.Services
             return new AvailableStockInfoDto
             {
                 TotalAvailableQty = totalQty,
-                Batches = batches.OrderBy(b => b.ExpiryDate ?? DateTime.MaxValue).ToList()
+                Batches = batches.OrderBy(b => b.ExpiryDate ?? DateTime.Max).ToList()
             };
         }
 
@@ -232,7 +232,7 @@ namespace KayanERP.Api.Services
                         Quantity = lineDto.DispatchedQty,
                         ReceivedQuantity = 0,
                         BatchNumber = !string.IsNullOrWhiteSpace(lineDto.BatchNumber) ? lineDto.BatchNumber.Trim() : $"LOT-{now:yyyyMMdd}-{lineDto.ItemId}",
-                        ExpiryDate = lineDto.ExpiryDate.HasValue ? DateTime.SpecifyKind(lineDto.ExpiryDate.Value.Date, DateTimeKind.Utc) : null,
+                        ExpiryDate = lineDto.ExpiryDate.Has ? DateTime.SpecifyKind(lineDto.ExpiryDate..Date, DateTimeKind.Utc) : null,
                         UnitCost = cost,
                         LineStatus = "PENDING",
                         LossQty = 0,
@@ -501,7 +501,7 @@ namespace KayanERP.Api.Services
             };
         }
 
-        private static string ExtractValue(string text, string key, string separator)
+        private static string Extract(string text, string key, string separator)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key)) return string.Empty;
 

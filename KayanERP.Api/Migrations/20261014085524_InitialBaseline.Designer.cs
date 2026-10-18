@@ -4,7 +4,7 @@ using KayanERP.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.Storage.Conversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -31,7 +31,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Account", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -80,16 +80,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.AppRole", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<int?>("CompanyId")
@@ -97,10 +97,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -124,10 +124,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("permissions");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("roles_pkey");
@@ -145,7 +145,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.AppUser", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -217,7 +217,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.AssetBalance", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -232,10 +232,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("item_id");
 
                     b.Property<DateTime>("LastUpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("PartyId")
                         .HasColumnType("bigint")
@@ -268,7 +268,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.AssetHistoryLog", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -321,7 +321,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.AssetMovement", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -332,10 +332,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("FromPartyId")
                         .HasColumnType("bigint")
@@ -352,10 +352,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("item_id");
 
                     b.Property<DateTime>("MovementDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("movement_date")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<string>("MovementType")
                         .IsRequired()
@@ -403,16 +403,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Branch", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("Address")
@@ -436,10 +436,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
@@ -447,10 +447,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("phone");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("branches_pkey");
@@ -468,7 +468,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.BranchTransfer", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -616,7 +616,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.CirculatingContainer", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
 
@@ -671,16 +671,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Company", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("Address")
@@ -700,10 +700,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_name");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Email")
                         .HasMaxLength(150)
@@ -724,10 +724,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("tenant_key");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("companies_pkey");
@@ -742,7 +742,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Crate", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -766,7 +766,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.CrateClient", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
 
@@ -790,7 +790,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.CrateClientTransaction", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
 
@@ -830,7 +830,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.CrateMovement", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -966,7 +966,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.CrateTransaction", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1014,16 +1014,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Customer", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("Address")
@@ -1035,10 +1035,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<decimal>("CreditLimit")
                         .HasPrecision(18, 2)
@@ -1059,11 +1059,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("CustomerType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("customer_type")
-                        .HasDefaultValueSql("'RETAIL'");
+                        .HasDefaultSql("'RETAIL'");
 
                     b.Property<string>("Email")
                         .HasMaxLength(150)
@@ -1090,10 +1090,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("tax_number");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("customers_pkey");
@@ -1111,7 +1111,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Department", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1168,17 +1168,17 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.DynamicForm", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -1202,9 +1202,9 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("form_name");
 
                     b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("is_active");
 
                     b.HasKey("Id")
@@ -1220,7 +1220,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.EmergencyTask", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1273,10 +1273,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("cost_impact");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -1284,9 +1284,9 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("description");
 
                     b.Property<int>("DowntimeMinutes")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
+                        .HasDefault(0)
                         .HasColumnName("downtime_minutes");
 
                     b.Property<string>("MediaFileName")
@@ -1296,10 +1296,10 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("MediaType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
-                        .HasDefaultValue("TEXT")
+                        .HasDefault("TEXT")
                         .HasColumnName("media_type");
 
                     b.Property<string>("MediaUrl")
@@ -1308,10 +1308,10 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Priority")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
-                        .HasDefaultValue("NORMAL")
+                        .HasDefault("NORMAL")
                         .HasColumnName("priority");
 
                     b.Property<DateTime?>("RespondedAt")
@@ -1346,10 +1346,10 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasDefaultValue("PENDING")
+                        .HasDefault("PENDING")
                         .HasColumnName("status");
 
                     b.Property<string>("TargetDepartment")
@@ -1364,9 +1364,9 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("target_employee_name");
 
                     b.Property<int>("TargetResolutionMinutes")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(30)
+                        .HasDefault(30)
                         .HasColumnName("target_resolution_minutes");
 
                     b.Property<string>("TaskNumber")
@@ -1396,7 +1396,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Employee", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1466,7 +1466,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.FinishedGoodsTransfer", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1687,7 +1687,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.FixedAsset", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1766,7 +1766,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.FormSubmission", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -1777,11 +1777,11 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("form_id");
 
                     b.Property<string>("Status")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'Submitted'");
+                        .HasDefaultSql("'Submitted'");
 
                     b.Property<string>("SubmissionData")
                         .IsRequired()
@@ -1789,10 +1789,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("submission_data");
 
                     b.Property<DateTime?>("SubmittedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("submitted_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("UserId")
                         .HasColumnType("bigint")
@@ -1810,16 +1810,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Item", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("Barcode")
@@ -1841,10 +1841,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("DepartmentId")
                         .HasColumnType("bigint")
@@ -1855,33 +1855,33 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("department_name");
 
                     b.Property<bool>("HasExpiryDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("has_expiry_date");
 
                     b.Property<bool>("HideDetailPrint")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
+                        .HasDefault(false)
                         .HasColumnName("hide_detail_print");
 
                     b.Property<bool>("IsContainer")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
+                        .HasDefault(false)
                         .HasColumnName("is_container");
 
                     b.Property<bool>("IsMerged")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
+                        .HasDefault(false)
                         .HasColumnName("is_merged");
 
                     b.Property<bool>("IsVariant")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
+                        .HasDefault(false)
                         .HasColumnName("is_variant");
 
                     b.Property<string>("ItemCode")
@@ -1908,9 +1908,9 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("max_stock");
 
                     b.Property<bool>("MultiUom")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
+                        .HasDefault(false)
                         .HasColumnName("multi_uom");
 
                     b.Property<long?>("ParentItemId")
@@ -1959,16 +1959,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ItemCategory", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("CategoryCode")
@@ -1988,10 +1988,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -2004,10 +2004,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("item_type");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("item_categories_pkey");
@@ -2025,7 +2025,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ItemUomConversion", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2074,7 +2074,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.JobTitle", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2115,7 +2115,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.JournalEntry", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2163,7 +2163,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.JournalEntryLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2204,16 +2204,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.MaintenanceAsset", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("AssetCode")
@@ -2238,10 +2238,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("DepartmentId")
                         .HasColumnType("bigint")
@@ -2253,10 +2253,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("location");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("maintenance_assets_pkey");
@@ -2274,7 +2274,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.MaintenanceOrder", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2298,10 +2298,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("cost");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -2310,11 +2310,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("MaintenanceType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("maintenance_type")
-                        .HasDefaultValueSql("'CORRECTIVE'");
+                        .HasDefaultSql("'CORRECTIVE'");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text")
@@ -2328,11 +2328,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Priority")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("priority")
-                        .HasDefaultValueSql("'NORMAL'");
+                        .HasDefaultSql("'NORMAL'");
 
                     b.Property<DateOnly?>("ScheduledDate")
                         .HasColumnType("date")
@@ -2340,11 +2340,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'OPEN'");
+                        .HasDefaultSql("'OPEN'");
 
                     b.Property<string>("Technician")
                         .HasMaxLength(150)
@@ -2352,10 +2352,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("technician");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("maintenance_orders_pkey");
@@ -2373,7 +2373,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.MaterialRequisition", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2447,7 +2447,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.MaterialRequisitionLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2524,7 +2524,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ProductionOrder", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2535,10 +2535,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint")
@@ -2549,10 +2549,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("notes");
 
                     b.Property<DateOnly>("OrderDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("date")
                         .HasColumnName("order_date")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -2566,17 +2566,17 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'DRAFT'");
+                        .HasDefaultSql("'DRAFT'");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint")
@@ -2604,7 +2604,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ProductionOrderDetail", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2650,11 +2650,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'PENDING'");
+                        .HasDefaultSql("'PENDING'");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -2696,17 +2696,17 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ProductionOrderStage", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("ItemId")
                         .HasColumnType("bigint")
@@ -2744,17 +2744,17 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'PENDING'");
+                        .HasDefaultSql("'PENDING'");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("production_order_stages_pkey");
@@ -2781,7 +2781,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ProductionStageMaterial", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2793,10 +2793,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("consumed_quantity");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("ItemId")
                         .HasColumnType("bigint")
@@ -2848,7 +2848,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.ProductivityLog", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2925,7 +2925,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.PurchaseInvoice", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2957,7 +2957,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.PurchaseInvoiceLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -2995,7 +2995,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.PurchaseOrder", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3006,10 +3006,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint")
@@ -3033,10 +3033,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("notes");
 
                     b.Property<DateOnly>("OrderDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("date")
                         .HasColumnName("order_date")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -3046,11 +3046,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'DRAFT'");
+                        .HasDefaultSql("'DRAFT'");
 
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(18, 2)
@@ -3072,10 +3072,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("total_amount");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint")
@@ -3103,7 +3103,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.PurchaseOrderLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3119,7 +3119,7 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("item_id");
 
                     b.Property<decimal>("LineTotal")
-                        .ValueGeneratedOnAddOrUpdate()
+                        .GeneratedOnAddOrUpdate()
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("line_total")
@@ -3168,7 +3168,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.QualityInspection", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3179,16 +3179,16 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("InspectionDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("inspection_date")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("InspectionType")
                         .IsRequired()
@@ -3243,11 +3243,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'PENDING'");
+                        .HasDefaultSql("'PENDING'");
 
                     b.Property<long?>("WarehouseId")
                         .HasColumnType("bigint")
@@ -3277,16 +3277,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Recipe", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<decimal>("BatchQuantity")
@@ -3305,16 +3305,16 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateOnly>("EffectiveFrom")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("date")
                         .HasColumnName("effective_from")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<DateOnly?>("EffectiveTo")
                         .HasColumnType("date")
@@ -3350,10 +3350,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("recipe_name");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<decimal>("WastePercentage")
                         .HasPrecision(8, 3)
@@ -3387,7 +3387,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.RecipeLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3398,10 +3398,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("component_item_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<bool>("IsOptional")
                         .HasColumnType("boolean")
@@ -3435,10 +3435,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("unit");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<decimal>("WastePercentage")
                         .HasPrecision(8, 3)
@@ -3464,23 +3464,23 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.RecipeStage", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text")
@@ -3509,10 +3509,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("stage_recipe_id");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("recipe_stages_pkey");
@@ -3536,17 +3536,17 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.RefreshToken", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("CreatedByIp")
                         .HasMaxLength(50)
@@ -3600,7 +3600,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Role", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3644,7 +3644,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.SalesInvoice", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3659,10 +3659,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint")
@@ -3705,7 +3705,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.SalesInvoiceLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3748,7 +3748,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.SalesOrder", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3763,10 +3763,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("CustomerId")
                         .HasColumnType("bigint")
@@ -3782,10 +3782,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("notes");
 
                     b.Property<DateOnly>("OrderDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("date")
                         .HasColumnName("order_date")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -3795,11 +3795,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'DRAFT'");
+                        .HasDefaultSql("'DRAFT'");
 
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(18, 2)
@@ -3817,10 +3817,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("total_amount");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint")
@@ -3851,7 +3851,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.SalesOrderLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3914,14 +3914,14 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.StockBalance", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<decimal?>("AvailableQuantity")
-                        .ValueGeneratedOnAddOrUpdate()
+                        .GeneratedOnAddOrUpdate()
                         .HasColumnType("numeric")
                         .HasColumnName("available_quantity");
 
@@ -3967,7 +3967,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.StockMovement", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -3978,10 +3978,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint")
@@ -3992,10 +3992,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("item_id");
 
                     b.Property<DateTime>("MovementAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("movement_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("MovementType")
                         .IsRequired()
@@ -4057,7 +4057,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.StockTransfer", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -4072,10 +4072,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("completed_at");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(100)
@@ -4106,21 +4106,21 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status")
-                        .HasDefaultValueSql("'IN_TRANSIT'");
+                        .HasDefaultSql("'IN_TRANSIT'");
 
                     b.Property<long>("ToWarehouseId")
                         .HasColumnType("bigint")
                         .HasColumnName("to_warehouse_id");
 
                     b.Property<DateOnly?>("TransferDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("date")
                         .HasColumnName("transfer_date")
-                        .HasDefaultValueSql("CURRENT_DATE");
+                        .HasDefaultSql("CURRENT_DATE");
 
                     b.Property<string>("TransferNumber")
                         .IsRequired()
@@ -4129,10 +4129,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("transfer_number");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("VehicleNumber")
                         .HasMaxLength(50)
@@ -4158,7 +4158,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.StockTransferLine", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -4170,10 +4170,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("batch_number");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("DiscrepancyReason")
                         .HasColumnType("text")
@@ -4189,11 +4189,11 @@ namespace KayanERP.Api.Migrations
 
                     b.Property<string>("LineStatus")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("line_status")
-                        .HasDefaultValueSql("'PENDING'");
+                        .HasDefaultSql("'PENDING'");
 
                     b.Property<decimal>("LossQty")
                         .HasPrecision(18, 3)
@@ -4238,16 +4238,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Supplier", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<string>("Address")
@@ -4259,10 +4259,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<decimal>("CreditLimit")
                         .HasPrecision(18, 2)
@@ -4310,10 +4310,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("tax_number");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id")
                         .HasName("suppliers_pkey");
@@ -4331,7 +4331,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.SupplierItemPrice", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -4389,16 +4389,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Unit", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<long>("CompanyId")
@@ -4433,7 +4433,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.UnitConversion", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -4843,16 +4843,16 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.Warehouse", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<bool>("Active")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefault(true)
                         .HasColumnName("active");
 
                     b.Property<long?>("BranchId")
@@ -4864,10 +4864,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -4878,10 +4878,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("parent_warehouse_id");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("WarehouseCode")
                         .IsRequired()
@@ -4919,7 +4919,7 @@ namespace KayanERP.Api.Migrations
             modelBuilder.Entity("KayanERP.Api.Models.WasteRecord", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
@@ -4930,10 +4930,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("company_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint")
@@ -4969,10 +4969,10 @@ namespace KayanERP.Api.Migrations
                         .HasColumnName("warehouse_id");
 
                     b.Property<DateTime>("WasteDate")
-                        .ValueGeneratedOnAdd()
+                        .GeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("waste_date")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("WasteReason")
                         .IsRequired()

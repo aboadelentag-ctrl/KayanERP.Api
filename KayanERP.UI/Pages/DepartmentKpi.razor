@@ -52,10 +52,10 @@
                 <div class="col-md-3">
                     <label class="form-label fw-bold small text-secondary mb-1">تحديد الصالة / القسم</label>
                     <select class="form-select form-select-sm border-primary fw-bold" @bind="selectedDepartmentId">
-                        <option value="0">-- كافة الصالات والأقسام --</option>
+                        <option ="0">-- كافة الصالات والأقسام --</option>
                         @foreach (var d in departmentsList)
                         {
-                            <option value="@d.Id">@d.DepartmentName (@d.DepartmentCode)</option>
+                            <option ="@d.Id">@d.DepartmentName (@d.DepartmentCode)</option>
                         }
                     </select>
                 </div>
@@ -145,7 +145,7 @@
                                     <div class="progress-bar progress-bar-striped progress-bar-animated @(eff >= 90 ? "bg-success" : (eff >= 75 ? "bg-warning" : "bg-danger"))"
                                          role="progressbar"
                                          style="width: @(progressWidth)%;"
-                                         aria-valuenow="@eff" aria-valuemin="0" aria-valuemax="100">
+                                         aria-now="@eff" aria-min="0" aria-max="100">
                                     </div>
                                 </div>
 

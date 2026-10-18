@@ -92,19 +92,19 @@
                     </div>
                     <div class="col-md-3">
                         <select class="form-select form-select-sm bg-dark text-white border-secondary" @bind="filterBranchId">
-                            <option value="0">كل الفروع المستلمة</option>
+                            <option ="0">كل الفروع المستلمة</option>
                             @foreach (var b in branches)
                             {
-                                <option value="@b.Id">@b.BranchName</option>
+                                <option ="@b.Id">@b.BranchName</option>
                             }
                         </select>
                     </div>
                     <div class="col-md-2">
                         <select class="form-select form-select-sm bg-dark text-white border-secondary" @bind="filterStatus">
-                            <option value="">كل الحالات</option>
-                            <option value="IN_TRANSIT">في الطريق 🚚</option>
-                            <option value="IN_DISPUTE">نزاع عجز 🚨</option>
-                            <option value="COMPLETED">مكتمل ومستلم ✓</option>
+                            <option ="">كل الحالات</option>
+                            <option ="IN_TRANSIT">في الطريق 🚚</option>
+                            <option ="IN_DISPUTE">نزاع عجز 🚨</option>
+                            <option ="COMPLETED">مكتمل ومستلم ✓</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -229,11 +229,11 @@
                 <div class="row g-3 mb-4 bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-50">
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-light">الفرع المستهدف <span class="text-danger">*</span></label>
-                        <select class="form-select bg-dark text-white border-secondary" value="@multiDispatch.DestinationBranchId" @onchange="OnDispatchBranchChanged">
-                            <option value="0">-- اختر الفرع --</option>
+                        <select class="form-select bg-dark text-white border-secondary" ="@multiDispatch.DestinationBranchId" @onchange="OnDispatchBranchChanged">
+                            <option ="0">-- اختر الفرع --</option>
                             @foreach (var b in branches)
                             {
-                                <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                                <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
                             }
                         </select>
                     </div>
@@ -241,10 +241,10 @@
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-light">مستودع الفرع المستلم <span class="text-danger">*</span></label>
                         <select class="form-select bg-dark text-white border-secondary" @bind="multiDispatch.DestinationWarehouseId">
-                            <option value="0">-- اختر المستودع --</option>
+                            <option ="0">-- اختر المستودع --</option>
                             @foreach (var w in branchWarehouses)
                             {
-                                <option value="@w.Id">@w.WarehouseName</option>
+                                <option ="@w.Id">@w.WarehouseName</option>
                             }
                         </select>
                     </div>
@@ -289,12 +289,12 @@
                                 <tr>
                                     <td>
                                         <select class="form-select form-select-sm bg-dark text-white border-secondary"
-                                                value="@itemRow.ItemId"
+                                                ="@itemRow.ItemId"
                                                 @onchange="(e) => OnItemSelected(itemRow, e)">
-                                            <option value="0">-- اختر المنتج التام --</option>
+                                            <option ="0">-- اختر المنتج التام --</option>
                                             @foreach (var itm in finishedItems)
                                             {
-                                                <option value="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
+                                                <option ="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
                                             }
                                         </select>
                                     </td>
@@ -308,10 +308,10 @@
                                     </td>
                                     <td>
                                         <select class="form-select form-select-sm bg-dark text-white border-secondary fw-bold" @bind="itemRow.ContainerType">
-                                            <option value="سرفيس">سرفيس (جاتوه/سواريه)</option>
-                                            <option value="صاج/صينية">صاج / صينية (شرقي/نواشف)</option>
-                                            <option value="علبة/كرتونة">علبة / كرتونة (تورت)</option>
-                                            <option value="بدون وعاء">بدون وعاء (فرط)</option>
+                                            <option ="سرفيس">سرفيس (جاتوه/سواريه)</option>
+                                            <option ="صاج/صينية">صاج / صينية (شرقي/نواشف)</option>
+                                            <option ="علبة/كرتونة">علبة / كرتونة (تورت)</option>
+                                            <option ="بدون وعاء">بدون وعاء (فرط)</option>
                                         </select>
                                     </td>
                                     <td>
@@ -488,10 +488,10 @@
                                         </td>
                                         <td>
                                             <select class="form-select form-select-sm bg-dark text-white border-secondary fw-bold" @bind="trf.TempChargeTo">
-                                                <option value="عهدة سائق التوزيع">عهدة سائق التوزيع</option>
-                                                <option value="هدر وكسر أثناء النقل">هدر وكسر أثناء النقل</option>
-                                                <option value="جفاف وفقد طبيعي">جفاف وفقد طبيعي</option>
-                                                <option value="تسوية جردية معتمدة">تسوية جردية معتمدة</option>
+                                                <option ="عهدة سائق التوزيع">عهدة سائق التوزيع</option>
+                                                <option ="هدر وكسر أثناء النقل">هدر وكسر أثناء النقل</option>
+                                                <option ="جفاف وفقد طبيعي">جفاف وفقد طبيعي</option>
+                                                <option ="تسوية جردية معتمدة">تسوية جردية معتمدة</option>
                                             </select>
                                         </td>
                                         <td>
@@ -559,7 +559,7 @@
                                     <td class="font-monospace text-primary fw-bold">@l.DispatchedQty.ToString("N1") @l.Unit</td>
                                     <td>@l.InnerCount @l.ContainerType (@l.CrateCount سبت)</td>
                                     <td class="font-monospace @(l.ReceivedQty < l.DispatchedQty ? "text-danger" : "text-success") fw-bold">
-                                        @(l.ReceivedQty.HasValue ? $"{l.ReceivedQty.Value:N1} {l.Unit}" : "بانتظار الاستلام")
+                                        @(l.ReceivedQty.Has ? $"{l.ReceivedQty.:N1} {l.Unit}" : "بانتظار الاستلام")
                                     </td>
                                     <td>
                                         <span class="badge @(l.Status == "COMPLETED" ? "bg-success" : l.Status == "IN_DISPUTE" ? "bg-danger" : "bg-warning text-dark")">
@@ -633,7 +633,7 @@
                                 <td class="fw-bold font-monospace">@row.DispatchedQty.ToString("N1") @row.Unit</td>
                                 <td>@row.InnerCount @row.ContainerType</td>
                                 <td class="font-monospace">@row.CrateCount سبت</td>
-                                <td class="font-monospace">@(row.ReceivedQty.HasValue ? $"{row.ReceivedQty:N1}" : "___________")</td>
+                                <td class="font-monospace">@(row.ReceivedQty.Has ? $"{row.ReceivedQty:N1}" : "___________")</td>
                                 <td>@(row.Notes ?? "")</td>
                             </tr>
                         }
@@ -833,11 +833,11 @@
             if (!string.IsNullOrWhiteSpace(filterStatus))
                 query = query.Where(t => t.Status == filterStatus);
 
-            if (filterDateFrom.HasValue)
-                query = query.Where(t => t.TransferDate >= DateOnly.FromDateTime(filterDateFrom.Value));
+            if (filterDateFrom.Has)
+                query = query.Where(t => t.TransferDate >= DateOnly.FromDateTime(filterDateFrom.));
 
-            if (filterDateTo.HasValue)
-                query = query.Where(t => t.TransferDate <= DateOnly.FromDateTime(filterDateTo.Value));
+            if (filterDateTo.Has)
+                query = query.Where(t => t.TransferDate <= DateOnly.FromDateTime(filterDateTo.));
 
             return query
                 .GroupBy(t => GetBaseManifestNumber(t.TransferNumber))
@@ -933,7 +933,7 @@
 
     private void OnDispatchBranchChanged(ChangeEventArgs e)
     {
-        if (long.TryParse(e.Value?.ToString(), out long bId))
+        if (long.TryParse(e.?.ToString(), out long bId))
         {
             multiDispatch.DestinationBranchId = bId;
             if (bId > 0)
@@ -956,7 +956,7 @@
 
     private async Task OnItemSelected(DispatchItemRowModel row, ChangeEventArgs e)
     {
-        if (long.TryParse(e.Value?.ToString(), out long itemId))
+        if (long.TryParse(e.?.ToString(), out long itemId))
         {
             row.ItemId = itemId;
             if (itemId > 0)

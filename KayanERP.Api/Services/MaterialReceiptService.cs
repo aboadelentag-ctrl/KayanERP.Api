@@ -24,16 +24,13 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية: حصر مستودعات الخامات المركزية وربطها بالفروع
-        // ==============================================================
         public async Task<MaterialReceiptLookupsDto> GetLookupsAsync()
         {
             var suppliers = await _context.Suppliers
                 .AsNoTracking()
                 .Where(s => s.Active)
                 .OrderBy(s => s.SupplierName)
-                .Select(s => new MaterialReceiptSupplierLookupDto
+                .Select(s => new SupplierLookupDto
                 {
                     Id = s.Id,
                     SupplierName = s.SupplierName
@@ -44,21 +41,17 @@ namespace KayanERP.Api.Services
                 .Include(w => w.Branch)
                 .AsNoTracking()
                 .Where(w => w.Active &&
-                           (w.WarehouseName.Contains("خامات")
-                         || w.WarehouseName.Contains("رئيسي")
-                         || w.WarehouseName.Contains("تعبئة")
-                         || w.WarehouseName.Contains("مستودع")
-                         || w.WarehouseName.Contains("مركزي"))
+                           (w.WarehouseName.Contains("خامات") || w.WarehouseName.Contains("رئيسي") ||
+                            w.WarehouseName.Contains("تعبئة") || w.WarehouseName.Contains("مستودع") ||
+                            w.WarehouseName.Contains("مركزي"))
                          && !w.WarehouseName.Contains("صالة")
                          && !w.WarehouseName.Contains("قسم")
                          && !w.WarehouseName.Contains("إدارة"))
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new MaterialReceiptWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    WarehouseName = w.Branch != null
-                        ? $"{w.WarehouseName} - [{w.Branch.BranchName}]"
-                        : w.WarehouseName
+                    Name = w.Branch != null ? $"{w.WarehouseName} - [{w.Branch.BranchName}]" : w.WarehouseName
                 })
                 .ToListAsync();
 
@@ -68,12 +61,10 @@ namespace KayanERP.Api.Services
                     .Include(w => w.Branch)
                     .AsNoTracking()
                     .Where(w => w.Active && !w.WarehouseName.Contains("صالة") && !w.WarehouseName.Contains("قسم"))
-                    .Select(w => new MaterialReceiptWarehouseLookupDto
+                    .Select(w => new WarehouseLookupDto
                     {
                         Id = w.Id,
-                        WarehouseName = w.Branch != null
-                            ? $"{w.WarehouseName} - [{w.Branch.BranchName}]"
-                            : w.WarehouseName
+                        Name = w.Branch != null ? $"{w.WarehouseName} - [{w.Branch.BranchName}]" : w.WarehouseName
                     })
                     .ToListAsync();
             }
@@ -85,9 +76,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ==============================================================
-        // 2. جلب الفواتير المعتمدة المفتوحة والمتبقي منها خامات للتوريد
-        // ==============================================================
         public async Task<List<PendingInvoiceDto>> GetPendingInvoicesAsync(long? supplierId = null)
         {
             var query = _context.PurchaseOrders
@@ -105,39 +93,32 @@ namespace KayanERP.Api.Services
                 .OrderByDescending(p => p.Id)
                 .Select(p => new PendingInvoiceDto
                 {
-                    Id = p.Id,
-                    OrderNumber = p.OrderNumber,
-                    OrderDate = p.OrderDate.ToString("yyyy-MM-dd"),
+                    InvoiceId = p.Id,
+                    InvoiceNumber = p.OrderNumber,
+                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
                     SupplierId = p.SupplierId,
                     SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "غير محدد",
-                    WarehouseId = p.WarehouseId,
                     TotalAmount = p.TotalAmount,
-                    Status = p.Status,
                     Lines = p.PurchaseOrderLines
                         .Where(l => (l.Quantity - l.ReceivedQuantity) > 0)
                         .Select(l => new PendingInvoiceLineDto
                         {
-                            Id = l.Id,
+                            LineId = l.Id,
                             ItemId = l.ItemId,
                             ItemCode = l.Item != null ? l.Item.ItemCode : string.Empty,
                             ItemName = l.Item != null ? l.Item.ItemName : string.Empty,
-                            Unit = l.Item != null ? (l.Item.Unit ?? "كجم") : "كجم",
-                            Quantity = l.Quantity,
-                            ReceivedQuantity = l.ReceivedQuantity,
-                            RemainingQuantity = l.Quantity - l.ReceivedQuantity,
-                            UnitPrice = l.UnitPrice,
-                            Notes = l.Notes
+                            OrderedQty = l.Quantity,
+                            ReceivedQty = l.ReceivedQuantity,
+                            RemainingQty = l.Quantity - l.ReceivedQuantity,
+                            UnitPrice = l.UnitPrice
                         }).ToList()
                 })
                 .ToListAsync();
         }
 
-        // ==============================================================
-        // 3. تأكيد الاستلام الميداني وفحص الجودة والترصيد الذري
-        // ==============================================================
         public async Task<MaterialReceiptResultDto> ProcessMaterialReceiptAsync(MaterialReceiptPostDto dto)
         {
-            if (dto == null || dto.Items == null || !dto.Items.Any())
+            if (dto == null || dto.Lines == null || !dto.Lines.Any())
                 throw new ArgumentException("لا توجد بنود للاستلام أو الفحص.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -153,59 +134,52 @@ namespace KayanERP.Api.Services
                 if (order.Status == "Closed" || order.Status == "Received" || order.Status == "Rejected")
                     throw new InvalidOperationException("هذه الفاتورة مغلقة أو مرفوضة مسبقاً.");
 
-                var targetWarehouseId = dto.WarehouseId > 0 ? dto.WarehouseId : order.WarehouseId;
                 var now = DateTime.UtcNow;
 
-                decimal totalAcceptedInReceipt = dto.Items.Sum(x => x.AcceptedQuantity);
-                decimal totalRejectedInReceipt = dto.Items.Sum(x => x.RejectedQuantity);
-
-                foreach (var item in dto.Items)
+                foreach (var item in dto.Lines)
                 {
-                    var poLine = order.PurchaseOrderLines.FirstOrDefault(l => l.ItemId == item.ItemId);
+                    var poLine = order.PurchaseOrderLines.FirstOrDefault(l => l.Id == item.LineId);
                     if (poLine != null)
                     {
-                        poLine.ReceivedQuantity += item.AcceptedQuantity;
+                        poLine.ReceivedQuantity += item.ReceivedQty;
                     }
 
-                    // ترحيل الرصيد المقبول إلى مستودع الخامات
-                    if (item.AcceptedQuantity > 0)
+                    if (item.ReceivedQty > 0)
                     {
                         var balance = await _context.StockBalances
-                            .FirstOrDefaultAsync(b => b.WarehouseId == targetWarehouseId && b.ItemId == item.ItemId);
+                            .FirstOrDefaultAsync(b => b.WarehouseId == dto.WarehouseId && b.ItemId == poLine!.ItemId);
 
                         if (balance != null)
                         {
-                            balance.Quantity += item.AcceptedQuantity;
+                            balance.Quantity += item.ReceivedQty;
                             balance.AvailableQuantity = balance.Quantity - balance.ReservedQuantity;
                             balance.LastUpdatedAt = now;
                         }
-                        else
+                        else if (poLine != null)
                         {
                             _context.StockBalances.Add(new StockBalance
                             {
                                 CompanyId = order.CompanyId,
-                                WarehouseId = targetWarehouseId,
-                                ItemId = item.ItemId,
-                                Quantity = item.AcceptedQuantity,
-                                AvailableQuantity = item.AcceptedQuantity,
+                                WarehouseId = dto.WarehouseId,
+                                ItemId = poLine.ItemId,
+                                Quantity = item.ReceivedQty,
+                                AvailableQuantity = item.ReceivedQty,
                                 ReservedQuantity = 0,
                                 LastUpdatedAt = now
                             });
                         }
 
-                        // تسجيل حركة الوارد في كارت الصنف مع بيانات الـ GMP
-                        var qcNote = $"LOT: {item.BatchNumber} | صلاحية: {item.ExpiryDate:yyyy-MM-dd} | قرار: مقبول | المفتش: [{dto.InspectorCode}] {dto.InspectorName} | شهادة التحليل COA: {dto.CoaNumber}";
-                        if (!string.IsNullOrWhiteSpace(item.RejectionReason) && item.RejectionReason != "مطابق للمواصفة")
-                            qcNote += $" | ملاحظات: {item.RejectionReason}";
+                        var qcNote = $"LOT: {item.BatchNumber} | صلاحية: {item.ExpiryDate:yyyy-MM-dd} | مقبول";
+                        if (!item.IsQcPassed) qcNote = $"LOT: {item.BatchNumber} | مرفوض فني";
 
                         _context.StockMovements.Add(new StockMovement
                         {
                             CompanyId = order.CompanyId,
-                            WarehouseId = targetWarehouseId,
-                            ItemId = item.ItemId,
-                            MovementType = "PURCHASE_RECEIPT",
-                            Quantity = item.AcceptedQuantity,
-                            UnitCost = item.UnitPrice,
+                            WarehouseId = dto.WarehouseId,
+                            ItemId = poLine!.ItemId,
+                            MovementType = item.IsQcPassed ? "PURCHASE_RECEIPT" : "QC_REJECTED",
+                            Quantity = item.ReceivedQty,
+                            UnitCost = poLine.UnitPrice,
                             ReferenceType = "PURCHASE_ORDER",
                             ReferenceId = order.Id,
                             Notes = qcNote,
@@ -213,45 +187,19 @@ namespace KayanERP.Api.Services
                             CreatedAt = now
                         });
                     }
-
-                    // توثيق الكميات المرفوضة في سجل رقابة الجودة
-                    if (item.RejectedQuantity > 0)
-                    {
-                        var rejectNote = $"LOT: {item.BatchNumber} | مرفوض فني | السبب: {item.RejectionReason} | المفتش: [{dto.InspectorCode}] {dto.InspectorName}";
-                        _context.StockMovements.Add(new StockMovement
-                        {
-                            CompanyId = order.CompanyId,
-                            WarehouseId = targetWarehouseId,
-                            ItemId = item.ItemId,
-                            MovementType = "QC_REJECTED",
-                            Quantity = item.RejectedQuantity,
-                            UnitCost = item.UnitPrice,
-                            ReferenceType = "PURCHASE_ORDER",
-                            ReferenceId = order.Id,
-                            Notes = rejectNote,
-                            MovementAt = now,
-                            CreatedAt = now
-                        });
-                    }
                 }
 
-                // محرك تحديث حالة الفاتورة
                 string finalMessage;
 
-                if (totalAcceptedInReceipt == 0 && totalRejectedInReceipt > 0 && order.PurchaseOrderLines.All(l => l.ReceivedQuantity == 0))
-                {
-                    order.Status = "Rejected";
-                    finalMessage = $"تم تسجيل رفض الشحنة بالكامل وإغلاق الفاتورة رقم [{order.OrderNumber}].";
-                }
-                else if (order.PurchaseOrderLines.All(l => l.ReceivedQuantity >= l.Quantity))
+                if (order.PurchaseOrderLines.All(l => l.ReceivedQuantity >= l.Quantity))
                 {
                     order.Status = "Closed";
-                    finalMessage = $"تم اعتماد إذن الفحص وترحيل الرصيد لمخزن الخامات وإغلاق الفاتورة رقم [{order.OrderNumber}] بنجاح!";
+                    finalMessage = $"تم اعتماد إذن الفحص وترحيل الرصيد وإغلاق الفاتورة رقم [{order.OrderNumber}] بنجاح!";
                 }
                 else
                 {
                     order.Status = "Partially_Received";
-                    finalMessage = $"تم إثبات الاستلام الجزئي للفاتورة رقم [{order.OrderNumber}] وتحديث الأرصدة المتبقية.";
+                    finalMessage = $"تم إثبات الاستلام الجزئي للفاتورة رقم [{order.OrderNumber}].";
                 }
 
                 order.UpdatedAt = now;
@@ -262,8 +210,8 @@ namespace KayanERP.Api.Services
                 return new MaterialReceiptResultDto
                 {
                     Success = true,
-                    NewStatus = order.Status,
-                    Message = finalMessage
+                    Message = finalMessage,
+                    ReceiptNumber = order.OrderNumber
                 };
             }
             catch

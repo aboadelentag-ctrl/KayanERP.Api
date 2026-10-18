@@ -3,7 +3,7 @@
 @layout KayanERP.UI.Pages.EmptyLayout
 @using System.Net.Http.Json
 @using System.Text
-@using KayanERP.UI.DTOs
+@using KayanERP.Shared.DTOs
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -202,20 +202,20 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark mb-1">المورد المعتمد <span class="text-danger">*</span></label>
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="newOrder.SupplierId">
-                                <option value="0">-- اختر المورد --</option>
+                                <option ="0">-- اختر المورد --</option>
                                 @foreach (var s in lookups.Suppliers)
                                 {
-                                    <option value="@s.Id">@s.SupplierName (@s.SupplierCode)</option>
+                                    <option ="@s.Id">@s.SupplierName (@s.SupplierCode)</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark mb-1">مستودع الاستلام المستهدف <span class="text-danger">*</span></label>
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="newOrder.WarehouseId">
-                                <option value="0">-- اختر المستودع --</option>
+                                <option ="0">-- اختر المستودع --</option>
                                 @foreach (var w in lookups.Warehouses)
                                 {
-                                    <option value="@w.Id">@w.WarehouseName</option>
+                                    <option ="@w.Id">@w.WarehouseName</option>
                                 }
                             </select>
                         </div>
@@ -258,10 +258,10 @@
                                             <tr>
                                                 <td class="text-start ps-3">
                                                     <select class="form-select form-select-sm fw-bold" @bind="line.ItemId" @bind:after="() => OnItemChanged(line)">
-                                                        <option value="0">-- اختر الصنف --</option>
+                                                        <option ="0">-- اختر الصنف --</option>
                                                         @foreach (var itm in lookups.Items)
                                                         {
-                                                            <option value="@itm.Id">@itm.ItemName (@itm.ItemCode) - [@itm.CategoryName]</option>
+                                                            <option ="@itm.Id">@itm.ItemName (@itm.ItemCode) - [@itm.CategoryName]</option>
                                                         }
                                                     </select>
                                                 </td>

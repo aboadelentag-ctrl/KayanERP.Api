@@ -64,29 +64,29 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">🏢 الإدارة / الصالة</label>
                             <select class="form-select form-select-sm" @bind="selectedDeptFilter">
-                                <option value="0">-- كل الأقسام والصالات --</option>
+                                <option ="0">-- كل الأقسام والصالات --</option>
                                 @foreach (var dept in departments)
                                 {
-                                    <option value="@dept.Id">@dept.DepartmentName</option>
+                                    <option ="@dept.Id">@dept.DepartmentName</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">💼 المسمى الوظيفي</label>
                             <select class="form-select form-select-sm" @bind="selectedJobTitleFilter">
-                                <option value="0">-- كل الوظائف --</option>
+                                <option ="0">-- كل الوظائف --</option>
                                 @foreach (var title in jobTitles)
                                 {
-                                    <option value="@title.Id">@title.TitleName</option>
+                                    <option ="@title.Id">@title.TitleName</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold text-secondary mb-1">⚡ حالة العامل</label>
                             <select class="form-select form-select-sm" @bind="selectedStatusFilter">
-                                <option value="all">كل الحالات</option>
-                                <option value="active">🟢 نشط فقط</option>
-                                <option value="inactive">🔴 غير نشط</option>
+                                <option ="all">كل الحالات</option>
+                                <option ="active">🟢 نشط فقط</option>
+                                <option ="inactive">🔴 غير نشط</option>
                             </select>
                         </div>
                     </div>
@@ -231,10 +231,10 @@
                     <div class="mb-2">
                         <label class="form-label small fw-bold text-secondary">القسم / الإدارة التابع لها <span class="text-danger">*</span></label>
                         <select class="form-select form-select-sm" @bind="currentEmp.DepartmentId">
-                            <option value="">-- اختر القسم أو الإدارة --</option>
+                            <option ="">-- اختر القسم أو الإدارة --</option>
                             @foreach (var dept in departments)
                             {
-                                <option value="@dept.Id">@dept.DepartmentName</option>
+                                <option ="@dept.Id">@dept.DepartmentName</option>
                             }
                         </select>
                     </div>
@@ -247,10 +247,10 @@
                             </button>
                         </div>
                         <select class="form-select form-select-sm" @bind="currentEmp.JobTitleId">
-                            <option value="">-- غير محدد --</option>
+                            <option ="">-- غير محدد --</option>
                             @foreach (var title in jobTitles)
                             {
-                                <option value="@title.Id">@title.TitleName</option>
+                                <option ="@title.Id">@title.TitleName</option>
                             }
                         </select>
                     </div>

@@ -33,7 +33,7 @@ namespace KayanERP.Api.Services
                     RequestNumber = p.OrderNumber,
                     WarehouseId = p.WarehouseId,
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
+                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.Min),
                     Status = p.Status,
                     ItemsCount = _context.PurchaseOrderLines.Count(l => l.PurchaseOrderId == p.Id)
                 })
@@ -76,7 +76,7 @@ namespace KayanERP.Api.Services
                 RequestNumber = po.OrderNumber,
                 WarehouseId = po.WarehouseId,
                 WarehouseName = _context.Warehouses.Where(w => w.Id == po.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                RequestDate = po.OrderDate.ToDateTime(TimeOnly.MinValue),
+                RequestDate = po.OrderDate.ToDateTime(TimeOnly.Min),
                 Status = po.Status,
                 ItemsCount = linesDto.Count,
                 Lines = linesDto
@@ -206,7 +206,7 @@ namespace KayanERP.Api.Services
                     InvoiceNumber = p.OrderNumber,
                     SupplierName = _context.Suppliers.Where(s => s.Id == p.SupplierId).Select(s => s.SupplierName).FirstOrDefault() ?? "مورد غير محدد",
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
+                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.Min),
                     TotalAmount = p.TotalAmount,
                     Status = p.Status
                 })

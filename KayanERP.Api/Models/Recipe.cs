@@ -1,56 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace KayanERP.Api.Models;
-
-public partial class Recipe
+namespace KayanERP.UI.Models
 {
-    public long Id { get; set; }
+    public class RecipeModel
+    {
+        public long Id { get; set; }
+        public string RecipeName { get; set; } = string.Empty;
+        public long ProductItemId { get; set; }
+        public string ProductItemName { get; set; } = string.Empty;
+        public decimal BatchQuantity { get; set; }
+        public bool Active { get; set; }
+        public List<RecipeLineModel> RecipeLines { get; set; } = new();
+    }
 
-    public long CompanyId { get; set; }
-
-    public long ProductItemId { get; set; }
-
-    public string RecipeCode { get; set; } = null!;
-
-    public string RecipeName { get; set; } = null!;
-
-    public decimal BatchQuantity { get; set; }
-
-    public string BatchUnit { get; set; } = null!;
-
-    public decimal YieldQuantity { get; set; }
-
-    public string YieldUnit { get; set; } = null!;
-
-    public decimal? PiecesPerBatch { get; set; }
-
-    public decimal WastePercentage { get; set; }
-
-    public int? PreparationTimeMinutes { get; set; }
-
-    public bool Active { get; set; }
-
-    public string? Notes { get; set; }
-
-    public DateOnly EffectiveFrom { get; set; }
-
-    public DateOnly? EffectiveTo { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
-
-    public virtual Company? Company { get; set; }
-    public virtual Item? ProductItem { get; set; }
-
-    public virtual ICollection<ProductionOrderStage> ProductionOrderStages { get; set; } = new List<ProductionOrderStage>();
-
-    public virtual ICollection<ProductionOrder> ProductionOrders { get; set; } = new List<ProductionOrder>();
-
-    public virtual ICollection<RecipeLine> RecipeLines { get; set; } = new List<RecipeLine>();
-
-    public virtual ICollection<RecipeStage> RecipeStageRecipes { get; set; } = new List<RecipeStage>();
-
-    public virtual ICollection<RecipeStage> RecipeStageStageRecipes { get; set; } = new List<RecipeStage>();
+    public class RecipeLineModel
+    {
+        public long Id { get; set; }
+        public long ComponentItemId { get; set; }
+        public string ComponentItemName { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public decimal Quantity { get; set; }
+        public decimal WastePercentage { get; set; }
+    }
 }

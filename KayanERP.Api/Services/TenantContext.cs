@@ -3,10 +3,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace KayanERP.Api.Services;
 
-/// <summary>
-/// التنفيذ الفعلي لـ TenantContext.
-/// يقرأ البيانات حصريًا من JWT Claims — لا يقبل أي قيمة من العميل مباشرة.
-/// </summary>
 public sealed class TenantContext : ITenantContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;

@@ -69,7 +69,7 @@ namespace KayanERP.Api.Services
                     RequestNumber = p.OrderNumber,
                     WarehouseId = p.WarehouseId,
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "مخزن غير محدد",
-                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
+                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.Min),
                     Status = p.Status,
                     Notes = string.Empty
                 })

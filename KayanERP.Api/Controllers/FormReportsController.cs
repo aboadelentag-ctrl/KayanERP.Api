@@ -34,13 +34,11 @@ namespace KayanERP.Api.Controllers
             if (form == null)
                 return NotFound("النموذج غير موجود.");
 
-            // 1. جلب سجلات الاستجابات
             var allSubmissions = await _context.FormSubmissions
                 .Where(s => s.FormId == formId)
                 .OrderByDescending(s => s.Id)
                 .ToListAsync();
 
-            // 2. فلترة التواريخ بأمان
             var filtered = allSubmissions.AsEnumerable();
 
             if (fromDate.HasValue)
@@ -80,29 +78,24 @@ namespace KayanERP.Api.Controllers
                 }
                 catch { }
 
-                // استخراج الحقول المحورية بذكاء من الـ JSON
-                string subDept = GetAnswerValue(answers, "dept", "department", "القسم", "القسم / الصالة");
-                string subItem = GetAnswerValue(answers, "product_name", "item", "الصنف", "الاسم", "الموظف");
-                string subReason = GetAnswerValue(answers, "reason", "المسبب", "المخالفة", "violation", "الإجراء التصحيحي");
-                string qtyStr = GetAnswerValue(answers, "quantity", "الكمية", "الوزن");
+                string subDept = GetAnswer(answers, "dept", "department", "القسم", "القسم / الصالة");
+                string subItem = GetAnswer(answers, "product_name", "item", "الصنف", "الاسم", "الموظف");
+                string subReason = GetAnswer(answers, "reason", "المسبب", "المخالفة", "violation", "الإجراء التصحيحي");
+                string qtyStr = GetAnswer(answers, "quantity", "الكمية", "الوزن");
 
-                // فلترة القسم إن حددها المستخدم
                 if (!string.IsNullOrWhiteSpace(department) && !subDept.Contains(department.Trim()))
                 {
                     continue;
                 }
 
-                // تجميع الكميات الرقمية
                 if (double.TryParse(qtyStr, out double parsedQty))
                 {
                     sumQuantities += parsedQty;
                 }
 
-                // إحصائيات الأقسام
                 string deptKey = string.IsNullOrWhiteSpace(subDept) ? "غير محدد" : subDept;
                 deptCounts[deptKey] = deptCounts.GetValueOrDefault(deptKey) + 1;
 
-                // فحص بنود الفحص وقوائم المطابقة
                 if (answers != null)
                 {
                     foreach (var kv in answers)
@@ -123,7 +116,6 @@ namespace KayanERP.Api.Controllers
                     }
                 }
 
-                // فحص وجود الوسائط التوثيقية
                 bool hasImg = answers != null && answers.ContainsKey("report_attachment_image") && !string.IsNullOrEmpty(answers["report_attachment_image"]);
                 bool hasVid = answers != null && answers.ContainsKey("report_attachment_video") && !string.IsNullOrEmpty(answers["report_attachment_video"]);
                 bool hasAud = answers != null && answers.ContainsKey("report_attachment_audio") && !string.IsNullOrEmpty(answers["report_attachment_audio"]);
@@ -152,7 +144,6 @@ namespace KayanERP.Api.Controllers
                 ? Math.Round(((double)totalPassedChecks / totalComplianceChecks) * 100, 1)
                 : 100.0;
 
-            // توزيع الأقسام مع النسب
             reportDto.DepartmentStats = deptCounts
                 .OrderByDescending(kv => kv.Value)
                 .Select(kv => new DepartmentStatItem
@@ -162,7 +153,6 @@ namespace KayanERP.Api.Controllers
                     Percentage = reportDto.TotalSubmissions > 0 ? Math.Round(((double)kv.Value / reportDto.TotalSubmissions) * 100, 1) : 0
                 }).ToList();
 
-            // أعلى أسباب الخلل أو بنود عدم المطابقة
             reportDto.TopViolations = nonComplianceFrequency
                 .OrderByDescending(kv => kv.Value)
                 .Take(5)
@@ -172,7 +162,7 @@ namespace KayanERP.Api.Controllers
             return Ok(reportDto);
         }
 
-        private string GetAnswerValue(Dictionary<string, string>? dict, params string[] keys)
+        private string GetAnswer(Dictionary<string, string>? dict, params string[] keys)
         {
             if (dict == null) return "";
             foreach (var key in keys)

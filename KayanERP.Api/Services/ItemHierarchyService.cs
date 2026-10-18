@@ -113,7 +113,7 @@ namespace KayanERP.Api.Services
             if (!rules.Any()) return quantity;
 
             // إعطاء الأسبقية التامة للمعامل الخاص بالصنف أولاً
-            var rule = rules.OrderByDescending(c => c.ItemId.HasValue).First();
+            var rule = rules.OrderByDescending(c => c.ItemId.Has).First();
 
             if (rule.ConversionFactor <= 0) return quantity;
 

@@ -25,8 +25,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        // ⚠️ مهم: نحدد مكان جدول Migrations History بشكل صريح
-        // الجدول موجود في `public` schema (قديم) — لازم نقوله يقرأ من هناك
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
     })
     .UseSnakeCaseNamingConvention();
@@ -39,9 +37,24 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 // ==============================================================
-// 3. تسجيل خدمات النظام (Services)
+// 3. تسجيل خدمات النظام (Services) - بديل AddApplicationServices
 // ==============================================================
-builder.Services.AddApplicationServices();
+builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<IMaterialReceiptService, MaterialReceiptService>();
+builder.Services.AddScoped<IProcurementService, ProcurementService>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+builder.Services.AddScoped<IPurchasingService, PurchasingService>();
+builder.Services.AddScoped<IMaterialRequisitionService, MaterialRequisitionService>();
+builder.Services.AddScoped<IProductionOrderService, ProductionOrderService>();
+builder.Services.AddScoped<IProductionOperationsService, ProductionOperationsService>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IStockTransferService, StockTransferService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<ISupplierPriceService, SupplierPriceService>();
+builder.Services.AddScoped<IVendorQcService, VendorQcService>();
+builder.Services.AddScoped<IFinishedGoodsTransferService, FinishedGoodsTransferService>();
+builder.Services.AddScoped<ICrateService, CrateService>();
+builder.Services.AddScoped<IAuthService, AuthService>(); // أو AuthService حسب اسم كلاسك
 
 // ==============================================================
 // 4. الـ JWT Authentication
@@ -76,7 +89,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// تسجيل خدمة إصدار التوكنات
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -104,8 +116,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.CustomSchemaIds(type => type.FullName?.Replace("+", ".").Replace("`", ""));
-
-    // تعريف Bearer Auth
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -115,8 +125,6 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "أدخل التوكن هنا بالشكل: Bearer {token}"
     });
-
-    // تفعيل Bearer Auth لكل الـ endpoints
     c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
@@ -124,7 +132,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ==============================================================
-// 7. CORS — Origins محددة من الإعدادات
+// 7. CORS
 // ==============================================================
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -132,8 +140,7 @@ var allowedOrigins = builder.Configuration
 
 if (allowedOrigins.Length == 0)
 {
-    throw new InvalidOperationException(
-        "No CORS origins configured. Add 'Cors:AllowedOrigins' to settings.");
+    throw new InvalidOperationException("No CORS origins configured. Add 'Cors:AllowedOrigins' to settings.");
 }
 
 builder.Services.AddCors(options =>
@@ -161,7 +168,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// ✅ Global Exception Handler — يجب أن يكون أول Middleware
 app.UseExceptionHandling();
 app.UseHttpsRedirection();
 app.UseCors("KayanPolicy");

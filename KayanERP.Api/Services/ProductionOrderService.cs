@@ -157,7 +157,7 @@ namespace KayanERP.Api.Services
                 // 3. معالجة تفاصيل الأصناف ومراحل التشغيل
                 foreach (var itemInput in dto.Items)
                 {
-                    if (!recipesMap.TryGetValue(itemInput.RecipeId, out var recipe))
+                    if (!recipesMap.TryGet(itemInput.RecipeId, out var recipe))
                         continue;
 
                     string lotNumber = $"LOT-{dto.OrderDate:yyyyMMdd}-{itemInput.ItemId}-{itemCounter++}";

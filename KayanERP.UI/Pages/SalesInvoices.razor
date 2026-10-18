@@ -1,7 +1,7 @@
 ﻿@page "/sales-invoices"
 @page "/SalesInvoices"
 @layout KayanERP.UI.Pages.EmptyLayout
-@using KayanERP.UI.DTOs
+@using KayanERP.Shared.DTOs
 @using KayanERP.UI.Services
 @inject ISalesClientService SalesService
 @inject IBranchContextService BranchContext
@@ -63,7 +63,7 @@
     <!-- 2. جسم صفحة الفواتير -->
     <main class="container-fluid py-4 px-4">
 
-        @if (BranchContext.HasActiveBranch || BranchId.HasValue)
+        @if (BranchContext.HasActiveBranch || BranchId.Has)
         {
             <div class="branch-lock-banner d-flex justify-content-between align-items-center shadow-sm py-2 px-3 mb-4 rounded-3">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -198,7 +198,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold">فرع الإصدار (مقفل)</label>
                             <input type="text" class="form-control form-control-sm fw-bold bg-light border-primary"
-                                   value="@ActiveBranchDisplayName" readonly />
+                                   ="@ActiveBranchDisplayName" readonly />
                         </div>
 
                         <!-- العميل -->
@@ -211,12 +211,12 @@
                                 </button>
                             </div>
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="newInvoice.CustomerId">
-                                <option value="0">-- اختر العميل --</option>
+                                <option ="0">-- اختر العميل --</option>
                                 @if (lookups?.Customers != null)
                                 {
                                     @foreach (var c in lookups.Customers)
                                     {
-                                        <option value="@c.Id">@c.CustomerName (@c.CustomerCode)</option>
+                                        <option ="@c.Id">@c.CustomerName (@c.CustomerCode)</option>
                                     }
                                 }
                             </select>
@@ -226,8 +226,8 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold">طريقة السداد والأثر المالي <span class="text-danger">*</span></label>
                             <select class="form-select form-select-sm fw-bold border-success" @bind="selectedPaymentMethod">
-                                <option value="CASH">💵 نقدي (خزينة الفرع)</option>
-                                <option value="CREDIT">📋 آجل (حساب التاجر)</option>
+                                <option ="CASH">💵 نقدي (خزينة الفرع)</option>
+                                <option ="CREDIT">📋 آجل (حساب التاجر)</option>
                             </select>
                         </div>
 
@@ -239,7 +239,7 @@
                                     <i class="bi bi-lock-fill text-warning"></i>
                                 </span>
                                 <input type="text" class="form-control form-control-sm fw-bold bg-light border-secondary text-dark"
-                                       value="@ActiveWarehouseDisplayName" readonly />
+                                       ="@ActiveWarehouseDisplayName" readonly />
                             </div>
                         </div>
                     </div>
@@ -280,14 +280,14 @@
                                             <tr>
                                                 <td>
                                                     <select class="form-select form-select-sm text-end fw-bold"
-                                                            value="@line.ItemId"
+                                                            ="@line.ItemId"
                                                             @onchange="(e) => OnItemSelected(index, e)">
-                                                        <option value="0">-- اختر المنتج --</option>
+                                                        <option ="0">-- اختر المنتج --</option>
                                                         @if (lookups?.FinishedItems != null)
                                                         {
                                                             @foreach (var item in lookups.FinishedItems)
                                                             {
-                                                                <option value="@item.Id">@item.ItemName (@item.ItemCode)</option>
+                                                                <option ="@item.Id">@item.ItemName (@item.ItemCode)</option>
                                                             }
                                                         }
                                                     </select>
@@ -299,7 +299,7 @@
                                                 <td>
                                                     <div class="input-group input-group-sm">
                                                         <input type="text" class="form-control form-control-sm text-center fw-bold text-success font-monospace bg-light border-0"
-                                                               value="@line.UnitPrice.ToString("N2")" readonly />
+                                                               ="@line.UnitPrice.ToString("N2")" readonly />
                                                         <span class="input-group-text bg-light text-muted border-0 py-0 px-2" title="السعر معتمد ومقفل من بطاقة الصنف">
                                                             <i class="bi bi-lock-fill text-secondary"></i>
                                                         </span>
@@ -854,7 +854,7 @@
 
     private void OnItemSelected(int index, ChangeEventArgs e)
     {
-        if (long.TryParse(e.Value?.ToString(), out long itemId) && itemId > 0)
+        if (long.TryParse(e.?.ToString(), out long itemId) && itemId > 0)
         {
             newInvoice.InvoiceLines[index].ItemId = itemId;
             var selectedItem = lookups?.FinishedItems?.FirstOrDefault(x => x.Id == itemId);
@@ -947,7 +947,7 @@
             return;
         }
 
-        if (!newInvoice.WarehouseId.HasValue || newInvoice.WarehouseId.Value <= 0)
+        if (!newInvoice.WarehouseId.Has || newInvoice.WarehouseId. <= 0)
         {
             var targetWh = ActiveBranchWarehouse;
             if (targetWh != null)

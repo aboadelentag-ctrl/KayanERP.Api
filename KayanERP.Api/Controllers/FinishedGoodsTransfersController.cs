@@ -18,9 +18,6 @@ namespace KayanERP.Api.Controllers
             _transferService = transferService;
         }
 
-        // ========================================================
-        // 1. القوائم المرجعية الموحدة (مخازن الصالات ومخازن التام والأصناف)
-        // ========================================================
         [HttpGet("lookups")]
         public async Task<ActionResult<TransferLookupsDto>> GetLookups()
         {
@@ -35,9 +32,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 2. استعراض سجل أذونات تحويل المنتج التام
-        // ========================================================
         [HttpGet]
         public async Task<ActionResult<List<FinishedGoodsTransferViewDto>>> GetAll()
         {
@@ -52,9 +46,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 3. المحطة 1: إصدار إذن تسليم من صالة التشغيل
-        // ========================================================
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] CreateTransferRequestDto dto)
         {
@@ -69,9 +60,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 4. المحطة 2: تدقيق ميزان التكاليف
-        // ========================================================
         [HttpPost("audit-costing")]
         public async Task<IActionResult> AuditCosting([FromBody] CostingAuditDto dto)
         {
@@ -86,9 +74,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 5. فض نزاع ميزان التكاليف والإنتاج
-        // ========================================================
         [HttpPost("resolve-costing-dispute")]
         public async Task<IActionResult> ResolveCostingDispute([FromBody] ResolveCostingDisputeDto dto)
         {
@@ -103,9 +88,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 6. المحطة 3: فحص وإفراج الجودة (GMP Release)
-        // ========================================================
         [HttpPost("inspect-qc")]
         public async Task<IActionResult> InspectQc([FromBody] QcInspectionDto dto)
         {
@@ -120,9 +102,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 7. المحطة 4: إعادة إرسال المرتجع بعد التعديل بالصالة
-        // ========================================================
         [HttpPost("resubmit-rework")]
         public async Task<IActionResult> ReSubmitRework([FromBody] ReSubmitReworkDto dto)
         {
@@ -137,9 +116,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 8. المحطة 5: استلام وترصيد مخزن الكنترول
-        // ========================================================
         [HttpPost("receive-control")]
         public async Task<IActionResult> ReceiveControl([FromBody] ControlReceiptDto dto)
         {
@@ -154,9 +130,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ========================================================
-        // 9. فض نزاع الجودة والكنترول واعتماد التسوية
-        // ========================================================
         [HttpPost("resolve-dispute")]
         public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeDto dto)
         {

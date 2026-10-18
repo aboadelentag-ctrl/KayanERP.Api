@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayanERP.Api.Models;
+using KayanERP.Shared.DTOs;
 
 namespace KayanERP.Api.Controllers
 {
@@ -19,9 +20,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية لكارت الصنف (الأصناف والمستودعات بالفروع)
-        // ==============================================================
         [HttpGet("lookups")]
         public async Task<IActionResult> GetLookups()
         {
@@ -65,9 +63,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. كشف حركة كارت الصنف واحتساب الرصيد التراكمي اللحظي
-        // ==============================================================
         [HttpGet("ledger")]
         public async Task<IActionResult> GetStockLedger(
             [FromQuery] long itemId,
@@ -99,7 +94,6 @@ namespace KayanERP.Api.Controllers
                     baseMovementsQuery = baseMovementsQuery.Where(m => m.WarehouseId == warehouseId.Value);
                 }
 
-                // 1. احتساب رصيد أول المدة بدقة متناهية قبل تاريخ البداية
                 decimal openingBalance = 0;
                 var periodQuery = baseMovementsQuery;
 
@@ -115,7 +109,7 @@ namespace KayanERP.Api.Controllers
                     foreach (var m in priorMovements)
                     {
                         if (string.Equals(m.MovementType, "QC_REJECTED", StringComparison.OrdinalIgnoreCase))
-                            continue; // المرفوضات لا تؤثر على الرصيد
+                            continue;
 
                         decimal qty = Math.Abs(m.Quantity);
                         openingBalance += IsInbound(m.MovementType) ? qty : -qty;
@@ -130,27 +124,23 @@ namespace KayanERP.Api.Controllers
                     periodQuery = periodQuery.Where(m => m.MovementAt <= endUtc);
                 }
 
-                // 2. جلب الحركات داخل الفترة المحددة
                 var periodMovements = await periodQuery
                     .OrderBy(m => m.MovementAt)
                     .ThenBy(m => m.Id)
                     .ToListAsync();
 
-                // 3. بناء سطور الكشف وتوليد الرصيد التراكمي المتسلسل (Running Balance)
                 decimal runningBalance = openingBalance;
                 var ledgerLines = new List<StockLedgerLineDto>();
 
                 foreach (var m in periodMovements)
                 {
-                    // استخراج رقم اللوط وتاريخ الصلاحية
-                    string batchNumber = ExtractValue(m.Notes, "تشغيلة:", "|");
-                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = ExtractValue(m.Notes, "لوط:", "|");
-                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = ExtractValue(m.Notes, "LOT:", "|");
-                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = ExtractValue(m.Notes, "تشغيلة/تتبع:", "|");
+                    string batchNumber = Extract(m.Notes, "تشغيلة:", "|");
+                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = Extract(m.Notes, "لوط:", "|");
+                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = Extract(m.Notes, "LOT:", "|");
+                    if (string.IsNullOrEmpty(batchNumber)) batchNumber = Extract(m.Notes, "تشغيلة/تتبع:", "|");
 
-                    string expiryDate = ExtractValue(m.Notes, "صلاحية:", "|");
+                    string expiryDate = Extract(m.Notes, "صلاحية:", "|");
 
-                    // معالجة المرفوضات الفنية: تظهر للمعاينة والرقابة لكنها لا تؤثر على الرصيد المخزني
                     if (string.Equals(m.MovementType, "QC_REJECTED", StringComparison.OrdinalIgnoreCase))
                     {
                         ledgerLines.Add(new StockLedgerLineDto
@@ -225,9 +215,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // دوال مساعدة في التصنيف والتحليل
-        // ==============================================================
         private static bool IsInbound(string movementType) => movementType switch
         {
             "PURCHASE_RECEIPT" => true,
@@ -262,7 +249,7 @@ namespace KayanERP.Api.Controllers
             _ => movementType
         };
 
-        private static string ExtractValue(string? text, string key, string separator)
+        private static string Extract(string? text, string key, string separator)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key)) return string.Empty;
             int startIdx = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);
@@ -276,42 +263,5 @@ namespace KayanERP.Api.Controllers
 
             return text.Substring(startIdx, endIdx - startIdx).Trim();
         }
-    }
-
-    // ==============================================================
-    // نماذج البيانات لكارت الصنف (DTOs)
-    // ==============================================================
-    public class StockCardReportDto
-    {
-        public long ItemId { get; set; }
-        public string ItemCode { get; set; } = string.Empty;
-        public string ItemName { get; set; } = string.Empty;
-        public string Unit { get; set; } = string.Empty;
-        public string CategoryName { get; set; } = string.Empty;
-        public decimal OpeningBalance { get; set; }
-        public decimal TotalInbound { get; set; }
-        public decimal TotalOutbound { get; set; }
-        public decimal ClosingBalance { get; set; }
-        public List<StockLedgerLineDto> Lines { get; set; } = new();
-    }
-
-    public class StockLedgerLineDto
-    {
-        public long MovementId { get; set; }
-        public DateTime MovementDate { get; set; }
-        public string MovementType { get; set; } = string.Empty;
-        public string MovementTypeLabel { get; set; } = string.Empty;
-        public string WarehouseName { get; set; } = string.Empty;
-        public string BranchName { get; set; } = string.Empty;
-        public decimal InQuantity { get; set; }
-        public decimal OutQuantity { get; set; }
-        public decimal BalanceAfter { get; set; }
-        public decimal UnitCost { get; set; }
-        public decimal TotalCost { get; set; }
-        public string BatchNumber { get; set; } = string.Empty;
-        public string ExpiryDate { get; set; } = string.Empty;
-        public string ReferenceType { get; set; } = string.Empty;
-        public long? ReferenceId { get; set; }
-        public string? Notes { get; set; }
     }
 }

@@ -35,25 +35,16 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ========================================================
-        // 1. القوائم المرجعية: حصر الصالات والمخازن المركزية والخامات
-        // ========================================================
         public async Task<RequisitionLookupsDto> GetLookupsAsync()
         {
             var departments = await _context.Departments
                 .AsNoTracking()
-                .Where(d => (d.DepartmentName.Contains("قسم")
-                          || d.DepartmentName.Contains("صالة")
-                          || d.DepartmentName.Contains("تورت")
-                          || d.DepartmentName.Contains("جاتوه")
-                          || d.DepartmentName.Contains("شرقي")
-                          || d.DepartmentName.Contains("اسبشيال")
-                          || d.DepartmentName.Contains("مخبوزات")
-                          || d.DepartmentName.Contains("كرواسون"))
-                          && !d.DepartmentName.Contains("إدارة")
-                          && !d.DepartmentName.Contains("العليا")
-                          && !d.DepartmentName.Contains("المالية")
-                          && !d.DepartmentName.Contains("الموارد"))
+                .Where(d => (d.DepartmentName.Contains("قسم") || d.DepartmentName.Contains("صالة") ||
+                             d.DepartmentName.Contains("تورت") || d.DepartmentName.Contains("جاتوه") ||
+                             d.DepartmentName.Contains("شرقي") || d.DepartmentName.Contains("اسبشيال") ||
+                             d.DepartmentName.Contains("مخبوزات") || d.DepartmentName.Contains("كرواسون"))
+                          && !d.DepartmentName.Contains("إدارة") && !d.DepartmentName.Contains("العليا") &&
+                             !d.DepartmentName.Contains("المالية") && !d.DepartmentName.Contains("الموارد"))
                 .OrderBy(d => d.DepartmentName)
                 .Select(d => new RequisitionDepartmentLookupDto
                 {
@@ -79,13 +70,9 @@ namespace KayanERP.Api.Services
             var warehouses = await _context.Warehouses
                 .AsNoTracking()
                 .Where(w => w.Active &&
-                            (w.WarehouseName.Contains("خامات")
-                          || w.WarehouseName.Contains("رئيسي")
-                          || w.WarehouseName.Contains("مستودع")
-                          || w.WarehouseName.Contains("مركزي"))
-                          && !w.WarehouseName.Contains("صالة")
-                          && !w.WarehouseName.Contains("قسم")
-                          && !w.WarehouseName.Contains("إدارة"))
+                            (w.WarehouseName.Contains("خامات") || w.WarehouseName.Contains("رئيسي") ||
+                             w.WarehouseName.Contains("مستودع") || w.WarehouseName.Contains("مركزي"))
+                          && !w.WarehouseName.Contains("صالة") && !w.WarehouseName.Contains("قسم") && !w.WarehouseName.Contains("إدارة"))
                 .OrderBy(w => w.WarehouseName)
                 .Select(w => new RequisitionWarehouseLookupDto
                 {
@@ -110,12 +97,9 @@ namespace KayanERP.Api.Services
 
             var rawMaterials = await _context.Items
                 .AsNoTracking()
-                .Where(i => i.Active && (i.ItemType.Contains("خام")
-                                     || i.ItemType.Contains("وسيط")
-                                     || i.ItemType.Contains("نصف")
-                                     || i.ItemType.Contains("عجين")
-                                     || i.ItemType == "RAW_MATERIAL"
-                                     || i.ItemType == "WIP"))
+                .Where(i => i.Active && (i.ItemType.Contains("خام") || i.ItemType.Contains("وسيط") ||
+                                     i.ItemType.Contains("نصف") || i.ItemType.Contains("عجين") ||
+                                     i.ItemType == "RAW_MATERIAL" || i.ItemType == "WIP"))
                 .OrderBy(i => i.ItemName)
                 .Select(i => new RequisitionRawMaterialLookupDto
                 {
@@ -135,9 +119,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ========================================================
-        // 2. استعراض كافة طلبات الصرف
-        // ========================================================
         public async Task<List<RequisitionDetailDto>> GetAllRequisitionsAsync(string? status = null)
         {
             var query = _context.MaterialRequisitions
@@ -168,9 +149,6 @@ namespace KayanERP.Api.Services
             return req == null ? null : MapToDetailDto(req);
         }
 
-        // ========================================================
-        // 3. إنشاء طلب الصرف
-        // ========================================================
         public async Task<RequisitionDetailDto> CreateRequisitionAsync(CreateRequisitionDto dto)
         {
             string reqNumber = $"MR-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
@@ -209,20 +187,14 @@ namespace KayanERP.Api.Services
             return (await GetRequisitionByIdAsync(req.Id))!;
         }
 
-        // ========================================================
-        // 4. اقتراحات FEFO لتشغيلات الصرف (الخامات والمكونات الوسيطة)
-        // ========================================================
         public async Task<List<FefoBatchSuggestionDto>> GetFefoSuggestionsAsync(long itemId, long warehouseId)
         {
             var receipts = await _context.StockMovements
                 .AsNoTracking()
                 .Where(m => m.ItemId == itemId && m.WarehouseId == warehouseId &&
-                           (m.MovementType == "PURCHASE_RECEIPT" ||
-                            m.MovementType == "PRODUCTION_RECEIPT" ||
-                            m.MovementType == "PRODUCTION_IN" ||
-                            m.MovementType == "INITIAL_STOCK" ||
-                            m.MovementType == "STOCK_IN" ||
-                            m.MovementType == "TRANSFER_IN"))
+                           (m.MovementType == "PURCHASE_RECEIPT" || m.MovementType == "PRODUCTION_RECEIPT" ||
+                            m.MovementType == "PRODUCTION_IN" || m.MovementType == "INITIAL_STOCK" ||
+                            m.MovementType == "STOCK_IN" || m.MovementType == "TRANSFER_IN"))
                 .OrderBy(m => m.MovementAt)
                 .ToListAsync();
 
@@ -232,12 +204,12 @@ namespace KayanERP.Api.Services
             {
                 if (string.IsNullOrWhiteSpace(r.Notes)) continue;
 
-                string batch = ExtractValue(r.Notes, "تشغيلة:", "|");
-                if (string.IsNullOrWhiteSpace(batch)) batch = ExtractValue(r.Notes, "لوط:", "|");
-                if (string.IsNullOrWhiteSpace(batch)) batch = ExtractValue(r.Notes, "LOT:", "|");
-                if (string.IsNullOrWhiteSpace(batch)) batch = ExtractValue(r.Notes, "تشغيلة/تتبع:", "|");
+                string batch = Extract(r.Notes, "تشغيلة:", "|");
+                if (string.IsNullOrWhiteSpace(batch)) batch = Extract(r.Notes, "لوط:", "|");
+                if (string.IsNullOrWhiteSpace(batch)) batch = Extract(r.Notes, "LOT:", "|");
+                if (string.IsNullOrWhiteSpace(batch)) batch = Extract(r.Notes, "تشغيلة/تتبع:", "|");
 
-                string expStr = ExtractValue(r.Notes, "صلاحية:", "|");
+                string expStr = Extract(r.Notes, "صلاحية:", "|");
                 DateTime? expDate = null;
                 if (DateTime.TryParse(expStr, out DateTime parsed)) expDate = parsed;
 
@@ -253,9 +225,6 @@ namespace KayanERP.Api.Services
             return suggestions.OrderBy(s => s.ExpiryDate ?? DateTime.MaxValue).ToList();
         }
 
-        // ========================================================
-        // 5. صرف الشحنة وتثبيت مخزن كل سطر خامة
-        // ========================================================
         public async Task<bool> DispatchRequisitionAsync(DispatchRequisitionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -296,9 +265,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 6. استلام السطر بالصالة
-        // ========================================================
         public async Task<bool> ReceiveLineItemAsync(ReceiveLineItemDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -345,9 +311,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 7. فض النزاع وتسوية الفروق (محصنة ضد مسح المنصرف الأصلي)
-        // ========================================================
         public async Task<bool> ResolveDiscrepancyAsync(ResolveDiscrepancyDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -382,9 +345,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 8. محرك التقرير الرقابي الشامل واحتساب كشف الحساب التراكمي للصالات
-        // ========================================================
         public async Task<List<RequisitionLifecycleAuditDto>> GetAuditLifecycleReportAsync(
             DateTime? startDate,
             DateTime? endDate,
@@ -521,12 +481,9 @@ namespace KayanERP.Api.Services
             return filtered.OrderByDescending(r => r.RequestDate).ThenByDescending(r => r.RequisitionId).ToList();
         }
 
-        // ========================================================
-        // 9. خصم الرصيد وترحيل حركة الصرف بمطابقة مادية تامة (Idempotent Guard)
-        // ========================================================
         private async Task FinalizeInventoryTransferAsync(MaterialRequisition req)
         {
-            if (req.Status == "COMPLETED") return; // حماية ضد التكرار والازدواجية
+            if (req.Status == "COMPLETED") return;
 
             req.Status = "COMPLETED";
             req.CompletedAt = DateTime.UtcNow;
@@ -545,7 +502,6 @@ namespace KayanERP.Api.Services
                     ? line.FromWarehouseId.Value
                     : req.FromWarehouseId;
 
-                // 1. خصم إجمالي الكمية التي خرجت بالفعل من المستودع
                 decimal qtyLeftWarehouse = line.DispatchedQty > 0 ? line.DispatchedQty : line.ReceivedQty;
 
                 var sourceBalance = await _context.StockBalances
@@ -574,7 +530,6 @@ namespace KayanERP.Api.Services
                 long itemCompanyId = (line.Item != null && line.Item.CompanyId > 0) ? line.Item.CompanyId : 1;
                 string whName = line.FromWarehouse?.WarehouseName ?? req.FromWarehouse?.WarehouseName ?? "مستودع";
 
-                // 2. إثبات صرف ما استلمته صالة التشغيل فعلياً
                 _context.StockMovements.Add(new StockMovement
                 {
                     CompanyId = itemCompanyId,
@@ -590,7 +545,6 @@ namespace KayanERP.Api.Services
                     Notes = $"صرف لصالة التشغيل | مخزن: {whName} | تشغيلة: {line.BatchNumber} | صلاحية: {line.ExpiryDate:yyyy-MM-dd} | إذن رقم: {req.RequisitionNumber}"
                 });
 
-                // 3. إثبات الهالك أو العجز كحركة مستقلة في كارت الصنف إن وجد
                 decimal shortage = qtyLeftWarehouse - line.ReceivedQty;
                 if (shortage > 0)
                 {
@@ -652,7 +606,7 @@ namespace KayanERP.Api.Services
             };
         }
 
-        private static string ExtractValue(string text, string key, string separator)
+        private static string Extract(string text, string key, string separator)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key)) return string.Empty;
 

@@ -154,7 +154,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("expires_at");
 
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
 
             entity.Property(e => e.RevokedAt)
@@ -203,11 +203,11 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("name");
 
             entity.Property(e => e.CrateBalance)
-                .HasDefaultValue(0)
+                .HasDefault(0)
                 .HasColumnName("crate_balance");
 
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
 
             entity.HasOne(d => d.Company)
@@ -240,11 +240,11 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("name");
 
             entity.Property(e => e.CrateBalance)
-                .HasDefaultValue(0)
+                .HasDefault(0)
                 .HasColumnName("crate_balance");
 
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
 
             entity.HasOne(d => d.Company)
@@ -284,7 +284,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("quantity");
 
             entity.Property(e => e.TransactionDate)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultSql("CURRENT_TIMESTAMP")
                 .HasColumnName("transaction_date");
 
             entity.Property(e => e.Notes)
@@ -320,9 +320,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.BranchName).HasMaxLength(200).HasColumnName("branch_name");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.Phone).HasMaxLength(50).HasColumnName("phone");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company)
                 .WithMany(p => p.Branches)
@@ -341,14 +341,14 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.CompanyCode, "companies_company_code_key").IsUnique();
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.CompanyCode).HasMaxLength(50).HasColumnName("company_code");
             entity.Property(e => e.CompanyName).HasMaxLength(200).HasColumnName("company_name");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.Email).HasMaxLength(150).HasColumnName("email");
             entity.Property(e => e.Phone).HasMaxLength(50).HasColumnName("phone");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
         });
 
         // ----------------------------------------------------
@@ -369,9 +369,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.WarehouseType).HasMaxLength(50).HasColumnName("warehouse_type");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ParentWarehouseId).HasColumnName("parent_warehouse_id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Branch)
                 .WithMany(p => p.Warehouses)
@@ -406,7 +406,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.InvoiceDate).HasColumnName("invoice_date");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasColumnName("total_amount");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
 
             entity.HasOne<Branch>()
                 .WithMany()
@@ -463,20 +463,20 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.CompanyId, "ix_customers_company_id");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreditLimit).HasPrecision(18, 2).HasColumnName("credit_limit");
             entity.Property(e => e.CustomerCode).HasMaxLength(50).HasColumnName("customer_code");
             entity.Property(e => e.CustomerName).HasMaxLength(200).HasColumnName("customer_name");
-            entity.Property(e => e.CustomerType).HasMaxLength(30).HasDefaultValueSql("'RETAIL'").HasColumnName("customer_type");
+            entity.Property(e => e.CustomerType).HasMaxLength(30).HasDefaultSql("'RETAIL'").HasColumnName("customer_type");
             entity.Property(e => e.Email).HasMaxLength(150).HasColumnName("email");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.PaymentTerms).HasMaxLength(100).HasColumnName("payment_terms");
             entity.Property(e => e.Phone).HasMaxLength(50).HasColumnName("phone");
             entity.Property(e => e.TaxNumber).HasMaxLength(100).HasColumnName("tax_number");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company).WithMany(p => p.Customers)
                 .HasForeignKey(d => d.CompanyId)
@@ -551,20 +551,20 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ItemType).HasMaxLength(30).HasColumnName("item_type");
             entity.Property(e => e.Unit).HasMaxLength(50).HasColumnName("unit");
             entity.Property(e => e.ParentItemId).HasColumnName("parent_item_id");
-            entity.Property(e => e.HasExpiryDate).HasDefaultValue(true).HasColumnName("has_expiry_date");
+            entity.Property(e => e.HasExpiryDate).HasDefault(true).HasColumnName("has_expiry_date");
             entity.Property(e => e.ShelfLifeDays).HasColumnName("shelf_life_days");
             entity.Property(e => e.ReorderLevel).HasPrecision(18, 3).HasColumnName("reorder_level");
             entity.Property(e => e.SafetyStock).HasPrecision(18, 3).HasColumnName("safety_stock");
             entity.Property(e => e.MaxStock).HasPrecision(18, 3).HasColumnName("max_stock");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.BasePrice).HasPrecision(18, 2).HasColumnName("base_price");
             entity.Property(e => e.Barcode).HasMaxLength(100).HasColumnName("barcode");
-            entity.Property(e => e.IsVariant).HasDefaultValue(false).HasColumnName("is_variant");
-            entity.Property(e => e.IsMerged).HasDefaultValue(false).HasColumnName("is_merged");
-            entity.Property(e => e.IsContainer).HasDefaultValue(false).HasColumnName("is_container");
-            entity.Property(e => e.MultiUom).HasDefaultValue(false).HasColumnName("multi_uom");
-            entity.Property(e => e.HideDetailPrint).HasDefaultValue(false).HasColumnName("hide_detail_print");
+            entity.Property(e => e.IsVariant).HasDefault(false).HasColumnName("is_variant");
+            entity.Property(e => e.IsMerged).HasDefault(false).HasColumnName("is_merged");
+            entity.Property(e => e.IsContainer).HasDefault(false).HasColumnName("is_container");
+            entity.Property(e => e.MultiUom).HasDefault(false).HasColumnName("multi_uom");
+            entity.Property(e => e.HideDetailPrint).HasDefault(false).HasColumnName("hide_detail_print");
 
             entity.HasOne(d => d.ItemCategory)
                 .WithMany(p => p.Items)
@@ -593,14 +593,14 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.CompanyId, "ix_item_categories_company_id");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.CategoryCode).HasMaxLength(50).HasColumnName("category_code");
             entity.Property(e => e.CategoryName).HasMaxLength(200).HasColumnName("category_name");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ItemType).HasMaxLength(30).HasColumnName("item_type");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company).WithMany(p => p.ItemCategories)
                 .HasForeignKey(d => d.CompanyId)
@@ -620,13 +620,13 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.OrderDate).HasDefaultValueSql("CURRENT_DATE").HasColumnName("order_date");
+            entity.Property(e => e.OrderDate).HasDefaultSql("CURRENT_DATE").HasColumnName("order_date");
             entity.Property(e => e.OrderNumber).HasMaxLength(50).HasColumnName("order_number");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'DRAFT'").HasColumnName("status");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'DRAFT'").HasColumnName("status");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
             entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
 
             entity.HasOne(d => d.Company).WithMany(p => p.ProductionOrders)
@@ -651,7 +651,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.PlannedQuantity).HasPrecision(14, 3).HasColumnName("planned_quantity");
             entity.Property(e => e.ProducedQuantity).HasPrecision(14, 3).HasColumnName("produced_quantity");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'PENDING'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'PENDING'").HasColumnName("status");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.EmployeeId).HasColumnName("Employee_id");
             entity.Property(e => e.WorkingHours).HasPrecision(10, 2).HasColumnName("working_hours");
@@ -683,7 +683,7 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.ProductionOrderDetailId, e.StageNumber }, "production_stages_unique").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.PlannedQuantity).HasPrecision(14, 3).HasColumnName("planned_quantity");
@@ -691,8 +691,8 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ProductionOrderDetailId).HasColumnName("production_order_detail_id");
             entity.Property(e => e.RecipeStageId).HasColumnName("recipe_stage_id");
             entity.Property(e => e.StageNumber).HasColumnName("stage_number");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'PENDING'").HasColumnName("status");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'PENDING'").HasColumnName("status");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Item).WithMany()
                 .HasForeignKey(d => d.ItemId)
@@ -719,7 +719,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ConsumedQuantity).HasPrecision(14, 3).HasColumnName("consumed_quantity");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.ProductionStageId).HasColumnName("production_stage_id");
@@ -753,19 +753,19 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.DiscountAmount).HasPrecision(18, 2).HasColumnName("discount_amount");
             entity.Property(e => e.ExpectedDate).HasColumnName("expected_date");
             entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.OrderDate).HasDefaultValueSql("CURRENT_DATE").HasColumnName("order_date");
+            entity.Property(e => e.OrderDate).HasDefaultSql("CURRENT_DATE").HasColumnName("order_date");
             entity.Property(e => e.OrderNumber).HasMaxLength(50).HasColumnName("order_number");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'DRAFT'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'DRAFT'").HasColumnName("status");
             entity.Property(e => e.Subtotal).HasPrecision(18, 2).HasColumnName("subtotal");
             entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
             entity.Property(e => e.TaxAmount).HasPrecision(18, 2).HasColumnName("tax_amount");
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasColumnName("total_amount");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
             entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
 
             entity.HasOne(d => d.Company).WithMany(p => p.PurchaseOrders)
@@ -822,8 +822,8 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.InspectionDate).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("inspection_date");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.InspectionDate).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("inspection_date");
             entity.Property(e => e.InspectionType).HasMaxLength(30).HasColumnName("inspection_type");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
             entity.Property(e => e.Notes).HasColumnName("notes");
@@ -831,7 +831,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ProductionStageId).HasColumnName("production_stage_id");
             entity.Property(e => e.Quantity).HasPrecision(18, 6).HasColumnName("quantity");
             entity.Property(e => e.Result).HasColumnName("result");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'PENDING'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'PENDING'").HasColumnName("status");
             entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
 
             entity.HasOne(d => d.Company).WithMany(p => p.QualityInspections)
@@ -868,12 +868,12 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.RecipeCode }, "recipes_company_id_recipe_code_key").IsUnique();
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.BatchQuantity).HasPrecision(18, 3).HasColumnName("batch_quantity");
             entity.Property(e => e.BatchUnit).HasMaxLength(50).HasColumnName("batch_unit");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.EffectiveFrom).HasDefaultValueSql("CURRENT_DATE").HasColumnName("effective_from");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.EffectiveFrom).HasDefaultSql("CURRENT_DATE").HasColumnName("effective_from");
             entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.PiecesPerBatch).HasPrecision(18, 3).HasColumnName("pieces_per_batch");
@@ -881,7 +881,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ProductItemId).HasColumnName("product_item_id");
             entity.Property(e => e.RecipeCode).HasMaxLength(50).HasColumnName("recipe_code");
             entity.Property(e => e.RecipeName).HasMaxLength(250).HasColumnName("recipe_name");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
             entity.Property(e => e.WastePercentage).HasPrecision(8, 3).HasColumnName("waste_percentage");
             entity.Property(e => e.YieldQuantity).HasPrecision(18, 3).HasColumnName("yield_quantity");
             entity.Property(e => e.YieldUnit).HasMaxLength(50).HasColumnName("yield_unit");
@@ -901,7 +901,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
             entity.Property(e => e.ComponentItemId).HasColumnName("component_item_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.IsOptional).HasColumnName("is_optional");
             entity.Property(e => e.LineNumber).HasColumnName("line_number");
             entity.Property(e => e.Notes).HasColumnName("notes");
@@ -909,7 +909,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.StageId).HasColumnName("stage_id");
             entity.Property(e => e.Unit).HasMaxLength(50).HasColumnName("unit");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
             entity.Property(e => e.WastePercentage).HasPrecision(8, 3).HasColumnName("waste_percentage");
 
             entity.HasOne(d => d.ComponentItem).WithMany()
@@ -937,15 +937,15 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.RecipeId, e.StageNumber }, "recipe_stages_recipe_id_stage_number_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.OutputItemId).HasColumnName("output_item_id");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.StageName).HasMaxLength(200).HasColumnName("stage_name");
             entity.Property(e => e.StageNumber).HasColumnName("stage_number");
             entity.Property(e => e.StageRecipeId).HasColumnName("stage_recipe_id");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.OutputItem).WithMany()
                 .HasForeignKey(d => d.OutputItemId)
@@ -971,14 +971,14 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.Name }, "roles_company_id_role_code_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.Name).HasMaxLength(50).HasColumnName("role_code");
             entity.Property(e => e.DisplayName).HasMaxLength(100).HasColumnName("role_name");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Permissions).HasColumnName("permissions");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
         });
 
         // ----------------------------------------------------
@@ -996,17 +996,17 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BranchId).HasColumnName("branch_id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
             entity.Property(e => e.DiscountAmount).HasPrecision(18, 2).HasColumnName("discount_amount");
             entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.OrderDate).HasDefaultValueSql("CURRENT_DATE").HasColumnName("order_date");
+            entity.Property(e => e.OrderDate).HasDefaultSql("CURRENT_DATE").HasColumnName("order_date");
             entity.Property(e => e.OrderNumber).HasMaxLength(50).HasColumnName("order_number");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'DRAFT'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'DRAFT'").HasColumnName("status");
             entity.Property(e => e.Subtotal).HasPrecision(18, 2).HasColumnName("subtotal");
             entity.Property(e => e.TaxAmount).HasPrecision(18, 2).HasColumnName("tax_amount");
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasColumnName("total_amount");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
             entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
 
             entity.HasOne(d => d.Branch).WithMany(p => p.SalesOrders)
@@ -1073,10 +1073,10 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
-            entity.Property(e => e.MovementAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("movement_at");
+            entity.Property(e => e.MovementAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("movement_at");
             entity.Property(e => e.MovementType).HasMaxLength(30).HasColumnName("movement_type");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.Quantity).HasPrecision(18, 3).HasColumnName("quantity");
@@ -1119,10 +1119,10 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
-            entity.Property(e => e.MovementAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("movement_at");
+            entity.Property(e => e.MovementAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("movement_at");
             entity.Property(e => e.MovementType).HasMaxLength(30).HasColumnName("movement_type");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.Quantity).HasPrecision(18, 3).HasColumnName("quantity");
@@ -1160,12 +1160,12 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.FromWarehouseId).HasColumnName("from_warehouse_id");
             entity.Property(e => e.ToWarehouseId).HasColumnName("to_warehouse_id");
-            entity.Property(e => e.TransferDate).HasDefaultValueSql("CURRENT_DATE").HasColumnName("transfer_date");
+            entity.Property(e => e.TransferDate).HasDefaultSql("CURRENT_DATE").HasColumnName("transfer_date");
             entity.Property(e => e.TransferNumber).HasMaxLength(50).HasColumnName("transfer_number");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'IN_TRANSIT'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'IN_TRANSIT'").HasColumnName("status");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.DriverName).HasMaxLength(150).HasColumnName("driver_name");
             entity.Property(e => e.VehicleNumber).HasMaxLength(50).HasColumnName("vehicle_number");
@@ -1173,7 +1173,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ReceivedBy).HasMaxLength(100).HasColumnName("received_by");
             entity.Property(e => e.DispatchedAt).HasColumnName("dispatched_at");
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company).WithMany(p => p.StockTransfers)
                 .HasForeignKey(d => d.CompanyId)
@@ -1205,11 +1205,11 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.BatchNumber).HasMaxLength(100).HasColumnName("batch_number");
             entity.Property(e => e.ExpiryDate).HasColumnName("expiry_date");
             entity.Property(e => e.UnitCost).HasPrecision(18, 2).HasColumnName("unit_cost");
-            entity.Property(e => e.LineStatus).HasMaxLength(30).HasDefaultValueSql("'PENDING'").HasColumnName("line_status");
+            entity.Property(e => e.LineStatus).HasMaxLength(30).HasDefaultSql("'PENDING'").HasColumnName("line_status");
             entity.Property(e => e.DiscrepancyReason).HasColumnName("discrepancy_reason");
             entity.Property(e => e.ResolutionNotes).HasColumnName("resolution_notes");
             entity.Property(e => e.LossQty).HasPrecision(18, 3).HasColumnName("loss_qty");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
 
             entity.HasOne(d => d.Item).WithMany()
                 .HasForeignKey(d => d.ItemId)
@@ -1233,10 +1233,10 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.SupplierCode }, "suppliers_company_id_supplier_code_key").IsUnique();
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreditLimit).HasPrecision(18, 2).HasColumnName("credit_limit");
             entity.Property(e => e.Email).HasMaxLength(150).HasColumnName("email");
             entity.Property(e => e.Notes).HasColumnName("notes");
@@ -1245,7 +1245,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.SupplierCode).HasMaxLength(50).HasColumnName("supplier_code");
             entity.Property(e => e.SupplierName).HasMaxLength(200).HasColumnName("supplier_name");
             entity.Property(e => e.TaxNumber).HasMaxLength(100).HasColumnName("tax_number");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company).WithMany(p => p.Suppliers)
                 .HasForeignKey(d => d.CompanyId)
@@ -1264,7 +1264,7 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.UnitCode }, "units_company_id_unit_code_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.UnitCode).HasMaxLength(30).HasColumnName("unit_code");
             entity.Property(e => e.UnitName).HasMaxLength(100).HasColumnName("unit_name");
@@ -1316,7 +1316,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
             entity.Property(e => e.Notes).HasColumnName("notes");
@@ -1324,7 +1324,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ProductionStageId).HasColumnName("production_stage_id");
             entity.Property(e => e.Quantity).HasPrecision(18, 6).HasColumnName("quantity");
             entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
-            entity.Property(e => e.WasteDate).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("waste_date");
+            entity.Property(e => e.WasteDate).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("waste_date");
             entity.Property(e => e.WasteReason).HasMaxLength(150).HasColumnName("waste_reason");
 
             entity.HasOne(d => d.Company).WithMany(p => p.WasteRecords)
@@ -1362,7 +1362,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.PartyType).HasMaxLength(50).HasColumnName("party_type");
             entity.Property(e => e.PartyId).HasColumnName("party_id");
             entity.Property(e => e.Quantity).HasPrecision(18, 3).HasColumnName("quantity");
-            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("last_updated_at");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("last_updated_at");
 
             entity.HasOne(d => d.Company).WithMany()
                 .HasForeignKey(d => d.CompanyId)
@@ -1385,7 +1385,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.MovementDate).HasDefaultValueSql("CURRENT_DATE").HasColumnName("movement_date");
+            entity.Property(e => e.MovementDate).HasDefaultSql("CURRENT_DATE").HasColumnName("movement_date");
             entity.Property(e => e.ItemId).HasColumnName("item_id");
             entity.Property(e => e.FromPartyType).HasMaxLength(50).HasColumnName("from_party_type");
             entity.Property(e => e.FromPartyId).HasColumnName("from_party_id");
@@ -1394,7 +1394,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Quantity).HasPrecision(18, 3).HasColumnName("quantity");
             entity.Property(e => e.MovementType).HasMaxLength(30).HasColumnName("movement_type");
             entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
 
             entity.HasOne(d => d.Company).WithMany()
                 .HasForeignKey(d => d.CompanyId)
@@ -1509,12 +1509,12 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.FormCode, "dynamic_forms_form_code_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.FieldsSchema).HasColumnType("text").HasColumnName("fields_schema");
             entity.Property(e => e.FormCode).HasMaxLength(100).HasColumnName("form_code");
             entity.Property(e => e.FormName).HasMaxLength(255).HasColumnName("form_name");
-            entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
+            entity.Property(e => e.IsActive).HasDefault(true).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<FormSubmission>(entity =>
@@ -1524,9 +1524,9 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.FormId).HasColumnName("form_id");
-            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValueSql("'Submitted'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultSql("'Submitted'").HasColumnName("status");
             entity.Property(e => e.SubmissionData).HasColumnType("text").HasColumnName("submission_data");
-            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("submitted_at");
+            entity.Property(e => e.SubmittedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("submitted_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Form).WithMany(p => p.FormSubmissions)
@@ -1553,15 +1553,15 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.AssignedTechnicianCode).HasMaxLength(50).HasColumnName("assigned_technician_code");
             entity.Property(e => e.AssignedTechnicianName).HasMaxLength(150).HasColumnName("assigned_technician_name");
             entity.Property(e => e.AssignmentNotes).HasColumnName("assignment_notes");
-            entity.Property(e => e.Priority).HasMaxLength(30).HasDefaultValue("NORMAL").HasColumnName("priority");
-            entity.Property(e => e.MediaType).HasMaxLength(30).HasDefaultValue("TEXT").HasColumnName("media_type");
+            entity.Property(e => e.Priority).HasMaxLength(30).HasDefault("NORMAL").HasColumnName("priority");
+            entity.Property(e => e.MediaType).HasMaxLength(30).HasDefault("TEXT").HasColumnName("media_type");
             entity.Property(e => e.MediaUrl).HasColumnName("media_url");
             entity.Property(e => e.MediaFileName).HasMaxLength(200).HasColumnName("media_file_name");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
-            entity.Property(e => e.TargetResolutionMinutes).HasDefaultValue(30).HasColumnName("target_resolution_minutes");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.TargetResolutionMinutes).HasDefault(30).HasColumnName("target_resolution_minutes");
             entity.Property(e => e.RespondedAt).HasColumnName("responded_at");
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
-            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("PENDING").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefault("PENDING").HasColumnName("status");
             entity.Property(e => e.ClosureNotes).HasColumnName("closure_notes");
             entity.Property(e => e.ClosureProofMediaUrl).HasColumnName("closure_proof_media_url");
             entity.Property(e => e.ClosedBy).HasMaxLength(150).HasColumnName("closed_by");
@@ -1570,7 +1570,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CostImpact).HasMaxLength(150).HasColumnName("cost_impact");
             entity.Property(e => e.SparePartsUsed).HasColumnName("spare_parts_used");
             entity.Property(e => e.RootCause).HasColumnName("root_cause");
-            entity.Property(e => e.DowntimeMinutes).HasDefaultValue(0).HasColumnName("downtime_minutes");
+            entity.Property(e => e.DowntimeMinutes).HasDefault(0).HasColumnName("downtime_minutes");
         });
 
         // ----------------------------------------------------
@@ -1583,15 +1583,15 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.AssetCode }, "maintenance_assets_company_id_asset_code_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Active).HasDefaultValue(true).HasColumnName("active");
+            entity.Property(e => e.Active).HasDefault(true).HasColumnName("active");
             entity.Property(e => e.AssetCode).HasMaxLength(50).HasColumnName("asset_code");
             entity.Property(e => e.AssetName).HasMaxLength(150).HasColumnName("asset_name");
             entity.Property(e => e.AssetType).HasMaxLength(100).HasColumnName("asset_type");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.DepartmentId).HasColumnName("department_id");
             entity.Property(e => e.Location).HasMaxLength(150).HasColumnName("location");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Company).WithMany(p => p.MaintenanceAssets)
                 .HasForeignKey(d => d.CompanyId)
@@ -1615,16 +1615,16 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.CompletedDate).HasColumnName("completed_date");
             entity.Property(e => e.Cost).HasPrecision(18, 2).HasColumnName("cost");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.MaintenanceType).HasMaxLength(30).HasDefaultValueSql("'CORRECTIVE'").HasColumnName("maintenance_type");
+            entity.Property(e => e.MaintenanceType).HasMaxLength(30).HasDefaultSql("'CORRECTIVE'").HasColumnName("maintenance_type");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.OrderNumber).HasMaxLength(50).HasColumnName("order_number");
-            entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultValueSql("'NORMAL'").HasColumnName("priority");
+            entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultSql("'NORMAL'").HasColumnName("priority");
             entity.Property(e => e.ScheduledDate).HasColumnName("scheduled_date");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValueSql("'OPEN'").HasColumnName("status");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultSql("'OPEN'").HasColumnName("status");
             entity.Property(e => e.Technician).HasMaxLength(150).HasColumnName("technician");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
 
             entity.HasOne(d => d.Asset).WithMany(p => p.MaintenanceOrders)
                 .HasForeignKey(d => d.AssetId)

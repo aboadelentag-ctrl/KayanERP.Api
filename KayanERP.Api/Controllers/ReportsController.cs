@@ -24,8 +24,8 @@ namespace KayanERP.Api.Controllers
         {
             try
             {
-                var startDt = startDate.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
-                var endDt = endDate.ToDateTime(TimeOnly.MaxValue).ToUniversalTime();
+                var startDt = startDate.ToDateTime(TimeOnly.Min).ToUniversalTime();
+                var endDt = endDate.ToDateTime(TimeOnly.Max).ToUniversalTime();
 
                 // 1. حساب إجمالي ساعات العمل الفعلية المسجلة من جدول يوميات العمال
                 var totalActualHours = await _context.ProductivityLogs

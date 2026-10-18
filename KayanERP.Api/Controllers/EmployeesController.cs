@@ -79,7 +79,7 @@ namespace KayanERP.Api.Controllers
 
             // التحقق من القسم (داخل نفس الشركة)
             long? deptId = dto.DepartmentId;
-            if (deptId.HasValue && deptId > 0)
+            if (deptId.Has && deptId > 0)
             {
                 var deptExists = await _context.Departments
                     .AnyAsync(d => d.Id == deptId && d.CompanyId == companyId);
@@ -89,7 +89,7 @@ namespace KayanERP.Api.Controllers
 
             // التحقق من المسمى الوظيفي
             long? jobTitleId = dto.JobTitleId;
-            if (jobTitleId.HasValue && jobTitleId > 0)
+            if (jobTitleId.Has && jobTitleId > 0)
             {
                 var titleExists = await _context.JobTitles
                     .AnyAsync(j => j.Id == jobTitleId && j.CompanyId == companyId);
@@ -147,14 +147,14 @@ namespace KayanERP.Api.Controllers
                     employee.EmployeeCode = dto.EmployeeCode.Trim();
             }
 
-            if (dto.DepartmentId.HasValue && dto.DepartmentId > 0)
+            if (dto.DepartmentId.Has && dto.DepartmentId > 0)
             {
                 var deptExists = await _context.Departments
                     .AnyAsync(d => d.Id == dto.DepartmentId && d.CompanyId == employee.CompanyId);
                 if (deptExists) employee.DepartmentId = dto.DepartmentId;
             }
 
-            if (dto.JobTitleId.HasValue && dto.JobTitleId > 0)
+            if (dto.JobTitleId.Has && dto.JobTitleId > 0)
             {
                 var titleExists = await _context.JobTitles
                     .AnyAsync(j => j.Id == dto.JobTitleId && j.CompanyId == employee.CompanyId);

@@ -18,7 +18,7 @@ namespace KayanERP.Api.Migrations
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                        .Annotation("Npgsql:GenerationStrategy", NpgsqlGenerationStrategy.IdentityAlwaysColumn),
                     company_id = table.Column<long>(type: "bigint", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     crate_balance = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -41,7 +41,7 @@ namespace KayanERP.Api.Migrations
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                        .Annotation("Npgsql:GenerationStrategy", NpgsqlGenerationStrategy.IdentityAlwaysColumn),
                     company_id = table.Column<long>(type: "bigint", nullable: false),
                     crate_client_id = table.Column<long>(type: "bigint", nullable: false),
                     transaction_type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),

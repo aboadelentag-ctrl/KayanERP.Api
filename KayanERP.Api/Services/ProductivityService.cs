@@ -53,7 +53,6 @@ namespace KayanERP.Api.Services
 
         public async Task<object> GetEmployeeProductivityAsync(long employeeId)
         {
-            // جلب الموظف مع بيانات القسم المرتبط به في استعلام واحد لتحسين الأداء
             var employee = await _context.Employees
                 .Include(e => e.Department)
                 .FirstOrDefaultAsync(w => w.Id == employeeId);
@@ -63,7 +62,6 @@ namespace KayanERP.Api.Services
 
             string deptName = employee.Department != null ? employee.Department.DepartmentName : "قسم غير محدد";
 
-            // جلب إنتاجية الموظف من جدول التفاصيل
             var employeeDetails = await _context.ProductionOrderDetails
                 .Include(d => d.ProductionOrder)
                 .Where(d => d.EmployeeId == employeeId && (d.Status == "COMPLETED" || d.Status == "مكتمل"))
@@ -105,7 +103,6 @@ namespace KayanERP.Api.Services
         {
             ExcelPackage.License.SetNonCommercialPersonal("Abu Adel ERP");
 
-            // الاستعلام المدمج لجلب بيانات الموظف مع القسم
             var employee = await _context.Employees
                 .Include(e => e.Department)
                 .FirstOrDefaultAsync(w => w.Id == employeeId);
@@ -123,7 +120,6 @@ namespace KayanERP.Api.Services
                 var worksheet = package.Workbook.Worksheets.Add("تقرير الإنتاجية");
                 worksheet.View.RightToLeft = true;
 
-                // تنسيق الترويسة الرئيسية
                 worksheet.Cells["A1:F1"].Merge = true;
                 worksheet.Cells["A1"].Value = $"تقرير كفاءة وإنتاجية الموظف - مؤسسة حلوانى أبو عادل";
                 worksheet.Cells["A1"].Style.Font.Bold = true;
@@ -133,7 +129,6 @@ namespace KayanERP.Api.Services
                 worksheet.Cells["A1"].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(31, 78, 120));
                 worksheet.Cells["A1"].Style.Font.Color.SetColor(System.Drawing.Color.White);
 
-                // بيانات الموظف
                 worksheet.Cells["A3"].Value = "اسم الموظف:";
                 worksheet.Cells["B3"].Value = employee.Name;
                 worksheet.Cells["C3"].Value = "كود الموظف:";
@@ -141,7 +136,6 @@ namespace KayanERP.Api.Services
                 worksheet.Cells["E3"].Value = "القسم:";
                 worksheet.Cells["F3"].Value = employee.Department?.DepartmentName ?? "غير محدد";
 
-                // رؤوس الأعمدة
                 worksheet.Cells["A5"].Value = "رقم أمر الإنتاج";
                 worksheet.Cells["B5"].Value = "الكمية المنتجة (كجم)";
                 worksheet.Cells["C5"].Value = "ساعات العمل";
@@ -157,7 +151,6 @@ namespace KayanERP.Api.Services
                     range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                 }
 
-                // تعبئة البيانات
                 int row = 6;
                 foreach (var detail in employeeDetails)
                 {
@@ -173,7 +166,6 @@ namespace KayanERP.Api.Services
                     row++;
                 }
 
-                // صف الإجماليات
                 worksheet.Cells[row, 1].Value = "الإجمالي";
                 worksheet.Cells[row, 1].Style.Font.Bold = true;
                 worksheet.Cells[row, 2].Formula = $"SUM(B6:B{row - 1})";

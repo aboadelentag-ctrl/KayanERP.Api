@@ -19,9 +19,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==============================================================
-        // 1. ملخص مؤشرات القيادة التنفيذية والتقييم المالي للمخزون
-        // ==============================================================
         [HttpGet("dashboard-summary")]
         public async Task<IActionResult> GetDashboardSummary()
         {
@@ -62,7 +59,6 @@ namespace KayanERP.Api.Controllers
                         outOfStockCount++;
                 }
 
-                // فحص اللوطات المهددة بانتهاء الصلاحية خلال 45 يوماً
                 var today = DateTime.UtcNow.Date;
                 var thresholdDate = today.AddDays(45);
 
@@ -80,9 +76,9 @@ namespace KayanERP.Api.Controllers
                 foreach (var note in recentMovements)
                 {
                     if (string.IsNullOrEmpty(note)) continue;
-                    string expStr = ExtractValue(note, "صلاحية:", "|");
-                    string batchNo = ExtractValue(note, "تشغيلة:", "|");
-                    if (string.IsNullOrEmpty(batchNo)) batchNo = ExtractValue(note, "لوط:", "|");
+                    string expStr = Extract(note, "صلاحية:", "|");
+                    string batchNo = Extract(note, "تشغيلة:", "|");
+                    if (string.IsNullOrEmpty(batchNo)) batchNo = Extract(note, "لوط:", "|");
 
                     if (!string.IsNullOrEmpty(expStr) && !string.IsNullOrEmpty(batchNo) && !checkedBatches.Contains(batchNo))
                     {
@@ -97,10 +93,10 @@ namespace KayanERP.Api.Controllers
 
                 var summary = new InventoryDashboardSummaryDto
                 {
-                    TotalInventoryValue = Math.Round(totalValuation, 2),
-                    RawMaterialsValue = Math.Round(rawMaterialsValuation, 2),
-                    WipValue = Math.Round(wipValuation, 2),
-                    FinishedGoodsValue = Math.Round(finishedGoodsValuation, 2),
+                    TotalInventory = Math.Round(totalValuation, 2),
+                    RawMaterials = Math.Round(rawMaterialsValuation, 2),
+                    Wip = Math.Round(wipValuation, 2),
+                    FinishedGoods = Math.Round(finishedGoodsValuation, 2),
                     TotalStockRecords = balances.Count,
                     LowStockCount = lowStockCount,
                     OutOfStockCount = outOfStockCount,
@@ -115,9 +111,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. جلب الأرصدة الحالية لجميع الأصناف موزعة على المخازن
-        // ==============================================================
         [HttpGet("balances")]
         public async Task<IActionResult> GetBalances([FromQuery] long? warehouseId = null, [FromQuery] string? search = null)
         {
@@ -156,7 +149,7 @@ namespace KayanERP.Api.Controllers
                         ReservedQuantity = b.ReservedQuantity,
                         AvailableQuantity = b.Quantity - b.ReservedQuantity,
                         EstimatedUnitCost = b.Item != null ? b.Item.BasePrice : 0m,
-                        TotalValue = (b.Quantity > 0 ? b.Quantity : 0m) * (b.Item != null ? b.Item.BasePrice : 0m),
+                        Total = (b.Quantity > 0 ? b.Quantity : 0m) * (b.Item != null ? b.Item.BasePrice : 0m),
                         LastUpdatedAt = b.LastUpdatedAt
                     })
                     .ToListAsync();
@@ -169,9 +162,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 3. تحديث وتعديل أرصدة الأصناف (من شيت الجرد أو الاستيراد)
-        // ==============================================================
         [HttpPost("import-balances")]
         public async Task<IActionResult> ImportBalances([FromBody] List<StockBalanceImportDto> items)
         {
@@ -244,9 +234,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 4. جلب بطاقة حركة الصنف (Item Ledger)
-        // ==============================================================
         [HttpGet("ledger/{itemId:long}")]
         public async Task<IActionResult> GetItemLedger(long itemId)
         {
@@ -279,7 +266,7 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        private static string ExtractValue(string text, string key, string separator)
+        private static string Extract(string text, string key, string separator)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key)) return string.Empty;
             int startIdx = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);
@@ -294,10 +281,10 @@ namespace KayanERP.Api.Controllers
 
     public class InventoryDashboardSummaryDto
     {
-        public decimal TotalInventoryValue { get; set; }
-        public decimal RawMaterialsValue { get; set; }
-        public decimal WipValue { get; set; }
-        public decimal FinishedGoodsValue { get; set; }
+        public decimal TotalInventory { get; set; }
+        public decimal RawMaterials { get; set; }
+        public decimal Wip { get; set; }
+        public decimal FinishedGoods { get; set; }
         public int TotalStockRecords { get; set; }
         public int LowStockCount { get; set; }
         public int OutOfStockCount { get; set; }
@@ -318,7 +305,7 @@ namespace KayanERP.Api.Controllers
         public decimal ReservedQuantity { get; set; }
         public decimal AvailableQuantity { get; set; }
         public decimal EstimatedUnitCost { get; set; }
-        public decimal TotalValue { get; set; }
+        public decimal Total { get; set; }
         public DateTime LastUpdatedAt { get; set; }
     }
 

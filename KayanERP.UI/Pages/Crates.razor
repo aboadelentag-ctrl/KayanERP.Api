@@ -322,8 +322,8 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">نوع الحركة *</label>
                             <select class="form-select form-select-sm fw-bold" @bind="dispatchDto.MovementType">
-                                <option value="DISPATCH_BRANCH">صرف من المصنع إلى الفرع / السائق</option>
-                                <option value="RETURN_FACTORY">إرجاع فوارغ من الفرع إلى المصنع</option>
+                                <option ="DISPATCH_BRANCH">صرف من المصنع إلى الفرع / السائق</option>
+                                <option ="RETURN_FACTORY">إرجاع فوارغ من الفرع إلى المصنع</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -331,7 +331,7 @@
                             <select class="form-select form-select-sm fw-bold" @bind="dispatchDto.ContainerName">
                                 @foreach (var cn in lookups.Containers)
                                 {
-                                    <option value="@cn.ContainerName">@cn.ContainerName (@cn.Specification)</option>
+                                    <option ="@cn.ContainerName">@cn.ContainerName (@cn.Specification)</option>
                                 }
                             </select>
                         </div>
@@ -436,10 +436,10 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">قرار اللجنة وتوجيه المسؤولية *</label>
                             <select class="form-select form-select-sm fw-bold" @bind="disputeDto.ArbitrationDecision">
-                                <option value="تحميل غرامة مالية على السائق">تحميل غرامة مالية على السائق</option>
-                                <option value="تحميل غرامة مالية على أمين مخزن الفرع">تحميل غرامة مالية على أمين مخزن الفرع</option>
-                                <option value="إهلاك كسر طبيعي على عهدة المصنع">إهلاك كسر طبيعي على عهدة المصنع</option>
-                                <option value="إعادة الصاجات المعثور عليها لمخزن التعبئة">إعادة الصاجات المعثور عليها لمخزن التعبئة</option>
+                                <option ="تحميل غرامة مالية على السائق">تحميل غرامة مالية على السائق</option>
+                                <option ="تحميل غرامة مالية على أمين مخزن الفرع">تحميل غرامة مالية على أمين مخزن الفرع</option>
+                                <option ="إهلاك كسر طبيعي على عهدة المصنع">إهلاك كسر طبيعي على عهدة المصنع</option>
+                                <option ="إعادة الصاجات المعثور عليها لمخزن التعبئة">إعادة الصاجات المعثور عليها لمخزن التعبئة</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -476,8 +476,8 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">نوع الحركة *</label>
                             <select class="form-select border-primary fw-bold" @bind="newTransaction.TransactionType">
-                                <option value="منصرف للعميل">🔴 منصرف للعميل (خروج إسبات من المصنع)</option>
-                                <option value="مستلم من العميل">🟢 مستلم من العميل (رجوع إسبات للمصنع)</option>
+                                <option ="منصرف للعميل">🔴 منصرف للعميل (خروج إسبات من المصنع)</option>
+                                <option ="مستلم من العميل">🟢 مستلم من العميل (رجوع إسبات للمصنع)</option>
                             </select>
                         </div>
                         <div class="mb-3">

@@ -62,27 +62,27 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">👑 المستوى الهيكلي</label>
                             <select class="form-select form-select-sm" @bind="selectedLevelFilter">
-                                <option value="all">-- كل المستويات --</option>
-                                <option value="root">👑 إدارات رئيسية فقط</option>
-                                <option value="sub">└── صالات وأقسام فرعية</option>
+                                <option ="all">-- كل المستويات --</option>
+                                <option ="root">👑 إدارات رئيسية فقط</option>
+                                <option ="sub">└── صالات وأقسام فرعية</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">🏢 تتبع لإدارة</label>
                             <select class="form-select form-select-sm" @bind="selectedParentFilter">
-                                <option value="-1">-- كل الجهات --</option>
+                                <option ="-1">-- كل الجهات --</option>
                                 @foreach (var parent in departments.Where(d => d.ParentDepartmentId == null))
                                 {
-                                    <option value="@parent.Id">@parent.DepartmentName</option>
+                                    <option ="@parent.Id">@parent.DepartmentName</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold text-secondary mb-1">⚡ الحالة</label>
                             <select class="form-select form-select-sm" @bind="selectedStatusFilter">
-                                <option value="all">كل الحالات</option>
-                                <option value="active">🟢 مفعل فقط</option>
-                                <option value="inactive">🔴 معطل</option>
+                                <option ="all">كل الحالات</option>
+                                <option ="active">🟢 مفعل فقط</option>
+                                <option ="inactive">🔴 معطل</option>
                             </select>
                         </div>
                     </div>
@@ -220,10 +220,10 @@
                     <div class="mb-2">
                         <label class="form-label small fw-bold text-secondary">يتبع لإدارة (اختياري)</label>
                         <select class="form-select form-select-sm" @bind="currentDept.ParentDepartmentId">
-                            <option value="">-- إدارة رئيسية (لا تتبع جهة أخرى) --</option>
+                            <option ="">-- إدارة رئيسية (لا تتبع جهة أخرى) --</option>
                             @foreach (var parent in departments.Where(d => d.Id != currentDept.Id))
                             {
-                                <option value="@parent.Id">@parent.DepartmentName (@parent.DepartmentCode)</option>
+                                <option ="@parent.Id">@parent.DepartmentName (@parent.DepartmentCode)</option>
                             }
                         </select>
                     </div>

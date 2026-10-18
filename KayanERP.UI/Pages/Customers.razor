@@ -1,6 +1,6 @@
 ﻿@page "/customers"
 @layout KayanERP.UI.Pages.EmptyLayout
-@using KayanERP.UI.DTOs
+@using KayanERP.Shared.DTOs
 @using KayanERP.UI.Services
 @using System.Net.Http.Json
 @using System.Text
@@ -91,19 +91,19 @@
                 </div>
                 <div class="col-md-3">
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedTypeFilter">
-                        <option value="">-- كافة الفئات والشرائح --</option>
-                        <option value="DIST_DAILY">🚚 تاجر يومي (مبيعات خارجية - طلب متغير)</option>
-                        <option value="DIST_VIP">🌟 تاجر جملة VIP (مبيعات خارجية)</option>
-                        <option value="DISTRIBUTOR">🏢 منفذ توزيع خارجي</option>
-                        <option value="WHOLESALE">🏪 معرض / جملة</option>
-                        <option value="RETAIL">👤 عميل قطاعي / معارض</option>
+                        <option ="">-- كافة الفئات والشرائح --</option>
+                        <option ="DIST_DAILY">🚚 تاجر يومي (مبيعات خارجية - طلب متغير)</option>
+                        <option ="DIST_VIP">🌟 تاجر جملة VIP (مبيعات خارجية)</option>
+                        <option ="DISTRIBUTOR">🏢 منفذ توزيع خارجي</option>
+                        <option ="WHOLESALE">🏪 معرض / جملة</option>
+                        <option ="RETAIL">👤 عميل قطاعي / معارض</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select form-select-sm" @bind="selectedStatusFilter">
-                        <option value="all">كل الحالات</option>
-                        <option value="active">نشط فقط</option>
-                        <option value="inactive">موقوف</option>
+                        <option ="all">كل الحالات</option>
+                        <option ="active">نشط فقط</option>
+                        <option ="inactive">موقوف</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-1">
@@ -236,16 +236,16 @@
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-dark mb-1">الشريحة ونوع التعامل *</label>
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="currentCustomer.CustomerType">
-                                <option value="DIST_DAILY">🚚 تاجر يومي (مبيعات خارجية - طلب متغير)</option>
-                                <option value="DIST_VIP">🌟 تاجر جملة VIP (حساب جارٍ وحد ائتماني)</option>
-                                <option value="DISTRIBUTOR">🏢 منفذ توزيع خارجي</option>
-                                <option value="WHOLESALE">🏪 معرض / جملة</option>
-                                <option value="RETAIL">👤 عميل قطاعي / معارض</option>
+                                <option ="DIST_DAILY">🚚 تاجر يومي (مبيعات خارجية - طلب متغير)</option>
+                                <option ="DIST_VIP">🌟 تاجر جملة VIP (حساب جارٍ وحد ائتماني)</option>
+                                <option ="DISTRIBUTOR">🏢 منفذ توزيع خارجي</option>
+                                <option ="WHOLESALE">🏪 معرض / جملة</option>
+                                <option ="RETAIL">👤 عميل قطاعي / معارض</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-dark mb-1">الفرع التابع له في الشجرة</label>
-                            <input type="text" class="form-control form-control-sm bg-white" readonly value="@GetBranchForType(currentCustomer.CustomerType)" />
+                            <input type="text" class="form-control form-control-sm bg-white" readonly ="@GetBranchForType(currentCustomer.CustomerType)" />
                         </div>
 
                         <div class="col-md-6">

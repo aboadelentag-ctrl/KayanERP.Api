@@ -8,6 +8,13 @@ using KayanERP.Shared.DTOs;
 
 namespace KayanERP.Api.Services
 {
+    public interface IStockService
+    {
+        Task<StockOperationResultDto> AddInitialStockAsync(InitialStockDto dto);
+        Task<List<StockBalanceViewDto>> GetStockBalancesAsync(long? warehouseId = null);
+        Task<List<StockMovementItemLedgerDto>> GetItemLedgerAsync(long itemId);
+    }
+
     public class StockService : IStockService
     {
         private readonly AppDbContext _context;
@@ -17,9 +24,6 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. إضافة رصيد افتتاحي ذرياً مع ضبط الرصيد الفعلي والمتاح
-        // ==============================================================
         public async Task<StockOperationResultDto> AddInitialStockAsync(InitialStockDto dto)
         {
             if (dto == null)
@@ -30,7 +34,6 @@ namespace KayanERP.Api.Services
             {
                 var defaultCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync();
                 long companyId = defaultCompany != null ? defaultCompany.Id : 1;
-
                 var now = DateTime.UtcNow;
 
                 var movement = new StockMovement
@@ -90,9 +93,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ==============================================================
-        // 2. استعلام سريع ومجمع لأرصدة المخازن
-        // ==============================================================
         public async Task<List<StockBalanceViewDto>> GetStockBalancesAsync(long? warehouseId = null)
         {
             var query = _context.StockBalances
@@ -123,9 +123,6 @@ namespace KayanERP.Api.Services
                 .ToListAsync();
         }
 
-        // ==============================================================
-        // 3. سجل حركات الصنف المباشر
-        // ==============================================================
         public async Task<List<StockMovementItemLedgerDto>> GetItemLedgerAsync(long itemId)
         {
             return await _context.StockMovements

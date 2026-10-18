@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace KayanERP.Api.DTOs
+namespace KayanERP.Shared.DTOs
 {
-    // ==========================================
-    // 1. القوائم المرجعية والأرصدة
-    // ==========================================
     public class ContainerLookupDto
     {
         public int Id { get; set; }
@@ -34,9 +31,6 @@ namespace KayanERP.Api.DTOs
         public int DamagedQuantity { get; set; }
     }
 
-    // ==========================================
-    // 2. دورة الصرف والاستلام الميداني
-    // ==========================================
     public class DispatchCrateDto
     {
         [Required(ErrorMessage = "يجب تحديد نوع الحركة.")]
@@ -108,13 +102,10 @@ namespace KayanERP.Api.DTOs
         public string? FinancialPenalty { get; set; }
     }
 
-    // ==========================================
-    // 3. معاملات عهد العملاء والمصنع
-    // ==========================================
     public class CreateCrateClientTransactionDto
     {
         [Required(ErrorMessage = "يجب تحديد معرف العميل.")]
-        public long CrateClientId { get; set; }                  // ← اتغيّر من int لـ long
+        public long CrateClientId { get; set; }
 
         [Required(ErrorMessage = "يجب تحديد نوع الحركة (منصرف للعميل / مستلم من العميل).")]
         public string TransactionType { get; set; } = string.Empty;
@@ -128,8 +119,8 @@ namespace KayanERP.Api.DTOs
 
     public class CrateClientTransactionViewDto
     {
-        public long Id { get; set; }                             // ← اتغيّر من int لـ long
-        public long CrateClientId { get; set; }                  // ← اتغيّر من int لـ long
+        public long Id { get; set; }
+        public long CrateClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
         public string TransactionType { get; set; } = string.Empty;
         public int Quantity { get; set; }

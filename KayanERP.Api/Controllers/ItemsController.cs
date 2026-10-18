@@ -25,9 +25,6 @@ namespace KayanERP.Api.Controllers
             _tenantContext = tenantContext;
         }
 
-        // ==============================================================
-        // 1. جلب الأصناف
-        // ==============================================================
         [HttpGet]
         public async Task<ActionResult<List<ItemApiDto>>> GetItems([FromQuery] string? itemType = null)
         {
@@ -83,9 +80,6 @@ namespace KayanERP.Api.Controllers
             return Ok(items);
         }
 
-        // ==============================================================
-        // 2. جلب صنف محدد
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<ActionResult<ItemApiDto>> GetItem(long id)
         {
@@ -135,9 +129,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==============================================================
-        // 3. إضافة صنف جديد
-        // ==============================================================
         [HttpPost]
         public async Task<ActionResult> PostItem([FromBody] ItemApiDto dto)
         {
@@ -146,7 +137,6 @@ namespace KayanERP.Api.Controllers
 
             var companyId = _tenantContext.CompanyId;
 
-            // فحص التكرار داخل نفس الشركة
             var exists = await _context.Items
                 .AnyAsync(i => i.CompanyId == companyId &&
                                i.ItemCode.ToLower() == dto.ItemCode.Trim().ToLower());
@@ -154,14 +144,12 @@ namespace KayanERP.Api.Controllers
             if (exists)
                 return Conflict(new { message = $"كود الصنف [{dto.ItemCode.Trim()}] مسجل مسبقاً." });
 
-            // تأكيد CategoryId من نفس الشركة
             var categoryId = dto.CategoryId > 0 ? dto.CategoryId : 1;
             var categoryExists = await _context.ItemCategories
                 .AnyAsync(c => c.Id == categoryId && c.CompanyId == companyId);
             if (!categoryExists)
                 return BadRequest(new { message = "التصنيف المحدد غير موجود." });
 
-            // تأكيد DepartmentId
             long? targetDeptId = null;
             string? targetDeptName = null;
             if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
@@ -207,7 +195,6 @@ namespace KayanERP.Api.Controllers
                 _context.Items.Add(item);
                 await _context.SaveChangesAsync();
 
-                // إضافة النكهات
                 if (dto.HasVariants && dto.Variants?.Any() == true)
                 {
                     int vIndex = 1;
@@ -250,9 +237,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 4. تعديل صنف
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> PutItem(long id, [FromBody] ItemApiDto dto)
         {
@@ -263,11 +247,9 @@ namespace KayanERP.Api.Controllers
             if (item == null)
                 return NotFound(new { message = "الصنف غير موجود." });
 
-            // تأكيد ملكية الصنف للشركة
             if (item.CompanyId != _tenantContext.CompanyId)
                 return Forbid();
 
-            // فحص التكرار داخل نفس الشركة
             if (!string.IsNullOrWhiteSpace(dto.ItemCode))
             {
                 var codeExists = await _context.Items
@@ -278,7 +260,6 @@ namespace KayanERP.Api.Controllers
                     return Conflict(new { message = $"كود الصنف [{dto.ItemCode.Trim()}] مسجل مسبقاً." });
             }
 
-            // تأكيد DepartmentId
             if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
             {
                 var dept = await _context.Departments
@@ -290,7 +271,6 @@ namespace KayanERP.Api.Controllers
                 }
             }
 
-            // تأكيد CategoryId
             if (dto.CategoryId > 0)
             {
                 var catExists = await _context.ItemCategories
@@ -298,7 +278,6 @@ namespace KayanERP.Api.Controllers
                 if (catExists) item.CategoryId = dto.CategoryId;
             }
 
-            // نحدّث الحقول المسموح بها
             item.ItemCode = dto.ItemCode?.Trim() ?? item.ItemCode;
             item.ItemName = dto.ItemName?.Trim() ?? item.ItemName;
             if (!string.IsNullOrWhiteSpace(dto.ItemType)) item.ItemType = dto.ItemType;
@@ -313,7 +292,6 @@ namespace KayanERP.Api.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // مزامنة النكهات
                 var existingVariants = await _context.Items
                     .Where(v => v.ParentItemId == item.Id)
                     .ToListAsync();
@@ -391,9 +369,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 5. الاستيراد السريع (Bulk Import)
-        // ==============================================================
         [HttpPost("bulk-quick-import")]
         public async Task<IActionResult> BulkQuickImport([FromBody] BulkQuickImportRequest request)
         {
@@ -440,13 +415,11 @@ namespace KayanERP.Api.Controllers
                     if (string.IsNullOrWhiteSpace(itemCode))
                         itemCode = $"FG-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
-                    // مطابقة القسم (داخل نفس الشركة)
                     var dept = departments.FirstOrDefault(d =>
                         d.DepartmentName.Trim().Equals(deptName, StringComparison.OrdinalIgnoreCase));
 
                     long? deptId = dept?.Id;
 
-                    // جلب أو إنشاء الصنف الأساسي
                     var item = await _context.Items.FirstOrDefaultAsync(i =>
                         i.CompanyId == companyId &&
                         i.ItemCode.ToLower() == itemCode.ToLower() &&
@@ -480,12 +453,11 @@ namespace KayanERP.Api.Controllers
                         item.ItemName = itemName;
                         item.BasePrice = price > 0 ? price : item.BasePrice;
                         item.Unit = unit;
-                        if (deptId.HasValue) item.DepartmentId = deptId;
+                        if (deptId.HasValue) item.DepartmentId = deptId.Value;
                         if (!string.IsNullOrEmpty(barcode)) item.Barcode = barcode;
                         if (!string.IsNullOrWhiteSpace(variantName)) item.IsVariant = true;
                     }
 
-                    // النكهة
                     if (!string.IsNullOrWhiteSpace(variantName))
                     {
                         var existsVar = await _context.Items.AnyAsync(v =>
@@ -515,7 +487,6 @@ namespace KayanERP.Api.Controllers
                         }
                     }
 
-                    // معامل التعبئة
                     if (packingFactor > 1)
                     {
                         var hasConv = await _context.ItemUomConversions
@@ -555,9 +526,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 6. حذف الصنف (Soft Delete)
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> DeleteItem(long id)
         {
@@ -568,16 +536,13 @@ namespace KayanERP.Api.Controllers
             if (item == null)
                 return NotFound(new { message = "الصنف غير موجود." });
 
-            // تأكيد ملكية الصنف للشركة
             if (item.CompanyId != _tenantContext.CompanyId)
                 return Forbid();
 
-            // فحص الحركات المخزنية
             bool hasMovements = await _context.StockMovements.AnyAsync(m => m.ItemId == id);
             if (hasMovements)
                 return BadRequest(new { message = "لا يمكن حذف الصنف لوجود حركات مخزنية مرتبطة به. يمكنك تعطيله بدلاً من الحذف." });
 
-            // Soft Delete للصنف والنكهات
             item.Active = false;
             foreach (var variant in item.Variants)
                 variant.Active = false;

@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace KayanERP.Api.DTOs
+namespace KayanERP.Shared.DTOs
 {
-    // ==============================================================
-    // 1. القوائم المرجعية لشاشات طلبات الصرف
-    // ==============================================================
+    public class RequisitionLookupsDto
+    {
+        public List<RequisitionDepartmentLookupDto> Departments { get; set; } = new();
+        public List<RequisitionWarehouseLookupDto> Warehouses { get; set; } = new();
+        public List<RequisitionRawMaterialLookupDto> RawMaterials { get; set; } = new();
+    }
+
     public class RequisitionDepartmentLookupDto
     {
         public long Id { get; set; }
@@ -24,20 +28,10 @@ namespace KayanERP.Api.DTOs
         public long Id { get; set; }
         public string ItemCode { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
-        public string? ItemType { get; set; }
-        public string? Unit { get; set; }
+        public string ItemType { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
     }
 
-    public class RequisitionLookupsDto
-    {
-        public List<RequisitionDepartmentLookupDto> Departments { get; set; } = new();
-        public List<RequisitionWarehouseLookupDto> Warehouses { get; set; } = new();
-        public List<RequisitionRawMaterialLookupDto> RawMaterials { get; set; } = new();
-    }
-
-    // ==============================================================
-    // 2. تفاصيل إذن الصرف وسطور الخامات
-    // ==============================================================
     public class RequisitionDetailDto
     {
         public long Id { get; set; }
@@ -64,7 +58,7 @@ namespace KayanERP.Api.DTOs
         public string ItemCode { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
-        public long WarehouseId { get; set; }
+        public long? WarehouseId { get; set; }
         public string WarehouseName { get; set; } = string.Empty;
         public decimal RequestedQty { get; set; }
         public decimal DispatchedQty { get; set; }
@@ -77,28 +71,29 @@ namespace KayanERP.Api.DTOs
         public string? WarehouseNotes { get; set; }
     }
 
-    // ==============================================================
-    // 3. إنشاء طلب الصرف
-    // ==============================================================
     public class CreateRequisitionDto
     {
         [Required]
         public long DepartmentId { get; set; }
+
         public long FromWarehouseId { get; set; }
         public string? Notes { get; set; }
-        public string RequestedBy { get; set; } = string.Empty;
+        public string? RequestedBy { get; set; }
+
+        [Required]
+        [MinLength(1, ErrorMessage = "يجب إضافة صنف واحد على الأقل.")]
         public List<CreateRequisitionLineDto> Lines { get; set; } = new();
     }
 
     public class CreateRequisitionLineDto
     {
+        [Required]
         public long ItemId { get; set; }
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "الكمية المطلوبة يجب أن تكون أكبر من صفر.")]
         public decimal RequestedQty { get; set; }
     }
 
-    // ==============================================================
-    // 4. اقتراحات FEFO لتشغيلات الصرف
-    // ==============================================================
     public class FefoBatchSuggestionDto
     {
         public string BatchNumber { get; set; } = string.Empty;
@@ -107,49 +102,45 @@ namespace KayanERP.Api.DTOs
         public decimal UnitCost { get; set; }
     }
 
-    // ==============================================================
-    // 5. صرف الخامات وتخصيص اللوطات والمخازن
-    // ==============================================================
     public class DispatchRequisitionDto
     {
         [Required]
         public long RequisitionId { get; set; }
-        public string DispatchedBy { get; set; } = string.Empty;
+        public string? DispatchedBy { get; set; }
+
+        [Required]
         public List<DispatchRequisitionLineDto> Lines { get; set; } = new();
     }
 
     public class DispatchRequisitionLineDto
     {
+        [Required]
         public long LineId { get; set; }
         public long WarehouseId { get; set; }
         public decimal DispatchedQty { get; set; }
-        public string BatchNumber { get; set; } = string.Empty;
+        public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public decimal UnitCost { get; set; }
     }
 
-    // ==============================================================
-    // 6. استلام السطر بالصالة وفض النزاع
-    // ==============================================================
     public class ReceiveLineItemDto
     {
+        [Required]
         public long LineId { get; set; }
         public decimal ReceivedQty { get; set; }
         public bool IsAccepted { get; set; }
         public string? DiscrepancyReason { get; set; }
-        public string ReceivedBy { get; set; } = string.Empty;
+        public string? ReceivedBy { get; set; }
     }
 
     public class ResolveDiscrepancyDto
     {
+        [Required]
         public long LineId { get; set; }
         public decimal FinalApprovedQty { get; set; }
         public string? WarehouseResolutionNotes { get; set; }
     }
 
-    // ==============================================================
-    // 7. التقرير الرقابي الشامل لدورة حياة الخامات وكشف حساب الصالات
-    // ==============================================================
     public class RequisitionLifecycleAuditDto
     {
         public long RequisitionId { get; set; }
@@ -164,25 +155,25 @@ namespace KayanERP.Api.DTOs
         public string ItemCode { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
-        public decimal RequestedQty { get; set; }
 
-        public string? DispatchedBy { get; set; }
+        public decimal RequestedQty { get; set; }
+        public string DispatchedBy { get; set; } = string.Empty;
         public DateTime? DispatchedAt { get; set; }
         public string FromWarehouseName { get; set; } = string.Empty;
         public decimal DispatchedQty { get; set; }
+
         public string BatchNumber { get; set; } = string.Empty;
         public DateTime? ExpiryDate { get; set; }
-
         public decimal ReceivedQty { get; set; }
         public string LineStatus { get; set; } = string.Empty;
 
-        public string DisputeStatusTitle { get; set; } = "مطابق بدون نزاع ✓";
+        public string DisputeStatusTitle { get; set; } = string.Empty;
         public string? DiscrepancyReason { get; set; }
         public decimal FinalApprovedQty { get; set; }
         public decimal ScrapOrLossQty { get; set; }
         public string? ResolutionNotes { get; set; }
-
         public string FloorStoreName { get; set; } = string.Empty;
+
         public decimal FloorStockBefore { get; set; }
         public decimal FloorStockAfter { get; set; }
         public decimal CurrentFloorStock { get; set; }

@@ -8,6 +8,14 @@ using KayanERP.Shared.DTOs;
 
 namespace KayanERP.Api.Services
 {
+    public interface ISalesService
+    {
+        Task<SalesLookupsDto> GetLookupsAsync();
+        Task<List<SalesInvoiceViewDto>> GetAllInvoicesAsync();
+        Task<SalesInvoiceViewDto?> GetInvoiceByIdAsync(long id);
+        Task<SalesInvoiceResultDto> CreateInvoiceAsync(ExtendedSalesInvoiceCreateDto dto);
+    }
+
     public class SalesService : ISalesService
     {
         private readonly AppDbContext _context;
@@ -17,23 +25,8 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية لشاشة الفاتورة (الفروع + العملاء + الأصناف + المخازن)
-        // ==============================================================
         public async Task<SalesLookupsDto> GetLookupsAsync()
         {
-            var branches = await _context.Branches
-                .AsNoTracking()
-                .Where(b => b.Active)
-                .OrderBy(b => b.Id)
-                .Select(b => new SalesBranchLookupDto
-                {
-                    Id = b.Id,
-                    BranchCode = b.BranchCode,
-                    BranchName = b.BranchName
-                })
-                .ToListAsync();
-
             var customers = await _context.Customers
                 .AsNoTracking()
                 .Where(c => c.Active)
@@ -41,55 +34,41 @@ namespace KayanERP.Api.Services
                 .Select(c => new CustomerLookupDto
                 {
                     Id = c.Id,
-                    CustomerName = c.CustomerName,
-                    CustomerCode = c.CustomerCode,
-                    Phone = c.Phone
+                    Name = c.CustomerName
                 })
                 .ToListAsync();
 
-            var finishedItems = await _context.Items
+            var items = await _context.Items
                 .AsNoTracking()
-                .Where(i => i.Active && (i.ItemType == "منتج تام" || i.ItemType == "FINISHED_GOODS" || i.ItemType == "وسيط" || i.ItemType == "نصف مصنع"))
+                .Where(i => i.Active)
                 .OrderBy(i => i.ItemName)
-                .Select(i => new SalesFinishedItemLookupDto
+                .Select(i => new ItemLookupDto
                 {
                     Id = i.Id,
-                    ItemCode = i.ItemCode,
-                    ItemName = i.ItemName,
-                    ItemType = i.ItemType,
-                    Unit = i.Unit,
-                    DepartmentId = i.DepartmentId,
-                    ShelfLifeDays = i.ShelfLifeDays,
-                    SellingPrice = i.BasePrice
+                    Name = i.ItemName,
+                    Price = i.BasePrice
                 })
                 .ToListAsync();
 
             var warehouses = await _context.Warehouses
                 .AsNoTracking()
-                .Where(w => w.Active && !w.WarehouseName.Contains("مرتجع") && !w.WarehouseName.Contains("تالف"))
+                .Where(w => w.Active)
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new SalesWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    BranchId = w.BranchId,
-                    WarehouseName = w.WarehouseName,
-                    WarehouseCode = w.WarehouseCode,
-                    WarehouseType = w.WarehouseType
+                    Name = w.WarehouseName
                 })
                 .ToListAsync();
 
             return new SalesLookupsDto
             {
-                Branches = branches,
                 Customers = customers,
-                FinishedItems = finishedItems,
+                Items = items,
                 Warehouses = warehouses
             };
         }
 
-        // ==============================================================
-        // 2. استعراض كافة فواتير المبيعات
-        // ==============================================================
         public async Task<List<SalesInvoiceViewDto>> GetAllInvoicesAsync()
         {
             var invoices = await _context.SalesInvoices
@@ -97,12 +76,6 @@ namespace KayanERP.Api.Services
                 .Include(i => i.InvoiceLines)
                 .OrderByDescending(i => i.Id)
                 .ToListAsync();
-
-            var branchIds = invoices.Where(i => i.BranchId.HasValue).Select(i => i.BranchId!.Value).Distinct().ToList();
-            var branches = await _context.Branches
-                .AsNoTracking()
-                .Where(b => branchIds.Contains(b.Id))
-                .ToDictionaryAsync(b => b.Id, b => b.BranchName);
 
             var customerIds = invoices.Select(i => i.CustomerId).Distinct().ToList();
             var customers = await _context.Customers
@@ -114,36 +87,28 @@ namespace KayanERP.Api.Services
             var items = await _context.Items
                 .AsNoTracking()
                 .Where(it => itemIds.Contains(it.Id))
-                .ToDictionaryAsync(it => it.Id, it => new { it.ItemCode, it.ItemName, it.Unit });
+                .ToDictionaryAsync(it => it.Id, it => it.ItemName);
 
             return invoices.Select(inv => new SalesInvoiceViewDto
             {
                 Id = inv.Id,
                 InvoiceNumber = inv.InvoiceNumber,
                 InvoiceDate = inv.InvoiceDate,
-                BranchId = inv.BranchId,
-                BranchName = (inv.BranchId.HasValue && branches.ContainsKey(inv.BranchId.Value)) ? branches[inv.BranchId.Value] : "الفرع الرئيسي",
-                CustomerId = inv.CustomerId,
                 CustomerName = customers.ContainsKey(inv.CustomerId) ? customers[inv.CustomerId] : "عميل غير محدد",
                 TotalAmount = inv.TotalAmount,
-                ItemsCount = inv.InvoiceLines.Count,
+                PaymentMethod = "CASH",
+                Status = "Posted",
                 Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineViewDto
                 {
                     Id = l.Id,
-                    ItemId = l.ItemId,
-                    ItemCode = items.ContainsKey(l.ItemId) ? items[l.ItemId].ItemCode : string.Empty,
-                    ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId].ItemName : "صنف",
-                    Unit = items.ContainsKey(l.ItemId) ? (items[l.ItemId].Unit ?? string.Empty) : string.Empty,
+                    ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId] : "صنف",
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
-                    LineTotal = l.LineTotal
+                    Total = l.LineTotal
                 }).ToList()
             }).ToList();
         }
 
-        // ==============================================================
-        // 3. استعراض تفاصيل فاتورة مبيعات محددة
-        // ==============================================================
         public async Task<SalesInvoiceViewDto?> GetInvoiceByIdAsync(long id)
         {
             var inv = await _context.SalesInvoices
@@ -154,43 +119,34 @@ namespace KayanERP.Api.Services
             if (inv == null) return null;
 
             var customer = await _context.Customers.FindAsync(inv.CustomerId);
-            var branch = inv.BranchId.HasValue ? await _context.Branches.FindAsync(inv.BranchId.Value) : null;
 
             var itemIds = inv.InvoiceLines.Select(l => l.ItemId).Distinct().ToList();
             var items = await _context.Items
                 .AsNoTracking()
                 .Where(it => itemIds.Contains(it.Id))
-                .ToDictionaryAsync(it => it.Id, it => new { it.ItemCode, it.ItemName, it.Unit });
+                .ToDictionaryAsync(it => it.Id, it => it.ItemName);
 
             return new SalesInvoiceViewDto
             {
                 Id = inv.Id,
                 InvoiceNumber = inv.InvoiceNumber,
                 InvoiceDate = inv.InvoiceDate,
-                BranchId = inv.BranchId,
-                BranchName = branch != null ? branch.BranchName : "الفرع الرئيسي",
-                CustomerId = inv.CustomerId,
                 CustomerName = customer != null ? customer.CustomerName : "عميل غير محدد",
                 TotalAmount = inv.TotalAmount,
-                ItemsCount = inv.InvoiceLines.Count,
+                PaymentMethod = "CASH",
+                Status = "Posted",
                 Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineViewDto
                 {
                     Id = l.Id,
-                    ItemId = l.ItemId,
-                    ItemCode = items.ContainsKey(l.ItemId) ? items[l.ItemId].ItemCode : string.Empty,
-                    ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId].ItemName : "صنف",
-                    Unit = items.ContainsKey(l.ItemId) ? (items[l.ItemId].Unit ?? string.Empty) : string.Empty,
+                    ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId] : "صنف",
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
-                    LineTotal = l.LineTotal
+                    Total = l.LineTotal
                 }).ToList()
             };
         }
 
-        // ==============================================================
-        // 4. إنشاء واعتماد فاتورة مبيعات وترحيل الأثر المخزني والمالي
-        // ==============================================================
-        public async Task<SalesInvoiceResultDto> CreateInvoiceAsync(SalesInvoiceCreateDto dto)
+        public async Task<SalesInvoiceResultDto> CreateInvoiceAsync(ExtendedSalesInvoiceCreateDto dto)
         {
             if (dto == null || dto.InvoiceLines == null || !dto.InvoiceLines.Any())
                 throw new InvalidOperationException("يجب إضافة صنف واحد على الأقل لإنشاء الفاتورة.");
@@ -199,27 +155,9 @@ namespace KayanERP.Api.Services
             if (customer == null)
                 throw new InvalidOperationException($"العميل رقم {dto.CustomerId} غير موجود في النظام.");
 
-            if (!customer.Active)
-                throw new InvalidOperationException($"العميل [{customer.CustomerName}] موقوف حالياً ولا يمكن إصدار فواتير له.");
-
-            long branchId = dto.BranchId ?? 1;
-            var currentBranch = await _context.Branches.FindAsync(branchId);
-            string branchDisplayName = currentBranch != null ? currentBranch.BranchName : "الفرع الرئيسي";
-
-            long warehouseId = dto.WarehouseId ?? 0;
+            long warehouseId = await _context.Warehouses.Where(w => w.Active).Select(w => w.Id).FirstOrDefaultAsync();
             if (warehouseId <= 0)
-            {
-                var defaultWh = await _context.Warehouses
-                    .AsNoTracking()
-                    .Where(w => w.Active && w.BranchId == branchId)
-                    .Select(w => w.Id)
-                    .FirstOrDefaultAsync();
-
-                warehouseId = defaultWh > 0 ? defaultWh : await _context.Warehouses.Where(w => w.Active).Select(w => w.Id).FirstOrDefaultAsync();
-            }
-
-            if (warehouseId <= 0)
-                throw new InvalidOperationException("تعذر تحديد مستودع صرف المبيعات في النظام، يرجى التأكد من تسجيل مستودع نشط في إدارة المخازن.");
+                throw new InvalidOperationException("تعذر تحديد مستودع صرف المبيعات.");
 
             var now = DateTime.UtcNow;
             decimal finalTotalAmount = dto.InvoiceLines.Sum(l => l.Quantity * l.UnitPrice);
@@ -236,7 +174,7 @@ namespace KayanERP.Api.Services
                     CompanyId = customer.CompanyId > 0 ? customer.CompanyId : 1,
                     InvoiceNumber = invoiceNumber,
                     InvoiceDate = now,
-                    BranchId = branchId,
+                    BranchId = dto.BranchId,
                     CustomerId = dto.CustomerId,
                     TotalAmount = finalTotalAmount,
                     CreatedAt = now
@@ -256,15 +194,8 @@ namespace KayanERP.Api.Services
                 _context.SalesInvoices.Add(invoice);
                 await _context.SaveChangesAsync();
 
-                // خصم المخزون اللحظي وتسجيل حركات كارت الصنف
                 foreach (var line in dto.InvoiceLines)
                 {
-                    var item = await _context.Items.FindAsync(line.ItemId);
-                    if (item == null)
-                        throw new InvalidOperationException($"المنتج رقم {line.ItemId} غير موجود.");
-
-                    decimal unitCost = item.BasePrice;
-
                     var stockBal = await _context.StockBalances
                         .FirstOrDefaultAsync(b => b.ItemId == line.ItemId && b.WarehouseId == warehouseId);
 
@@ -293,12 +224,11 @@ namespace KayanERP.Api.Services
                         ItemId = line.ItemId,
                         MovementType = "SALES_ISSUE",
                         Quantity = -line.Quantity,
-                        UnitCost = unitCost,
                         ReferenceType = "SALES_INVOICE",
                         ReferenceId = invoice.Id,
                         MovementAt = now,
                         CreatedAt = now,
-                        Notes = $"فاتورة مبيعات رقم [{invoice.InvoiceNumber}] | الفرع: {branchDisplayName} | العميل: {customer.CustomerName}"
+                        Notes = $"فاتورة مبيعات رقم [{invoice.InvoiceNumber}]"
                     });
                 }
 
@@ -310,9 +240,7 @@ namespace KayanERP.Api.Services
                     Success = true,
                     InvoiceId = invoice.Id,
                     InvoiceNumber = invoice.InvoiceNumber,
-                    TotalAmount = invoice.TotalAmount,
-                    ItemsCount = invoice.InvoiceLines.Count,
-                    Message = $"تم إصدار فاتورة المبيعات وترحيل الأثر المخزني بنجاح | تم الترحيل المالي آلياً: [من حـ/ خزينة ({branchDisplayName})] إلى [حـ/ إيرادات مبيعات التوزيع والطلبيات] متزناً 100%."
+                    Message = "تم إصدار الفاتورة بنجاح."
                 };
             }
             catch

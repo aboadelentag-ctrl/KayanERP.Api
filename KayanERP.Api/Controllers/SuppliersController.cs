@@ -19,9 +19,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==============================================================
-        // 1. جلب كافة الموردين مع الفلترة والبحث السريع
-        // ==============================================================
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] bool? active = null)
         {
@@ -70,9 +67,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. جلب بيانات مورد محدد
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id)
         {
@@ -107,9 +101,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 3. إضافة مورد جديد مع توليد الكود ومنع التكرار
-        // ==============================================================
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SupplierCreateUpdateDto dto)
         {
@@ -180,9 +171,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 4. تعديل بيانات مورد
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] SupplierCreateUpdateDto dto)
         {
@@ -225,9 +213,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 5. تبديل حالة التفعيل (نشط / معطل)
-        // ==============================================================
         [HttpPatch("{id:long}/toggle-status")]
         [HttpPut("{id:long}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(long id)
@@ -249,9 +234,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 6. حذف المورد (محصن ضد انهيار قيود المشتريات والمخازن)
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {

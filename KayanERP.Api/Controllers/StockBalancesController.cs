@@ -118,7 +118,7 @@ namespace KayanERP.Api.Controllers
                     ReorderLevel = s.Item.ReorderLevel,
                     SafetyStock = s.Item.SafetyStock,
                     BasePrice = s.Item.BasePrice,
-                    TotalStockValue = s.Quantity * s.Item.BasePrice,
+                    TotalStock = s.Quantity * s.Item.BasePrice,
                     LastUpdatedAt = s.LastUpdatedAt,
                     Status = s.Quantity <= 0 ? "نفد الرصيد"
                            : (s.Item.SafetyStock > 0 && s.Quantity <= s.Item.SafetyStock) ? "حرج (تحت حد الأمان)"
@@ -163,7 +163,7 @@ namespace KayanERP.Api.Controllers
                 TotalItemsCount = items.Count,
                 TotalStockQuantity = items.Sum(i => i.Quantity),
                 TotalAvailableQuantity = items.Sum(i => i.Available),
-                EstimatedStockValue = items.Sum(i => i.Quantity * i.Price),
+                EstimatedStock = items.Sum(i => i.Quantity * i.Price),
                 LowStockCount = items.Count(i =>
                     i.Quantity > 0 &&
                     ((i.Reorder > 0 && i.Quantity <= i.Reorder) ||

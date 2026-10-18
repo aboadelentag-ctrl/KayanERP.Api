@@ -309,10 +309,10 @@
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-light">نسخ صلاحيات مبدئية من دور آخر (اختياري)</label>
                     <select class="form-select bg-dark text-white border-secondary" @bind="cloneFromRoleId">
-                        <option value="0">بدء بمصفوفة فارغة بدون صلاحيات</option>
+                        <option ="0">بدء بمصفوفة فارغة بدون صلاحيات</option>
                         @foreach (var r in rolesList)
                         {
-                            <option value="@r.Id">نسخ من: @r.DisplayName</option>
+                            <option ="@r.Id">نسخ من: @r.DisplayName</option>
                         }
                     </select>
                 </div>
@@ -343,10 +343,10 @@
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-light">اختر العامل من السجل الرسمي <span class="text-danger">*</span></label>
                     <select class="form-select bg-dark text-white border-secondary" @onchange="OnEmployeeSelected">
-                        <option value="0">-- اختر العامل لملء البيانات تلقائياً --</option>
+                        <option ="0">-- اختر العامل لملء البيانات تلقائياً --</option>
                         @foreach (var emp in employeesList)
                         {
-                            <option value="@emp.Id">[@emp.EmployeeCode] @emp.FullName (@emp.DepartmentName)</option>
+                            <option ="@emp.Id">[@emp.EmployeeCode] @emp.FullName (@emp.DepartmentName)</option>
                         }
                     </select>
                 </div>
@@ -378,7 +378,7 @@
                     <select class="form-select bg-dark text-white border-secondary" @bind="newUserRoleId">
                         @foreach (var r in rolesList)
                         {
-                            <option value="@r.Id">@r.DisplayName</option>
+                            <option ="@r.Id">@r.DisplayName</option>
                         }
                     </select>
                 </div>
@@ -846,7 +846,7 @@
 
     private void OnEmployeeSelected(ChangeEventArgs e)
     {
-        if (long.TryParse(e.Value?.ToString(), out long empId) && empId > 0)
+        if (long.TryParse(e.?.ToString(), out long empId) && empId > 0)
         {
             var emp = employeesList.FirstOrDefault(x => x.Id == empId);
             if (emp != null)
