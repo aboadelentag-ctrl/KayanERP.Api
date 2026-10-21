@@ -6,7 +6,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>فحص الجودة واستلام الخامات الموردة (GMP) - حلواني أبو عادل</PageTitle>
+<PageTitle>فحص الجودة واستلام الخامات الموردة (GMP) - كيان ERP</PageTitle>
 
 <div class="container-fluid py-4" dir="rtl">
     <!-- Header -->
@@ -74,10 +74,10 @@
             <div class="row g-2 align-items-center">
                 <div class="col-md-5">
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedSupplierId" @bind:after="LoadInvoices">
-                        <option ="0">كافة الموردين</option>
+                        <option value="0">كافة الموردين</option>
                         @foreach (var s in lookups.Suppliers)
                         {
-                            <option ="@s.Id">@s.SupplierName</option>
+                            <option value="@s.Id">@s.SupplierName</option>
                         }
                     </select>
                 </div>
@@ -181,7 +181,7 @@
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="receiptPostDto.WarehouseId">
                                 @foreach (var w in lookups.Warehouses)
                                 {
-                                    <option ="@w.Id">@w.WarehouseName</option>
+                                    <option value="@w.Id">@w.WarehouseName</option>
                                 }
                             </select>
                         </div>

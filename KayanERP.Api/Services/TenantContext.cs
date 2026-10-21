@@ -7,34 +7,30 @@ public sealed class TenantContext : ITenantContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    // كاش داخلي عشان نتجنب قراءة الـ Claims من الـ HttpContext كل مرة
+    private long? _cachedCompanyId;
+    private long? _cachedBranchId;
+    private long? _cachedUserId;
+    private bool _isResolved;
+
     public TenantContext(IHttpContextAccessor httpContextAccessor)
     {
-        _httpContextAccessor = httpContextAccessor;
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
 
     public long CompanyId
     {
         get
         {
-            var user = _httpContextAccessor.HttpContext?.User;
+            ResolveClaims();
 
-            if (user?.Identity?.IsAuthenticated != true)
-            {
-                throw new UnauthorizedAccessException(
-                    "No authenticated user found. Please login to continue.");
-            }
-
-            var claim = user.FindFirst("company_id")?.Value;
-
-            if (string.IsNullOrEmpty(claim) ||
-                !long.TryParse(claim, out var companyId) ||
-                companyId <= 0)
+            if (_cachedCompanyId is null or <= 0)
             {
                 throw new UnauthorizedAccessException(
                     "Company ID is missing or invalid in the authentication token.");
             }
 
-            return companyId;
+            return _cachedCompanyId.Value;
         }
     }
 
@@ -42,14 +38,8 @@ public sealed class TenantContext : ITenantContext
     {
         get
         {
-            var user = _httpContextAccessor.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true) return null;
-
-            var claim = user.FindFirst("branch_id")?.Value;
-
-            return long.TryParse(claim, out var branchId) && branchId > 0
-                ? branchId
-                : null;
+            ResolveClaims();
+            return _cachedBranchId;
         }
     }
 
@@ -57,15 +47,50 @@ public sealed class TenantContext : ITenantContext
     {
         get
         {
-            var user = _httpContextAccessor.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true) return null;
-
-            var claim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                     ?? user.FindFirst("sub")?.Value;
-
-            return long.TryParse(claim, out var userId) && userId > 0
-                ? userId
-                : null;
+            ResolveClaims();
+            return _cachedUserId;
         }
+    }
+
+    /// <summary>
+    /// يستخرج الـ Claims مرة واحدة فقط لكل Request ويخزنها في الكاش الداخلي.
+    /// </summary>
+    private void ResolveClaims()
+    {
+        if (_isResolved) return;
+
+        var user = _httpContextAccessor.HttpContext?.User;
+
+        // لو مفيش مستخدم مسجل دخول، نسيب القيم null ونخلي الشركة ترمي Exception
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            _isResolved = true;
+            return;
+        }
+
+        // --- Company ID ---
+        var companyClaim = user.FindFirst("company_id")?.Value;
+        if (long.TryParse(companyClaim, out var companyId) && companyId > 0)
+        {
+            _cachedCompanyId = companyId;
+        }
+
+        // --- Branch ID (اختياري) ---
+        var branchClaim = user.FindFirst("branch_id")?.Value;
+        if (long.TryParse(branchClaim, out var branchId) && branchId > 0)
+        {
+            _cachedBranchId = branchId;
+        }
+
+        // --- User ID ---
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? user.FindFirst("sub")?.Value;
+
+        if (long.TryParse(userIdClaim, out var userId) && userId > 0)
+        {
+            _cachedUserId = userId;
+        }
+
+        _isResolved = true;
     }
 }

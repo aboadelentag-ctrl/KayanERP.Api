@@ -8,7 +8,7 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject IJSRuntime JS
-@inject AppState State
+@inject KayanERP.Shared.DTOs.AppState State
 
 <PageTitle>إدارة فواتير المبيعات - منصة كيان السحابية</PageTitle>
 
@@ -24,7 +24,7 @@
 
             <span class="tenant-badge">
                 <span class="pulse-dot"></span>
-                <span>@(!string.IsNullOrEmpty(State.TenantName) ? State.TenantName : "مجموعة حلواني أبو عادل")</span>
+                <span>@(!string.IsNullOrEmpty(State.TenantName) ? State.TenantName : "مجموعة كيان ERP")</span>
             </span>
 
             <button class="topbar-btn" @onclick="@(() => Navigation.NavigateTo("/workspace"))">
@@ -63,7 +63,7 @@
     <!-- 2. جسم صفحة الفواتير -->
     <main class="container-fluid py-4 px-4">
 
-        @if (BranchContext.HasActiveBranch || BranchId.Has)
+        @if (BranchContext.HasActiveBranch || BranchId.HasValue)
         {
             <div class="branch-lock-banner d-flex justify-content-between align-items-center shadow-sm py-2 px-3 mb-4 rounded-3">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -179,7 +179,7 @@
 </div>
 
 <!-- ========================================== -->
-<!-- نافذة 1: إصدار فاتورة مبيعات جديدة         -->
+<!-- نافذة 1: إصدار فاتورة مبيعات جديدة          -->
 <!-- ========================================== -->
 @if (showCreateModal)
 {
@@ -198,7 +198,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold">فرع الإصدار (مقفل)</label>
                             <input type="text" class="form-control form-control-sm fw-bold bg-light border-primary"
-                                   ="@ActiveBranchDisplayName" readonly />
+                                   value="@ActiveBranchDisplayName" readonly />
                         </div>
 
                         <!-- العميل -->
@@ -211,12 +211,12 @@
                                 </button>
                             </div>
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="newInvoice.CustomerId">
-                                <option ="0">-- اختر العميل --</option>
+                                <option value="0">-- اختر العميل --</option>
                                 @if (lookups?.Customers != null)
                                 {
                                     @foreach (var c in lookups.Customers)
                                     {
-                                        <option ="@c.Id">@c.CustomerName (@c.CustomerCode)</option>
+                                        <option value="@c.Id">@c.CustomerName (@c.CustomerCode)</option>
                                     }
                                 }
                             </select>
@@ -226,8 +226,8 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold">طريقة السداد والأثر المالي <span class="text-danger">*</span></label>
                             <select class="form-select form-select-sm fw-bold border-success" @bind="selectedPaymentMethod">
-                                <option ="CASH">💵 نقدي (خزينة الفرع)</option>
-                                <option ="CREDIT">📋 آجل (حساب التاجر)</option>
+                                <option value="CASH">💵 نقدي (خزينة الفرع)</option>
+                                <option value="CREDIT">📋 آجل (حساب التاجر)</option>
                             </select>
                         </div>
 
@@ -239,7 +239,7 @@
                                     <i class="bi bi-lock-fill text-warning"></i>
                                 </span>
                                 <input type="text" class="form-control form-control-sm fw-bold bg-light border-secondary text-dark"
-                                       ="@ActiveWarehouseDisplayName" readonly />
+                                       value="@ActiveWarehouseDisplayName" readonly />
                             </div>
                         </div>
                     </div>
@@ -280,14 +280,14 @@
                                             <tr>
                                                 <td>
                                                     <select class="form-select form-select-sm text-end fw-bold"
-                                                            ="@line.ItemId"
+                                                            value="@line.ItemId"
                                                             @onchange="(e) => OnItemSelected(index, e)">
-                                                        <option ="0">-- اختر المنتج --</option>
+                                                        <option value="0">-- اختر المنتج --</option>
                                                         @if (lookups?.FinishedItems != null)
                                                         {
                                                             @foreach (var item in lookups.FinishedItems)
                                                             {
-                                                                <option ="@item.Id">@item.ItemName (@item.ItemCode)</option>
+                                                                <option value="@item.Id">@item.ItemName (@item.ItemCode)</option>
                                                             }
                                                         }
                                                     </select>
@@ -299,7 +299,7 @@
                                                 <td>
                                                     <div class="input-group input-group-sm">
                                                         <input type="text" class="form-control form-control-sm text-center fw-bold text-success font-monospace bg-light border-0"
-                                                               ="@line.UnitPrice.ToString("N2")" readonly />
+                                                               value="@line.UnitPrice.ToString("N2")" readonly />
                                                         <span class="input-group-text bg-light text-muted border-0 py-0 px-2" title="السعر معتمد ومقفل من بطاقة الصنف">
                                                             <i class="bi bi-lock-fill text-secondary"></i>
                                                         </span>
@@ -416,7 +416,7 @@
                     {
                         <!-- قالب إيصال الكاشير الحراري (POS Thermal Receipt) -->
                         <div class="pos-receipt text-center font-monospace">
-                            <div class="fw-bold fs-5">حلواني أبو عادل</div>
+                            <div class="fw-bold fs-5">كيان ERP</div>
                             <div class="small text-muted">KAYAN ENTERPRISE ERP</div>
                             <div class="small fw-bold border-bottom pb-2 mb-2">فرع: @selectedInvoiceForPrint.BranchName</div>
 
@@ -461,7 +461,7 @@
                         <div class="p-3 border rounded-3 font-monospace">
                             <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                                 <div>
-                                    <h4 class="fw-bold text-primary mb-0">مجموعة حلواني أبو عادل</h4>
+                                    <h4 class="fw-bold text-primary mb-0">مجموعة كيان ERP</h4>
                                     <span class="text-muted small">سجل تجاري: 482910 | بطاقة ضريبية: 712-345-998</span>
                                     <div class="fw-bold text-dark mt-1">فرع الإصدار: @selectedInvoiceForPrint.BranchName</div>
                                 </div>
@@ -521,7 +521,7 @@
                 </div>
 
                 <div class="modal-footer bg-light py-2 d-flex justify-content-between no-print">
-                    <button type="button" class="btn btn-secondary btn-sm px-4" @onclick="() => showPrintModal = false">إغلاق</button>
+                    <button type="button" class="btn btn-secondary btn-sm px-4" @onclick="() => showPrintModal = false">إلغاء</button>
                     <button type="button" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" @onclick="TriggerBrowserPrint">
                         <i class="bi bi-printer me-1"></i> طباعة الفاتورة الآن
                     </button>
@@ -701,8 +701,7 @@
         background: #FFF;
     }
 
-    /* تهيئة أمر الطباعة لعزل الفاتورة فقط وإخفاء بقية عناصر الشاشة */
-    @@media print {
+    @media print {
         body * {
             visibility: hidden;
         }
@@ -741,12 +740,10 @@
     private string? successMessage;
     private string? errorMessage;
 
-    // حالة الطباعة والمعاينة
     private bool showPrintModal = false;
     private SalesInvoiceViewDto? selectedInvoiceForPrint;
-    private string printFormat = "POS"; // "POS" أو "A4"
+    private string printFormat = "POS";
 
-    // حالة إضافة عميل سريع
     private bool showQuickCustomerModal = false;
     private bool isSavingCustomer = false;
     private string? quickCustomerError;
@@ -854,7 +851,7 @@
 
     private void OnItemSelected(int index, ChangeEventArgs e)
     {
-        if (long.TryParse(e.?.ToString(), out long itemId) && itemId > 0)
+        if (long.TryParse(e.Value?.ToString(), out long itemId) && itemId > 0)
         {
             newInvoice.InvoiceLines[index].ItemId = itemId;
             var selectedItem = lookups?.FinishedItems?.FirstOrDefault(x => x.Id == itemId);
@@ -869,7 +866,6 @@
         }
     }
 
-    // فتح نافذة المعاينة والطباعة
     private void OpenPrintPreview(SalesInvoiceViewDto inv)
     {
         selectedInvoiceForPrint = inv;
@@ -877,7 +873,6 @@
         showPrintModal = true;
     }
 
-    // استدعاء أمر الطباعة المباشر من المتصفح
     private async Task TriggerBrowserPrint()
     {
         await JS.InvokeVoidAsync("window.print");
@@ -947,7 +942,7 @@
             return;
         }
 
-        if (!newInvoice.WarehouseId.Has || newInvoice.WarehouseId. <= 0)
+        if (!newInvoice.WarehouseId.HasValue || newInvoice.WarehouseId.Value <= 0)
         {
             var targetWh = ActiveBranchWarehouse;
             if (targetWh != null)
@@ -992,9 +987,8 @@
                 CloseCreateModal();
                 await LoadInvoices();
 
-                // فتح الفاتورة الحديثة للمعاينة والطباعة مباشرة للكاشير
                 var latestInv = invoices.FirstOrDefault(x => x.Id == result?.InvoiceId)
-                                ?? invoices.FirstOrDefault();
+                            ?? invoices.FirstOrDefault();
                 if (latestInv != null)
                 {
                     OpenPrintPreview(latestInv);

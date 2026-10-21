@@ -10,7 +10,7 @@
 @inject IJSRuntime JS
 @inject AppState State
 
-<PageTitle>طلب وصرف خامات الصالات (Floor Stock Handshake) - حلواني أبو عادل</PageTitle>
+<PageTitle>طلب وصرف خامات الصالات (Floor Stock Handshake) - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -137,7 +137,7 @@
     </ul>
 
     <!-- ======================================================== -->
-    <!-- محطة 1: تسجيل طلب جديد                                   -->
+    <!-- محطة 1: تسجيل طلب جديد                                  -->
     <!-- ======================================================== -->
     @if (activeTab == "REQUEST" && State.HasAnyPermission("Requisition.Create", "Production.OperationsHub", "Production.Execution"))
     {
@@ -151,10 +151,10 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-dark">الصالة الإنتاجية الطالبة *</label>
                         <select class="form-select border-primary fw-bold" @bind="newReq.DepartmentId">
-                            <option ="0">-- اختر الصالة الإنتاجية الطالبة --</option>
+                            <option value="0">-- اختر الصالة الإنتاجية الطالبة --</option>
                             @foreach (var d in departments)
                             {
-                                <option ="@d.Id">@d.DepartmentName</option>
+                                <option value="@d.Id">@d.DepartmentName</option>
                             }
                         </select>
                     </div>
@@ -165,7 +165,7 @@
                             <span class="badge bg-secondary font-monospace">🔒 موثق تلقائياً</span>
                         </label>
                         <input type="text" class="form-control border-primary fw-bold bg-white text-primary"
-                               ="@CurrentSupervisorDisplayName"
+                               value="@CurrentSupervisorDisplayName"
                                readonly disabled />
                     </div>
                 </div>
@@ -200,10 +200,10 @@
                                     <tr>
                                         <td>
                                             <select class="form-select form-select-sm fw-bold" @bind="line.ItemId">
-                                                <option ="0">-- اختر الخامة أو المكون --</option>
+                                                <option value="0">-- اختر الخامة أو المكون --</option>
                                                 @foreach (var itm in rawMaterials)
                                                 {
-                                                    <option ="@itm.Id">@itm.ItemName (@itm.ItemCode) - @itm.Unit</option>
+                                                    <option value="@itm.Id">@itm.ItemName (@itm.ItemCode) - @itm.Unit</option>
                                                 }
                                             </select>
                                         </td>
@@ -293,7 +293,7 @@
                                 <span class="badge bg-dark font-monospace">🔒 موثق تلقائياً</span>
                             </label>
                             <input type="text" class="form-control form-control-sm fw-bold border-primary bg-white text-primary"
-                                   ="@CurrentStorekeeperDisplayName"
+                                   value="@CurrentStorekeeperDisplayName"
                                    readonly disabled />
                         </div>
                         <div class="col-md-7">
@@ -325,11 +325,11 @@
                                         <td class="fw-bold text-primary font-monospace">@originLine.RequestedQty.ToString("N2") @originLine.Unit</td>
                                         <td>
                                             <select class="form-select form-select-sm fw-bold border-primary"
-                                                    ="@l.WarehouseId"
+                                                    value="@l.WarehouseId"
                                                     @onchange="(e) => OnLineWarehouseChanged(l, e)">
                                                 @foreach (var w in warehouses)
                                                 {
-                                                    <option ="@w.Id">@w.WarehouseName</option>
+                                                    <option value="@w.Id">@w.WarehouseName</option>
                                                 }
                                             </select>
                                         </td>
@@ -656,20 +656,20 @@
                     <div class="col-md-3">
                         <label class="small fw-bold text-secondary">صالة الإنتاج:</label>
                         <select class="form-select form-select-sm fw-bold" @bind="auditDeptFilter">
-                            <option ="0">-- كل الصالات الإنتاجية --</option>
+                            <option value="0">-- كل الصالات الإنتاجية --</option>
                             @foreach (var d in departments)
                             {
-                                <option ="@d.Id">@d.DepartmentName</option>
+                                <option value="@d.Id">@d.DepartmentName</option>
                             }
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="small fw-bold text-secondary">خامة محددة:</label>
                         <select class="form-select form-select-sm fw-bold" @bind="auditItemFilter">
-                            <option ="0">-- كل الخامات والمكونات --</option>
+                            <option value="0">-- كل الخامات والمكونات --</option>
                             @foreach (var itm in rawMaterials)
                             {
-                                <option ="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
+                                <option value="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
                             }
                         </select>
                     </div>
@@ -1063,9 +1063,9 @@
         await LoadRequisitions();
 
         newReq.RequestedBy = CurrentSupervisorDisplayName;
-        if (State.DepartmentId.Has && departments.Any(d => d.Id == State.DepartmentId.))
+        if (State.DepartmentId.HasValue && departments.Any(d => d.Id == State.DepartmentId.Value))
         {
-            newReq.DepartmentId = State.DepartmentId.;
+            newReq.DepartmentId = State.DepartmentId.Value;
         }
 
         await LoadAuditReport();
@@ -1155,7 +1155,7 @@
                     r.DepartmentName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (!string.IsNullOrEmpty(r.FromWarehouseName) && r.FromWarehouseName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     r.Lines.Any(l => l.ItemName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                                    (!string.IsNullOrEmpty(l.BatchNumber) && l.BatchNumber.Contains(term, StringComparison.OrdinalIgnoreCase))));
+                                     (!string.IsNullOrEmpty(l.BatchNumber) && l.BatchNumber.Contains(term, StringComparison.OrdinalIgnoreCase))));
             }
 
             if (selectedDeptFilter > 0)
@@ -1225,7 +1225,7 @@
         dispatchLinesView.Clear();
 
         long defaultWhId = warehouses.FirstOrDefault(w => w.WarehouseName.Contains("خامات") || w.WarehouseName.Contains("رئيسي"))?.Id
-                           ?? (warehouses.FirstOrDefault()?.Id ?? (req.FromWarehouseId > 0 ? req.FromWarehouseId : 1));
+                        ?? (warehouses.FirstOrDefault()?.Id ?? (req.FromWarehouseId > 0 ? req.FromWarehouseId : 1));
 
         foreach (var l in req.Lines)
         {
@@ -1254,7 +1254,7 @@
 
     private async Task OnLineWarehouseChanged(DispatchLineViewModel line, ChangeEventArgs e)
     {
-        if (long.TryParse(e.?.ToString(), out var newWhId) && newWhId > 0)
+        if (long.TryParse(e.Value?.ToString(), out var newWhId) && newWhId > 0)
         {
             line.WarehouseId = newWhId;
             await FetchFefoForLine(line);

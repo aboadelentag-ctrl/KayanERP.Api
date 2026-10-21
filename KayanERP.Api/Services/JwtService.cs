@@ -50,7 +50,7 @@ namespace KayanERP.Api.Services
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new(JwtRegisteredClaimNames.Iat,
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                    ClaimTypes.Integer64),
+                    ClaimValueTypes.Integer64),
                 new("company_id", companyId.ToString()),
                 new("role", role)
             };

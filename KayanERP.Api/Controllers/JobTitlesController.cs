@@ -40,7 +40,7 @@ namespace KayanERP.Api.Controllers
                     Id = j.Id,
                     TitleName = j.TitleName,
                     HourlyRate = j.HourlyRate,
-                    JobGrade = j.JobGrade,
+                    JobGrade = j.JobGrade.ToString(),
                     Active = j.Active
                 })
                 .ToListAsync();
@@ -60,7 +60,6 @@ namespace KayanERP.Api.Controllers
             var trimmedName = dto.TitleName.Trim();
             var companyId = _tenantContext.CompanyId;
 
-            // ⚠️ التحقق من التكرار داخل نفس الشركة
             var existing = await _context.JobTitles
                 .FirstOrDefaultAsync(j => j.CompanyId == companyId &&
                                           j.TitleName.ToLower() == trimmedName.ToLower());
@@ -68,12 +67,18 @@ namespace KayanERP.Api.Controllers
             if (existing != null)
                 return Conflict(new { message = $"المسمى الوظيفي ({trimmedName}) مسجل بالفعل." });
 
+            int parsedGrade = 1;
+            if (!string.IsNullOrWhiteSpace(dto.JobGrade) && int.TryParse(dto.JobGrade, out int g) && g > 0)
+            {
+                parsedGrade = g;
+            }
+
             var jobTitle = new JobTitle
             {
                 CompanyId = companyId,
                 TitleName = trimmedName,
-                HourlyRate = dto.HourlyRate > 0 ? dto.HourlyRate : 25,
-                JobGrade = dto.JobGrade > 0 ? dto.JobGrade : 1,
+                HourlyRate = dto.HourlyRate > 0 ? dto.HourlyRate : 25m,
+                JobGrade = parsedGrade,
                 Active = true
             };
 
@@ -85,7 +90,7 @@ namespace KayanERP.Api.Controllers
                 Id = jobTitle.Id,
                 TitleName = jobTitle.TitleName,
                 HourlyRate = jobTitle.HourlyRate,
-                JobGrade = jobTitle.JobGrade,
+                JobGrade = jobTitle.JobGrade.ToString(),
                 Active = jobTitle.Active
             });
         }

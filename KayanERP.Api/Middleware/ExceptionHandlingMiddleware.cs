@@ -1,13 +1,15 @@
 ﻿using System.Net;
 using System.Text.Json;
-using KayanERP.Api.Exceptions;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace KayanERP.Api.Middleware;
+namespace KayanERP.Api.Middleware; // ✅ تم توحيد الـ Namespace
 
 /// <summary>
-/// Middleware يعالج كل الـ Exceptions اللي بتحصل في الـ Pipeline.
-/// يحوّلها لـ JSON Response منظم + يمنع تسريب Stack Traces.
+/// Global exception handling middleware.
+/// Catches all unhandled exceptions, logs them with a correlation id,
+/// and returns a unified JSON error response to the client.
 /// </summary>
 public sealed class ExceptionHandlingMiddleware
 {
@@ -15,14 +17,19 @@ public sealed class ExceptionHandlingMiddleware
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IHostEnvironment _env;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger,
         IHostEnvironment env)
     {
-        _next = next;
-        _logger = logger;
-        _env = env;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _env = env ?? throw new ArgumentNullException(nameof(env));
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -39,134 +46,78 @@ public sealed class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        // 1. تحديد الـ Status Code والـ Response
-        var (statusCode, title, errorCode, errors) = exception switch
+        var traceId = context.TraceIdentifier;
+
+        // Log the full exception with correlation id
+        _logger.LogError(
+            exception,
+            "Unhandled exception. TraceId: {TraceId}, Path: {Path}, Method: {Method}",
+            traceId,
+            context.Request.Path,
+            context.Request.Method);
+
+        var (statusCode, errorCode, message) = MapException(exception);
+
+        var response = new ErrorResponse
         {
-            // ===== Exceptions مخصصة =====
-            ValidationException ve => (
-                ve.StatusCode,
-                ve.Message,
-                ve.ErrorCode,
-                (object?)ve.Errors
-            ),
-
-            AppException appEx => (
-                appEx.StatusCode,
-                appEx.Message,
-                appEx.ErrorCode,
-                null
-            ),
-
-            // ===== Unauthorized =====
-            UnauthorizedAccessException => (
-                StatusCodes.Status401Unauthorized,
-                "غير مصرح لك بالوصول. يرجى تسجيل الدخول مرة أخرى.",
-                "Unauthorized",
-                null
-            ),
-
-            // ===== Database Issues =====
-            Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException => (
-                StatusCodes.Status409Conflict,
-                "تم تعديل البيانات من قبل مستخدم آخر. يرجى إعادة المحاولة.",
-                "ConcurrencyConflict",
-                null
-            ),
-
-            Microsoft.EntityFrameworkCore.DbUpdateException dbe => (
-                StatusCodes.Status409Conflict,
-                "حدث تعارض في البيانات. قد تكون بعض البيانات مكررة.",
-                "DatabaseConflict",
-                null
-            ),
-
-            // ===== Timeout / Network =====
-            TaskCanceledException or OperationCanceledException => (
-                StatusCodes.Status408RequestTimeout,
-                "انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.",
-                "RequestTimeout",
-                null
-            ),
-
-            // ===== أي Exception تاني =====
-            _ => (
-                StatusCodes.Status500InternalServerError,
-                "حدث خطأ غير متوقع في الخادم. يرجى المحاولة لاحقاً.",
-                "InternalServerError",
-                null
-            )
+            TraceId = traceId,
+            ErrorCode = errorCode,
+            Message = message,
+            // In Development only: include exception detail for faster debugging.
+            Details = _env.IsDevelopment() ? exception.ToString() : null
         };
 
-        // 2. تسجيل الخطأ
-        LogException(context, exception, statusCode);
-
-        // 3. بناء الـ Response
-        var problemDetails = new ProblemDetails
+        if (context.Response.HasStarted)
         {
-            Type = $"https://httpstatuses.io/{statusCode}",
-            Title = title,
-            Status = statusCode,
-            Instance = context.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = errorCode,
-                ["traceId"] = context.TraceIdentifier,
-                ["timestamp"] = DateTime.UtcNow
-            }
-        };
-
-        if (errors != null)
-        {
-            problemDetails.Extensions["errors"] = errors;
+            _logger.LogWarning(
+                "Response already started, cannot write error response. TraceId: {TraceId}", traceId);
+            return;
         }
 
-        // 4. تفاصيل إضافية في Development فقط
-        if (_env.IsDevelopment())
-        {
-            problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
-            problemDetails.Extensions["exceptionMessage"] = exception.Message;
-            problemDetails.Extensions["stackTrace"] = exception.StackTrace?.Split('\n').Take(10).ToArray();
-        }
-
-        // 5. إرسال الرد
+        context.Response.Clear();
         context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "application/problem+json";
+        context.Response.ContentType = "application/json; charset=utf-8";
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
-
-        await context.Response.WriteAsJsonAsync(problemDetails, options);
+        var json = JsonSerializer.Serialize(response, JsonOptions);
+        await context.Response.WriteAsync(json);
     }
 
-    private void LogException(HttpContext context, Exception exception, int statusCode)
+    /// <summary>
+    /// Maps an exception to (HTTP status, business error code, safe user message).
+    /// Extend this method as new domain exceptions are introduced.
+    /// </summary>
+    private static (int statusCode, string errorCode, string message) MapException(Exception exception)
     {
-        var logLevel = statusCode switch
+        return exception switch
         {
-            >= 500 => LogLevel.Error,
-            401 or 403 => LogLevel.Warning,
-            _ => LogLevel.Information
-        };
+            ArgumentNullException or ArgumentException =>
+                ((int)HttpStatusCode.BadRequest, "INVALID_ARGUMENT", exception.Message),
 
-        _logger.Log(
-            logLevel,
-            exception,
-            "Exception handled: {ExceptionType} at {Path} → HTTP {StatusCode}",
-            exception.GetType().Name,
-            context.Request.Path,
-            statusCode);
+            UnauthorizedAccessException =>
+                ((int)HttpStatusCode.Unauthorized, "UNAUTHORIZED", "You are not authorized to perform this action."),
+
+            KeyNotFoundException =>
+                ((int)HttpStatusCode.NotFound, "NOT_FOUND", exception.Message),
+
+            InvalidOperationException =>
+                ((int)HttpStatusCode.Conflict, "INVALID_OPERATION", exception.Message),
+
+            TimeoutException =>
+                ((int)HttpStatusCode.GatewayTimeout, "TIMEOUT", "The operation timed out. Please try again."),
+
+            _ => ((int)HttpStatusCode.InternalServerError, "INTERNAL_ERROR",
+                  "An unexpected error occurred. Please contact support with the trace id.")
+        };
     }
 }
 
 /// <summary>
-/// Extension method لتسجيل الـ Middleware بسهولة في Program.cs
+/// Unified error payload returned to the client for all unhandled exceptions.
 /// </summary>
-public static class ExceptionHandlingMiddlewareExtensions
+public sealed class ErrorResponse
 {
-    public static IApplicationBuilder UseExceptionHandling(this IApplicationBuilder app)
-    {
-        return app.UseMiddleware<ExceptionHandlingMiddleware>();
-    }
+    public string TraceId { get; set; } = default!;
+    public string ErrorCode { get; set; } = default!;
+    public string Message { get; set; } = default!;
+    public string? Details { get; set; }
 }

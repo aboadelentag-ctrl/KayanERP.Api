@@ -1,10 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using KayanERP.Api.Models;
 using KayanERP.Shared.DTOs;
 
 namespace KayanERP.Api.Services
 {
-    // الإنترفيس المعتمد
     public interface IProcurementService
     {
         Task<List<ProcurementPendingRequestDto>> GetPendingRequestsAsync();
@@ -33,7 +36,7 @@ namespace KayanERP.Api.Services
                     RequestNumber = p.OrderNumber,
                     WarehouseId = p.WarehouseId,
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.Min),
+                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
                     Status = p.Status,
                     ItemsCount = _context.PurchaseOrderLines.Count(l => l.PurchaseOrderId == p.Id)
                 })
@@ -76,7 +79,7 @@ namespace KayanERP.Api.Services
                 RequestNumber = po.OrderNumber,
                 WarehouseId = po.WarehouseId,
                 WarehouseName = _context.Warehouses.Where(w => w.Id == po.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                RequestDate = po.OrderDate.ToDateTime(TimeOnly.Min),
+                RequestDate = po.OrderDate.ToDateTime(TimeOnly.MinValue),
                 Status = po.Status,
                 ItemsCount = linesDto.Count,
                 Lines = linesDto
@@ -206,7 +209,7 @@ namespace KayanERP.Api.Services
                     InvoiceNumber = p.OrderNumber,
                     SupplierName = _context.Suppliers.Where(s => s.Id == p.SupplierId).Select(s => s.SupplierName).FirstOrDefault() ?? "مورد غير محدد",
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "المخزن الرئيسي",
-                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.Min),
+                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
                     TotalAmount = p.TotalAmount,
                     Status = p.Status
                 })

@@ -1,4 +1,7 @@
-﻿namespace KayanERP.UI.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace KayanERP.UI.Models
 {
     public class PurchaseRequestItemLookupDto
     {

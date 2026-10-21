@@ -9,7 +9,7 @@
 @inject IJSRuntime JS
 @inject AppState State
 
-<PageTitle>حوكمة تحويل المنتج التام واستلام الكنترول - حلواني أبو عادل</PageTitle>
+<PageTitle>حوكمة تحويل المنتج التام واستلام الكنترول - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -111,7 +111,7 @@
     </ul>
 
     <!-- ======================================================== -->
-    <!-- Tab 1: السجل العام للمتابعة                              -->
+    <!-- Tab 1: السجل العام للمتابعة                               -->
     <!-- ======================================================== -->
     @if (activeTab == "list")
     {
@@ -534,7 +534,7 @@
     }
 
     <!-- ======================================================== -->
-    <!-- Tab 6: تشغيل وتعديل المرتجعات بالصالة                    -->
+    <!-- Tab 6: تشغيل وتعديل المرتجعات بالصالة                   -->
     <!-- ======================================================== -->
     @if (activeTab == "rework" && State.HasAnyPermission("Production.Execution", "FinishedGoods.Rework"))
     {
@@ -710,14 +710,12 @@
     private CreateTransferRequestDto newTransfer = new();
     private string selectedItemUnit = "كجم";
 
-    // نزاع 1: إنتاج وتكاليف
     private FinishedGoodsTransferViewDto? selectedCostingDispute;
     private decimal costingDisputeFinalWeight;
     private int costingDisputeFinalCount;
     private string costingDisputeChargeTo = "عجز تصنيع يُحمّل على تقرير وردية الصالة";
     private string costingDisputeNotes = string.Empty;
 
-    // نزاع 2: جودة وكنترول
     private FinishedGoodsTransferViewDto? selectedDisputeTransfer;
     private decimal disputeFinalQty;
     private string controlDisputeChargeTo = "عهدة سائق وعامل النقل الداخلي";
@@ -1273,9 +1271,6 @@
         }
     }
 
-    // ========================================================
-    // تصدير سجل أذونات تحويل المنتج التام إلى ملف Excel (CSV)
-    // ========================================================
     private async Task ExportTransfersToCsv()
     {
         if (transfers == null || !transfers.Any())

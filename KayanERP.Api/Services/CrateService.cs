@@ -10,7 +10,6 @@ namespace KayanERP.Api.Services
 {
     public class CrateService : ICrateService
     {
-        // ثوابت أنواع الحركة — بدل النصوص العربية
         public const string TransactionTypeDispatch = "DISPATCH";
         public const string TransactionTypeReturn = "RETURN";
 
@@ -21,9 +20,6 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ========================================================
-        // 1. الدوال المتوافقة مع النظام السابق
-        // ========================================================
         public async Task<object> ProcessTransactionAsync(CrateTransactionCreateDto dto)
         {
             if (dto == null)
@@ -37,7 +33,7 @@ namespace KayanERP.Api.Services
         {
             if (partyType?.ToLower() == "client" || partyType?.Contains("عميل") == true)
             {
-                var client = await _context.CrateClients.FindAsync(partyId); // ✅ بدون cast
+                var client = await _context.CrateClients.FindAsync(partyId);
                 return new { PartyId = partyId, Balance = client?.CrateBalance ?? 0 };
             }
 
@@ -45,9 +41,6 @@ namespace KayanERP.Api.Services
             return new { PartyId = partyId, Balance = factoryBalance };
         }
 
-        // ========================================================
-        // 2. القوائم المرجعية السريعة
-        // ========================================================
         public async Task<CrateLookupsDto> GetLookupsAsync()
         {
             var containers = await _context.CirculatingContainers
@@ -63,12 +56,23 @@ namespace KayanERP.Api.Services
 
             var departments = await _context.Departments
                 .AsNoTracking()
-                .Select(d => d.DepartmentName)
+                .Select(d => new DepartmentDto
+                {
+                    Id = d.Id,
+                    DepartmentName = d.DepartmentName,
+                    DepartmentCode = d.DepartmentCode
+                })
                 .ToListAsync();
 
             var warehouses = await _context.Warehouses
                 .AsNoTracking()
-                .Select(w => w.WarehouseName)
+                .Select(w => new WarehouseLookupDto
+                {
+                    Id = w.Id,
+                    BranchId = w.BranchId ?? 1L,
+                    WarehouseName = w.WarehouseName,
+                    WarehouseCode = w.WarehouseCode
+                })
                 .ToListAsync();
 
             return new CrateLookupsDto
@@ -79,9 +83,6 @@ namespace KayanERP.Api.Services
             };
         }
 
-        // ========================================================
-        // 3. جرد وأرصدة الحاويات والصاجات اللحظية
-        // ========================================================
         public async Task<List<CirculatingContainerViewDto>> GetInventoryAsync()
         {
             return await _context.CirculatingContainers
@@ -100,9 +101,6 @@ namespace KayanERP.Api.Services
                 .ToListAsync();
         }
 
-        // ========================================================
-        // 4. سجل الحركات
-        // ========================================================
         public async Task<List<CrateMovementViewDto>> GetMovementsAsync(string? status)
         {
             var query = _context.CrateMovements.AsNoTracking().AsQueryable();
@@ -114,9 +112,6 @@ namespace KayanERP.Api.Services
             return list.Select(MapToMovementView).ToList();
         }
 
-        // ========================================================
-        // 5. صرف الحاويات والصاجات (طرف أول)
-        // ========================================================
         public async Task<CrateMovementViewDto> DispatchCratesAsync(DispatchCrateDto dto, string fallbackEmpCode, string fallbackEmpName)
         {
             if (dto.DispatchedQuantity <= 0)
@@ -128,7 +123,6 @@ namespace KayanERP.Api.Services
             if (container == null)
                 throw new InvalidOperationException($"نوع الفوارغ [{dto.ContainerName}] غير مسجل بدليل الحاويات النشطة.");
 
-            // التحقق من الرصيد المتاح بمخزن التعبئة في حال الصرف للفروع
             if (dto.MovementType == "DISPATCH_BRANCH")
             {
                 if (container.InPackagingWarehouseQuantity < dto.DispatchedQuantity)
@@ -141,7 +135,6 @@ namespace KayanERP.Api.Services
             var empCode = !string.IsNullOrWhiteSpace(dto.DispatchedByCode) ? dto.DispatchedByCode : fallbackEmpCode;
             var empName = !string.IsNullOrWhiteSpace(dto.DispatchedByName) ? dto.DispatchedByName : fallbackEmpName;
 
-            // ✅ استخدام Guid بدل Random لضمان عدم التصادم
             var movementNumber = $"CRT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
             var movement = new CrateMovement
@@ -165,9 +158,6 @@ namespace KayanERP.Api.Services
             return MapToMovementView(movement);
         }
 
-        // ========================================================
-        // 6. استلام الحاويات وفصل المهام الرقابي (طرف ثانٍ)
-        // ========================================================
         public async Task<(bool Success, string Message, CrateMovementViewDto? Movement)> ReceiveCratesAsync(
             long id, ReceiveCrateDto dto, string fallbackEmpCode, string fallbackEmpName)
         {
@@ -181,7 +171,6 @@ namespace KayanERP.Api.Services
             var empCode = !string.IsNullOrWhiteSpace(dto.ReceivedByCode) ? dto.ReceivedByCode : fallbackEmpCode;
             var empName = !string.IsNullOrWhiteSpace(dto.ReceivedByName) ? dto.ReceivedByName : fallbackEmpName;
 
-            // تطبيق مبدأ فصل المهام الرقابي الصارم
             bool isAdminOrSuper = empCode.Contains("ADMIN", StringComparison.OrdinalIgnoreCase)
                                || empCode.Equals("SUPERADMIN", StringComparison.OrdinalIgnoreCase);
 
@@ -248,9 +237,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 7. فض وتسوية النزاع (لجنة الرقابة والتحكيم)
-        // ========================================================
         public async Task<(bool Success, string Message, CrateMovementViewDto? Movement)> SettleDisputeAsync(
             long id, SettleDisputeDto dto, string fallbackEmpCode, string fallbackEmpName)
         {
@@ -313,9 +299,6 @@ namespace KayanERP.Api.Services
             }
         }
 
-        // ========================================================
-        // 8. حسابات عهد العملاء والمصنع
-        // ========================================================
         public async Task<int> GetFactoryBalanceAsync()
         {
             var factoryCrate = await _context.Crates.AsNoTracking().FirstOrDefaultAsync();
@@ -382,7 +365,6 @@ namespace KayanERP.Api.Services
 
                 _context.CrateClientTransactions.Add(entity);
 
-                // ✅ استخدام الثوابت بدل النصوص العربية
                 if (dto.TransactionType == TransactionTypeDispatch)
                 {
                     client.CrateBalance += dto.Quantity;
@@ -419,6 +401,8 @@ namespace KayanERP.Api.Services
 
         private static CrateMovementViewDto MapToMovementView(CrateMovement m)
         {
+            decimal.TryParse(m.FinancialPenalty, out decimal penaltyVal);
+
             return new CrateMovementViewDto
             {
                 Id = m.Id,
@@ -441,7 +425,7 @@ namespace KayanERP.Api.Services
                 Status = m.Status,
                 ArbitrationDecision = m.ArbitrationDecision,
                 ArbitrationText = m.ArbitrationText,
-                FinancialPenalty = m.FinancialPenalty
+                FinancialPenalty = penaltyVal
             };
         }
     }

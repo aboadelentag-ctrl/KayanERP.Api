@@ -46,10 +46,11 @@ namespace KayanERP.Api.Services
                           && !d.DepartmentName.Contains("إدارة") && !d.DepartmentName.Contains("العليا") &&
                              !d.DepartmentName.Contains("المالية") && !d.DepartmentName.Contains("الموارد"))
                 .OrderBy(d => d.DepartmentName)
-                .Select(d => new RequisitionDepartmentLookupDto
+                .Select(d => new ProductionDepartmentLookupDto
                 {
                     Id = d.Id,
-                    DepartmentName = d.DepartmentName
+                    DepartmentName = d.DepartmentName,
+                    DepartmentCode = d.DepartmentCode
                 })
                 .ToListAsync();
 
@@ -59,10 +60,11 @@ namespace KayanERP.Api.Services
                     .AsNoTracking()
                     .Where(d => !d.DepartmentName.Contains("إدارة") && !d.DepartmentName.Contains("المالية"))
                     .OrderBy(d => d.DepartmentName)
-                    .Select(d => new RequisitionDepartmentLookupDto
+                    .Select(d => new ProductionDepartmentLookupDto
                     {
                         Id = d.Id,
-                        DepartmentName = d.DepartmentName
+                        DepartmentName = d.DepartmentName,
+                        DepartmentCode = d.DepartmentCode
                     })
                     .ToListAsync();
             }
@@ -74,10 +76,12 @@ namespace KayanERP.Api.Services
                              w.WarehouseName.Contains("مستودع") || w.WarehouseName.Contains("مركزي"))
                           && !w.WarehouseName.Contains("صالة") && !w.WarehouseName.Contains("قسم") && !w.WarehouseName.Contains("إدارة"))
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new RequisitionWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    WarehouseName = w.WarehouseName
+                    BranchId = w.BranchId ?? 1L,
+                    WarehouseName = w.WarehouseName,
+                    WarehouseCode = w.WarehouseCode
                 })
                 .ToListAsync();
 
@@ -87,10 +91,12 @@ namespace KayanERP.Api.Services
                     .AsNoTracking()
                     .Where(w => w.Active && !w.WarehouseName.Contains("صالة") && !w.WarehouseName.Contains("قسم"))
                     .OrderBy(w => w.WarehouseName)
-                    .Select(w => new RequisitionWarehouseLookupDto
+                    .Select(w => new WarehouseLookupDto
                     {
                         Id = w.Id,
-                        WarehouseName = w.WarehouseName
+                        BranchId = w.BranchId ?? 1L,
+                        WarehouseName = w.WarehouseName,
+                        WarehouseCode = w.WarehouseCode
                     })
                     .ToListAsync();
             }
@@ -101,13 +107,15 @@ namespace KayanERP.Api.Services
                                      i.ItemType.Contains("نصف") || i.ItemType.Contains("عجين") ||
                                      i.ItemType == "RAW_MATERIAL" || i.ItemType == "WIP"))
                 .OrderBy(i => i.ItemName)
-                .Select(i => new RequisitionRawMaterialLookupDto
+                .Select(i => new ItemLookupDto
                 {
                     Id = i.Id,
+                    ItemId = i.Id,
                     ItemCode = i.ItemCode,
                     ItemName = i.ItemName,
                     ItemType = i.ItemType,
-                    Unit = i.Unit ?? "كجم"
+                    Unit = i.Unit ?? "كجم",
+                    BasePrice = i.BasePrice
                 })
                 .ToListAsync();
 
@@ -151,7 +159,7 @@ namespace KayanERP.Api.Services
 
         public async Task<RequisitionDetailDto> CreateRequisitionAsync(CreateRequisitionDto dto)
         {
-            string reqNumber = $"MR-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+            string reqNumber = $"MR-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
 
             long initialWarehouseId = dto.FromWarehouseId > 0
                 ? dto.FromWarehouseId
@@ -423,8 +431,8 @@ namespace KayanERP.Api.Services
                         ExpiryDate = line.ExpiryDate,
                         ReceivedQty = line.ReceivedQty,
                         LineStatus = line.LineStatus,
-                        DisputeStatusTitle = disputeStatus,
                         DiscrepancyReason = line.DiscrepancyReason,
+                        DisputeStatusTitle = disputeStatus,
                         FinalApprovedQty = finalApproved,
                         ScrapOrLossQty = scrapLoss,
                         ResolutionNotes = line.WarehouseNotes,
@@ -584,15 +592,13 @@ namespace KayanERP.Api.Services
                 CreatedAt = r.CreatedAt,
                 DispatchedAt = r.DispatchedAt,
                 CompletedAt = r.CompletedAt,
-                Lines = r.Lines.Select(l => new RequisitionLineDetailDto
+                Lines = r.Lines.Select(l => new RequisitionLineDto
                 {
                     Id = l.Id,
                     ItemId = l.ItemId,
                     ItemCode = l.Item?.ItemCode ?? string.Empty,
                     ItemName = l.Item?.ItemName ?? "صنف",
                     Unit = l.Item?.Unit ?? string.Empty,
-                    WarehouseId = l.FromWarehouseId ?? r.FromWarehouseId,
-                    WarehouseName = l.FromWarehouse?.WarehouseName ?? r.FromWarehouse?.WarehouseName ?? "المخزن الرئيسي",
                     RequestedQty = l.RequestedQty,
                     DispatchedQty = l.DispatchedQty,
                     ReceivedQty = l.ReceivedQty,

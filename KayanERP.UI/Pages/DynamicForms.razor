@@ -7,7 +7,7 @@
 @using System.IO
 @using System.Text
 
-<PageTitle>أستوديو تصميم النماذج وهندسة HACCP - حلواني أبو عادل</PageTitle>
+<PageTitle>أستوديو تصميم النماذج وهندسة HACCP - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
@@ -513,7 +513,7 @@
         {
             var opt = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             editingSchema = JsonSerializer.Deserialize<FormStudioSchema>(form.FieldsSchema, opt) 
-                            ?? new FormStudioSchema { FormTitle = form.FormName, FormCode = form.FormCode };
+                        ?? new FormStudioSchema { FormTitle = form.FormName, FormCode = form.FormCode };
         }
         catch
         {

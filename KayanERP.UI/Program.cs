@@ -26,9 +26,9 @@ builder.Services.AddBlazoredLocalStorage();
 // 3. تفعيل خدمات الصلاحيات والأمان الأساسية لـ Blazor
 builder.Services.AddAuthorizationCore();
 
-// 4. تسجيل خدمة إدارة حالة المستخدم وصلاحيات الأزرار (AppState)
+// 4. تسجيل خدمة إدارة حالة المستخدم، وصلاحيات الأزرار، والخدمات المركزية للمنظومة
 builder.Services.AddScoped<AppState>();
 builder.Services.AddScoped<ISalesClientService, SalesClientService>();
-builder.Services.AddScoped<KayanERP.UI.Services.IBranchContextService, KayanERP.UI.Services.BranchContextService>();
+builder.Services.AddScoped<IBranchContextService, BranchContextService>();
 
 await builder.Build().RunAsync();

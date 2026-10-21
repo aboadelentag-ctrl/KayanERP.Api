@@ -57,7 +57,7 @@ namespace KayanERP.Api.Services
                                          w.WarehouseName.Contains("شرقي") || w.WarehouseName.Contains("جاتوه") || w.WarehouseName.Contains("تورت") ||
                                          w.WarehouseName.Contains("اسبشيال")))
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new ProductionWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
                     WarehouseName = w.WarehouseName,
@@ -84,7 +84,7 @@ namespace KayanERP.Api.Services
                 ItemName = i.ItemName,
                 ItemType = i.ItemType,
                 Unit = i.Unit,
-                DepartmentId = i.DepartmentId,
+                DepartmentId = i.DepartmentId ?? 0,
                 DepartmentName = i.Department != null ? i.Department.DepartmentName : string.Empty,
                 CurrentStock = stockBalancesMap.TryGetValue(i.Id, out var qty) ? qty : 0
             }).ToList();
@@ -99,7 +99,7 @@ namespace KayanERP.Api.Services
                     Id = e.Id,
                     EmployeeCode = e.EmployeeCode,
                     Name = e.Name,
-                    DepartmentId = e.DepartmentId,
+                    DepartmentId = e.DepartmentId ?? 0,
                     DepartmentName = e.Department != null ? e.Department.DepartmentName : "صالة إنتاج",
                     JobTitle = e.JobTitle != null ? e.JobTitle.TitleName : "عامل إنتاج"
                 })
@@ -131,7 +131,7 @@ namespace KayanERP.Api.Services
             {
                 OrderId = o.Id,
                 OrderNumber = o.OrderNumber,
-                OrderDate = o.OrderDate,
+                OrderDate = o.OrderDate.ToDateTime(TimeOnly.MinValue),
                 Status = o.Status,
                 WarehouseId = o.WarehouseId,
                 WarehouseName = o.Warehouse != null ? o.Warehouse.WarehouseName : "مخزن صالة التشغيل",
@@ -144,11 +144,11 @@ namespace KayanERP.Api.Services
                     ItemId = d.ItemId,
                     ItemCode = d.Item?.ItemCode ?? string.Empty,
                     ItemName = d.Item?.ItemName ?? string.Empty,
-                    ItemType = d.Item?.ItemType,
+                    ItemType = d.Item?.ItemType ?? string.Empty,
                     PlannedQuantity = d.PlannedQuantity,
                     ProducedQuantity = d.ProducedQuantity,
                     WasteQuantity = d.WasteQuantity,
-                    Unit = d.Item?.Unit,
+                    Unit = d.Item?.Unit ?? string.Empty,
                     RecipeId = d.RecipeId,
                     RecipeName = d.Recipe != null ? d.Recipe.RecipeName : string.Empty,
                     Status = d.Status,
@@ -168,13 +168,13 @@ namespace KayanERP.Api.Services
                 var companyId = dto.CompanyId > 0 ? dto.CompanyId : 1;
                 var orderNumber = !string.IsNullOrWhiteSpace(dto.OrderNumber)
                     ? dto.OrderNumber.Trim()
-                    : $"PRD-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(100, 999)}";
+                    : $"PRD-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(100, 999)}";
 
                 var order = new ProductionOrder
                 {
                     CompanyId = companyId,
                     OrderNumber = orderNumber,
-                    OrderDate = dto.OrderDate != default ? dto.OrderDate : DateOnly.FromDateTime(DateTime.UtcNow),
+                    OrderDate = dto.OrderDate != default ? DateOnly.FromDateTime(dto.OrderDate) : DateOnly.FromDateTime(DateTime.UtcNow),
                     WarehouseId = dto.WarehouseId,
                     Status = "PENDING_EXECUTION",
                     Notes = dto.Notes,
@@ -241,8 +241,8 @@ namespace KayanERP.Api.Services
                 ItemId = d.ItemId,
                 ItemCode = d.Item?.ItemCode ?? string.Empty,
                 ItemName = d.Item?.ItemName ?? string.Empty,
-                ItemType = d.Item?.ItemType,
-                Unit = d.Item?.Unit,
+                ItemType = d.Item?.ItemType ?? string.Empty,
+                Unit = d.Item?.Unit ?? string.Empty,
                 PlannedQuantity = d.PlannedQuantity,
                 ProducedQuantity = d.ProducedQuantity > 0 ? d.ProducedQuantity : d.PlannedQuantity,
                 NormalScrapQuantity = 0m,
@@ -267,7 +267,7 @@ namespace KayanERP.Api.Services
             {
                 Id = order.Id,
                 OrderNumber = order.OrderNumber,
-                OrderDate = order.OrderDate,
+                OrderDate = order.OrderDate.ToDateTime(TimeOnly.MinValue),
                 Status = order.Status,
                 WarehouseName = order.Warehouse != null ? order.Warehouse.WarehouseName : "مخزن الصالة",
                 Items = items
@@ -462,8 +462,8 @@ namespace KayanERP.Api.Services
 
                 var nowUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
-                TimeOnly.TryParse(dto.StartTime, out var checkInTime);
-                TimeOnly.TryParse(dto.EndTime, out var checkOutTime);
+                TimeOnly? checkInTime = dto.StartTime != default ? TimeOnly.FromTimeSpan(dto.StartTime) : null;
+                TimeOnly? checkOutTime = dto.EndTime != default ? TimeOnly.FromTimeSpan(dto.EndTime) : null;
 
                 foreach (var worker in presentCrew)
                 {
@@ -476,8 +476,8 @@ namespace KayanERP.Api.Services
                         EmployeeId = worker.EmployeeId,
                         WorkDate = nowUtc,
                         AttendanceStatus = "حاضر",
-                        CheckIn = checkInTime != default ? checkInTime : (TimeOnly?)null,
-                        CheckOut = checkOutTime != default ? checkOutTime : (TimeOnly?)null,
+                        CheckIn = checkInTime,
+                        CheckOut = checkOutTime,
                         HoursWorked = worker.HoursWorked,
                         HourlyRate = rate,
                         LaborCost = cost,
@@ -531,7 +531,7 @@ namespace KayanERP.Api.Services
             var query = _context.ProductivityLogs
                 .AsNoTracking()
                 .Include(p => p.Employee)
-                    .ThenInclude(e => e.Department)
+                    .ThenInclude(e => e!.Department)
                 .Where(p => p.WorkDate >= startUtc && p.WorkDate <= endUtc);
 
             if (departmentId.HasValue && departmentId.Value > 0)
@@ -563,7 +563,7 @@ namespace KayanERP.Api.Services
             var query = _context.ProductivityLogs
                 .AsNoTracking()
                 .Include(p => p.Employee)
-                    .ThenInclude(e => e.Department)
+                    .ThenInclude(e => e!.Department)
                 .Where(p => p.WorkDate >= startUtc && p.WorkDate <= endUtc);
 
             if (departmentId.HasValue && departmentId.Value > 0)
@@ -624,7 +624,7 @@ namespace KayanERP.Api.Services
                 TotalLaborCost = totalLaborCost,
                 ProductionPerHour = prodPerHour,
                 TotalWaste = Math.Round(totalProduced * 0.015m, 2),
-                WastePercentage = "1.5%",
+                WastePercentage = 1.5m,
                 Evaluation = eval
             };
         }

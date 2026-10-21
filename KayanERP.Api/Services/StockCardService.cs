@@ -135,7 +135,7 @@ namespace KayanERP.Api.Services
             DateTime? toUtc = toDate.HasValue ? DateTime.SpecifyKind(toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc) : null;
 
             decimal running = 0;
-            var ledger = new List<StockMovementLedgerDto>();
+            var ledger = new List<StockLedgerLineDto>();
 
             decimal openingBalance = 0;
             if (fromUtc.HasValue)
@@ -156,14 +156,18 @@ namespace KayanERP.Api.Services
 
                 running = openingBalance;
 
-                ledger.Add(new StockMovementLedgerDto
+                ledger.Add(new StockLedgerLineDto
                 {
                     MovementId = 0,
                     MovementAt = fromUtc.Value,
+                    MovementDate = fromUtc.Value,
                     MovementType = "OPENING_BALANCE",
+                    MovementTypeLabel = "رصيد افتتاحي",
+                    WarehouseName = warehouseName,
                     InQuantity = 0,
                     OutQuantity = 0,
                     RunningBalance = openingBalance,
+                    BalanceAfter = openingBalance,
                     UnitCost = 0,
                     ReferenceType = "SYSTEM",
                     ReferenceId = null,
@@ -197,14 +201,18 @@ namespace KayanERP.Api.Services
                     running -= outQty;
                 }
 
-                ledger.Add(new StockMovementLedgerDto
+                ledger.Add(new StockLedgerLineDto
                 {
                     MovementId = m.Id,
                     MovementAt = m.MovementAt,
+                    MovementDate = m.MovementAt,
                     MovementType = m.MovementType,
+                    MovementTypeLabel = m.MovementType,
+                    WarehouseName = warehouseName,
                     InQuantity = inQty,
                     OutQuantity = outQty,
                     RunningBalance = running,
+                    BalanceAfter = running,
                     UnitCost = Convert.ToDecimal(m.UnitCost),
                     ReferenceType = m.ReferenceType ?? string.Empty,
                     ReferenceId = m.ReferenceId,
@@ -252,10 +260,12 @@ namespace KayanERP.Api.Services
             {
                 string expStr = expiryMap[kvp.Key];
                 int? daysRemaining = null;
+                DateTime? parsedExpiry = null;
                 string status = "Valid";
 
                 if (DateTime.TryParse(expStr, out DateTime expDateVal))
                 {
+                    parsedExpiry = expDateVal;
                     daysRemaining = (expDateVal.Date - today).Days;
                     if (daysRemaining < 0) status = "Expired";
                     else if (daysRemaining <= 60) status = "Expiring_Soon";
@@ -265,8 +275,8 @@ namespace KayanERP.Api.Services
                 {
                     BatchNumber = kvp.Key,
                     Quantity = kvp.Value,
-                    ExpiryDate = !string.IsNullOrWhiteSpace(expStr) ? expStr : "غير محدد",
-                    DaysRemaining = daysRemaining,
+                    ExpiryDate = parsedExpiry,
+                    DaysRemaining = daysRemaining ?? 0,
                     Status = status
                 });
             }
@@ -320,7 +330,7 @@ namespace KayanERP.Api.Services
                     StockStatus = stockStatus,
                     StatusMessage = statusMsg
                 },
-                Batches = batchesList.OrderBy(b => b.DaysRemaining ?? 9999).ToList(),
+                Batches = batchesList.OrderBy(b => b.DaysRemaining).ToList(),
                 Ledger = ledger.OrderByDescending(l => l.MovementAt).ThenByDescending(l => l.MovementId).ToList()
             };
         }

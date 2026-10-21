@@ -31,10 +31,13 @@ namespace KayanERP.Api.Services
                 .AsNoTracking()
                 .Where(c => c.Active)
                 .OrderBy(c => c.CustomerName)
-                .Select(c => new CustomerLookupDto
+                .Select(c => new CustomerDto
                 {
                     Id = c.Id,
-                    Name = c.CustomerName
+                    CustomerName = c.CustomerName,
+                    Name = c.CustomerName,
+                    CustomerCode = c.CustomerCode ?? string.Empty,
+                    CreditLimit = c.CreditLimit
                 })
                 .ToListAsync();
 
@@ -45,8 +48,13 @@ namespace KayanERP.Api.Services
                 .Select(i => new ItemLookupDto
                 {
                     Id = i.Id,
+                    ItemId = i.Id,
+                    ItemCode = i.ItemCode,
+                    ItemName = i.ItemName,
                     Name = i.ItemName,
-                    Price = i.BasePrice
+                    Price = i.BasePrice,
+                    BasePrice = i.BasePrice,
+                    Unit = i.Unit ?? "قطعة"
                 })
                 .ToListAsync();
 
@@ -57,6 +65,9 @@ namespace KayanERP.Api.Services
                 .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
+                    BranchId = w.BranchId ?? 1L,
+                    WarehouseName = w.WarehouseName,
+                    WarehouseCode = w.WarehouseCode,
                     Name = w.WarehouseName
                 })
                 .ToListAsync();
@@ -98,13 +109,15 @@ namespace KayanERP.Api.Services
                 TotalAmount = inv.TotalAmount,
                 PaymentMethod = "CASH",
                 Status = "Posted",
-                Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineViewDto
+                Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineDto
                 {
                     Id = l.Id,
+                    ItemId = l.ItemId,
                     ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId] : "صنف",
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
-                    Total = l.LineTotal
+                    Total = l.LineTotal,
+                    LineTotal = l.LineTotal
                 }).ToList()
             }).ToList();
         }
@@ -135,13 +148,15 @@ namespace KayanERP.Api.Services
                 TotalAmount = inv.TotalAmount,
                 PaymentMethod = "CASH",
                 Status = "Posted",
-                Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineViewDto
+                Lines = inv.InvoiceLines.Select(l => new SalesInvoiceLineDto
                 {
                     Id = l.Id,
+                    ItemId = l.ItemId,
                     ItemName = items.ContainsKey(l.ItemId) ? items[l.ItemId] : "صنف",
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
-                    Total = l.LineTotal
+                    Total = l.LineTotal,
+                    LineTotal = l.LineTotal
                 }).ToList()
             };
         }
@@ -165,8 +180,9 @@ namespace KayanERP.Api.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                int monthlyCount = await _context.SalesInvoices
-                    .CountAsync(i => i.InvoiceDate.Year == now.Year && i.InvoiceDate.Month == now.Month);
+                int monthlyCount = Convert.ToInt32(await _context.SalesInvoices
+                    .CountAsync(i => i.InvoiceDate.Year == now.Year && i.InvoiceDate.Month == now.Month));
+
                 string invoiceNumber = $"INV-{now:yyyyMM}-{(monthlyCount + 1):D4}";
 
                 var invoice = new SalesInvoice
@@ -185,7 +201,7 @@ namespace KayanERP.Api.Services
                     invoice.InvoiceLines.Add(new SalesInvoiceLine
                     {
                         ItemId = line.ItemId,
-                        Quantity = line.Quantity,
+                        Quantity = (int)line.Quantity,
                         UnitPrice = line.UnitPrice,
                         LineTotal = line.Quantity * line.UnitPrice
                     });

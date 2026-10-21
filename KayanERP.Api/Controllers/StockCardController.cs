@@ -85,7 +85,7 @@ namespace KayanERP.Api.Controllers
 
                 var baseMovementsQuery = _context.StockMovements
                     .Include(m => m.Warehouse)
-                        .ThenInclude(w => w.Branch)
+                        .ThenInclude(w => w!.Branch)
                     .AsNoTracking()
                     .Where(m => m.ItemId == itemId);
 
@@ -139,7 +139,8 @@ namespace KayanERP.Api.Controllers
                     if (string.IsNullOrEmpty(batchNumber)) batchNumber = Extract(m.Notes, "LOT:", "|");
                     if (string.IsNullOrEmpty(batchNumber)) batchNumber = Extract(m.Notes, "تشغيلة/تتبع:", "|");
 
-                    string expiryDate = Extract(m.Notes, "صلاحية:", "|");
+                    string expiryDateStr = Extract(m.Notes, "صلاحية:", "|");
+                    DateTime? parsedExpiry = DateTime.TryParse(expiryDateStr, out var expVal) ? expVal : null;
 
                     if (string.Equals(m.MovementType, "QC_REJECTED", StringComparison.OrdinalIgnoreCase))
                     {
@@ -157,10 +158,10 @@ namespace KayanERP.Api.Controllers
                             UnitCost = m.UnitCost,
                             TotalCost = 0,
                             BatchNumber = !string.IsNullOrEmpty(batchNumber) ? batchNumber : "---",
-                            ExpiryDate = !string.IsNullOrEmpty(expiryDate) ? expiryDate : "---",
+                            ExpiryDate = parsedExpiry,
                             ReferenceType = m.ReferenceType ?? "---",
                             ReferenceId = m.ReferenceId,
-                            Notes = m.Notes
+                            Notes = m.Notes ?? string.Empty
                         });
                         continue;
                     }
@@ -186,10 +187,10 @@ namespace KayanERP.Api.Controllers
                         UnitCost = m.UnitCost,
                         TotalCost = qty * m.UnitCost,
                         BatchNumber = !string.IsNullOrEmpty(batchNumber) ? batchNumber : "---",
-                        ExpiryDate = !string.IsNullOrEmpty(expiryDate) ? expiryDate : "---",
+                        ExpiryDate = parsedExpiry,
                         ReferenceType = m.ReferenceType ?? "---",
                         ReferenceId = m.ReferenceId,
-                        Notes = m.Notes
+                        Notes = m.Notes ?? string.Empty
                     });
                 }
 

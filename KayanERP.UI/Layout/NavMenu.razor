@@ -320,40 +320,47 @@
                 </div>
             </AuthorizePermission>
         }
-        <div class="nav-heading text-warning text-opacity-75 px-3 mt-3 mb-1 small fw-bold">
-    ─── الإدارة المالية والحسابات العامة ───
-</div>
 
-<div class="nav-item px-2 mb-1">
-    <NavLink class="nav-link rounded-2 text-warning fw-bold border border-warning border-opacity-25" href="chart-of-accounts">
-        <span class="bi bi-bank2 me-2 text-warning" aria-hidden="true"></span>
-        <span>شجرة الحسابات والمركز المالي 🏛️</span>
-    </NavLink>
-</div>
-<div class="nav-item px-2 mb-1">
-    <NavLink class="nav-link rounded-2 text-success fw-bold border border-success border-opacity-25" href="treasury-vouchers">
-        <span class="bi bi-cash-coin me-2 text-success" aria-hidden="true"></span>
-        <span>سندات القبض والصرف والخزائن 💵</span>
-    </NavLink>
-</div>
-<div class="nav-item px-2 mb-1">
-    <NavLink class="nav-link rounded-2 text-info fw-bold border border-info border-opacity-25" href="journal-entries">
-        <span class="bi bi-book-half me-2 text-info" aria-hidden="true"></span>
-        <span>دفتر قيود اليومية العامة 📖</span>
-    </NavLink>
-</div>
-<div class="nav-item px-2 mb-1">
-    <NavLink class="nav-link rounded-2 text-danger fw-bold border border-danger border-opacity-25" href="expenses-payables">
-        <span class="bi bi-wallet2 me-2 text-danger" aria-hidden="true"></span>
-        <span>الموردين والغاز ومصروفات التشغيل 🏭</span>
-    </NavLink>
-</div>
-<div class="nav-item px-2 mb-1">
-    <NavLink class="nav-link rounded-2 text-warning fw-bold border border-warning border-opacity-50" href="financial-statements">
-        <span class="bi bi-graph-up me-2 text-warning" aria-hidden="true"></span>
-        <span>القوائم المالية والأرباح والمركز المالي 📊</span>
-    </NavLink>
-</div>
+        <!-- ==================================================== -->
+        <!-- 6.5. الإدارة المالية والحسابات العامة -->
+        <!-- ==================================================== -->
+        @if (MatchesSearch("المالية الحسابات الخزينة الخزائن قيود يومية مصروفات القوائم الأرباح الموردين"))
+        {
+            <div class="nav-heading text-warning text-opacity-75 px-3 mt-3 mb-1 small fw-bold">
+                ─── الإدارة المالية والحسابات العامة ───
+            </div>
+
+            <div class="nav-item px-2 mb-1">
+                <NavLink class="nav-link rounded-2 text-warning fw-bold border border-warning border-opacity-25" href="chart-of-accounts">
+                    <span class="bi bi-bank2 me-2 text-warning" aria-hidden="true"></span>
+                    <span>شجرة الحسابات والمركز المالي 🏛️</span>
+                </NavLink>
+            </div>
+            <div class="nav-item px-2 mb-1">
+                <NavLink class="nav-link rounded-2 text-success fw-bold border border-success border-opacity-25" href="treasury-vouchers">
+                    <span class="bi bi-cash-coin me-2 text-success" aria-hidden="true"></span>
+                    <span>سندات القبض والصرف والخزائن 💵</span>
+                </NavLink>
+            </div>
+            <div class="nav-item px-2 mb-1">
+                <NavLink class="nav-link rounded-2 text-info fw-bold border border-info border-opacity-25" href="journal-entries">
+                    <span class="bi bi-book-half me-2 text-info" aria-hidden="true"></span>
+                    <span>دفتر قيود اليومية العامة 📖</span>
+                </NavLink>
+            </div>
+            <div class="nav-item px-2 mb-1">
+                <NavLink class="nav-link rounded-2 text-danger fw-bold border border-danger border-opacity-25" href="expenses-payables">
+                    <span class="bi bi-wallet2 me-2 text-danger" aria-hidden="true"></span>
+                    <span>الموردين والغاز ومصروفات التشغيل 🏭</span>
+                </NavLink>
+            </div>
+            <div class="nav-item px-2 mb-1">
+                <NavLink class="nav-link rounded-2 text-warning fw-bold border border-warning border-opacity-50" href="financial-statements">
+                    <span class="bi bi-graph-up me-2 text-warning" aria-hidden="true"></span>
+                    <span>القوائم المالية والأرباح والمركز المالي 📊</span>
+                </NavLink>
+            </div>
+        }
 
         <!-- ==================================================== -->
         <!-- 7. منظومة النماذج ومحاضر الفحص الرقمية (HACCP) -->

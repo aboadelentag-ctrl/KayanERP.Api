@@ -14,7 +14,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
-<PageTitle>إدارة الأصول والماكينات وتتبع الحاويات - حلواني أبو عادل</PageTitle>
+<PageTitle>إدارة الأصول والماكينات وتتبع الحاويات - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -33,37 +33,27 @@
             <div class="d-flex gap-2 flex-wrap">
                 @if (activeTab == "fixed")
                 {
-                    <AuthorizePermission Permission="FixedAssets.Manage">
-                        <button class="btn btn-warning text-dark btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenNewFixedAssetModal">
-                            <i class="bi bi-plus-circle-fill"></i> قيد أصل / ماكينة جديدة
-                        </button>
-                    </AuthorizePermission>
+                    <button class="btn btn-warning text-dark btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenNewFixedAssetModal">
+                        <i class="bi bi-plus-circle-fill"></i> قيد أصل / ماكينة جديدة
+                    </button>
 
-                    <AuthorizePermission Permission="FixedAssets.Manage">
-                        <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenMachineTransferModal">
-                            <i class="bi bi-arrow-left-right"></i> نقل عهدة ماكينة / أصل رأسمالي
-                        </button>
-                    </AuthorizePermission>
+                    <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenMachineTransferModal">
+                        <i class="bi bi-arrow-left-right"></i> نقل عهدة ماكينة / أصل رأسمالي
+                    </button>
 
-                    <AuthorizePermission Permission="FixedAssets.View">
-                        <button class="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm" @onclick="ExportAssetsToExcel">
-                            <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> تصدير إكسيل
-                        </button>
-                    </AuthorizePermission>
+                    <button class="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm" @onclick="ExportAssetsToExcel">
+                        <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> تصدير إكسيل
+                    </button>
                 }
                 else if (activeTab == "circulating")
                 {
-                    <AuthorizePermission Permission="Crates.Dispatch">
-                        <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenCrateDispatchModal">
-                            <i class="bi bi-box-arrow-up-right"></i> إصدار إذن تسليم وصرف أسبات وأوعية
-                        </button>
-                    </AuthorizePermission>
+                    <button class="btn btn-primary btn-sm fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="OpenCrateDispatchModal">
+                        <i class="bi bi-box-arrow-up-right"></i> إصدار إذن تسليم وصرف أسبات وأوعية
+                    </button>
 
-                    <AuthorizePermission Permission="Crates.Export">
-                        <button class="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm" @onclick="ExportCrateMovementsToExcel">
-                            <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> تصدير سجل الحركات
-                        </button>
-                    </AuthorizePermission>
+                    <button class="btn btn-outline-light btn-sm fw-bold px-3 py-2 shadow-sm" @onclick="ExportCrateMovementsToExcel">
+                        <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> تصدير سجل الحركات
+                    </button>
                 }
             </div>
         </div>
@@ -231,23 +221,17 @@
                                                 🔄 نقل
                                             </button>
 
-                                            <AuthorizePermission Permission="Emergency.Create">
-                                                <button class="btn btn-sm btn-danger fw-bold py-1 px-2 shadow-sm" title="إطلاق بلاغ طارئ واستدعاء صيانة" @onclick="() => OpenDirectSOSModal(asset)">
-                                                    🚨 عطل
-                                                </button>
-                                            </AuthorizePermission>
+                                            <button class="btn btn-sm btn-danger fw-bold py-1 px-2 shadow-sm" title="إطلاق بلاغ طارئ واستدعاء صيانة" @onclick="() => OpenDirectSOSModal(asset)">
+                                                🚨 عطل
+                                            </button>
 
-                                            <AuthorizePermission Permission="FixedAssets.History, FixedAssets.View">
-                                                <button class="btn btn-sm btn-outline-dark fw-bold py-1 px-2" title="استعراض الأرشيف الكامل" @onclick="() => OpenAssetHistoryModal(asset)">
-                                                    📜 السجل
-                                                </button>
-                                            </AuthorizePermission>
+                                            <button class="btn btn-sm btn-outline-dark fw-bold py-1 px-2" title="استعراض الأرشيف الكامل" @onclick="() => OpenAssetHistoryModal(asset)">
+                                                📜 السجل
+                                            </button>
 
-                                            <AuthorizePermission Permission="FixedAssets.Manage">
-                                                <button class="btn btn-sm btn-outline-primary fw-bold py-1 px-2" @onclick="() => EditFixedAsset(asset)">
-                                                    تعديل
-                                                </button>
-                                            </AuthorizePermission>
+                                            <button class="btn btn-sm btn-outline-primary fw-bold py-1 px-2" @onclick="() => EditFixedAsset(asset)">
+                                                تعديل
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -302,7 +286,7 @@
 
         <div class="card shadow-sm border-0 rounded-3 mb-4 border-top border-4 border-primary">
             <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold text-dark m-0">🚚 سجل أذون صرف واستلام الأسبات ومحاضر النزاع (@crateMovementsHistory.Count حركة)</h6>
+                <h6 class="fw-bold text-dark m-0">🚚 سجل أذون صرف واستلاست والأسبات ومحاضر النزاع (@crateMovementsHistory.Count حركة)</h6>
                 <div class="d-flex gap-2">
                     <select class="form-select form-select-sm font-monospace" style="width: 200px;" @bind="crateFilterStatus" @bind:after="LoadCrateData">
                         <option value="">-- كل الحالات --</option>
@@ -394,11 +378,9 @@
                                             }
                                             @if (m.Status == "DISPUTED")
                                             {
-                                                <AuthorizePermission Permission="Crates.SettleDispute, Roles.Manage">
-                                                    <button class="btn btn-sm btn-danger fw-bold py-1 px-2 shadow-sm" @onclick="() => OpenSettleDisputeModal(m)">
-                                                        ⚖️ فض النزاع
-                                                    </button>
-                                                </AuthorizePermission>
+                                                <button class="btn btn-sm btn-danger fw-bold py-1 px-2 shadow-sm" @onclick="() => OpenSettleDisputeModal(m)">
+                                                    ⚖️ فض النزاع
+                                                </button>
                                             }
                                         </div>
                                     </td>
@@ -494,7 +476,7 @@
                             <label class="form-label small fw-bold text-dark mb-1">نوع الحركة *</label>
                             <select class="form-select fw-bold border-primary" @bind="newCrateDispatch.MovementType">
                                 <option value="DISPATCH_BRANCH">صرف للفروع وسيارات التوزيع 📤</option>
-                                <option value="RETURN_FACTORY">استلام ومرتجع للمصنع 📥</option>
+                                <option value="RETURN_FACTORY">استلاست ومرتجع للمصنع 📥</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -533,7 +515,7 @@
     </div>
 }
 
-<!-- مودال 2: تأكيد الاستلام الميداني للأسبات (مرن للمسؤولين) -->
+<!-- مودال 2: تأكيد الاستلام الميداني للأسبات -->
 @if (isCrateReceiveModalOpen && selectedMovementForReceive != null)
 {
     var isSameUser = !string.IsNullOrWhiteSpace(State.EmployeeCode) && selectedMovementForReceive.DispatchedByCode.Equals(State.EmployeeCode, StringComparison.OrdinalIgnoreCase);
@@ -550,16 +532,9 @@
                     @if (isSameUser && !canBypassSoD)
                     {
                         <div class="alert alert-danger py-2 small fw-bold mb-3 border-danger">
-                            ⛔ <strong>حظر رقابي (Segregation of Duties):</strong> أنت مسجل كـ "المُسلِّم" لهذا الإذن، ولا يجوز لك قانوناً ورقابياً تأكيد الاستلام لنفسك. يجب أن يدخل الطرف المستلم بحسابه لتأكيد الاستلام.
+                            ⛔ <strong>حظر رقابي (Segregation of Duties):</strong> أنت مسجل كـ "المُسلِّم" لهذا الإذن، ولا يجوز لك قانوناً ورقابياً تأكيد الاستلام لنفسك.
                         </div>
                     }
-                    else if (isSameUser && canBypassSoD)
-                    {
-                        <div class="alert alert-info py-2 small fw-bold mb-3 border-info">
-                            ℹ️ <strong>تنبيه إداري:</strong> تم تمكين تأكيد الاستلام بحساب المسؤول لأغراض الاختبار والمطابقة الشاملة.
-                        </div>
-                    }
-
                     <div class="card p-3 bg-white border-0 shadow-sm mb-3">
                         <div class="row g-2 small">
                             <div class="col-md-4">
@@ -594,7 +569,7 @@
                         {
                             <div class="col-12">
                                 <div class="alert alert-warning py-2 small fw-bold mb-0">
-                                    ⚠️ <strong>تنبيه عجز وكسر:</strong> يوجد عجز بمقدار (@calcShortage) وعاء مفقود، و (@receiveCrateDto.DamagedCount) وعاء تالف. سيتم تحويل الإذن فوراً إلى <strong>(نزاع رسمي DISPUTED)</strong> للإحالة إلى لجنة فض المنازعات.
+                                    ⚠️ <strong>تنبيه عجز وكسر:</strong> يوجد عجز بمقدار (@calcShortage) وعاء مفقود، و (@receiveCrateDto.DamagedCount) وعاء تالف. سيتم تحويل الإذن فوراً إلى <strong>(نزاع رسمي DISPUTED)</strong>.
                                 </div>
                             </div>
                         }
@@ -631,10 +606,7 @@
                 <div class="modal-body bg-light p-4">
                     <div class="alert alert-danger py-2 small mb-3 border-danger">
                         📌 <strong>واقعة النزاع:</strong> من منصرف (@selectedMovementForSettle.DispatchedQuantity) تم استلام (@selectedMovementForSettle.ReceivedQuantity)، بعجز قدره <strong>(@selectedMovementForSettle.ShortageQuantity) مفقود</strong> و <strong>(@selectedMovementForSettle.DamagedCount) تالف/مكسور</strong>.
-                        <br />
-                        <span class="text-muted">ملاحظة المستلم: @selectedMovementForSettle.ReceiveNotes</span>
                     </div>
-
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-dark mb-1">قرار لجنة التحكيم المعتمد *</label>
@@ -665,7 +637,7 @@
     </div>
 }
 
-<!-- مودال 4: إطلاق بلاغ طوارئ مباشر (SOS) -->
+<!-- مودال 4: إطلاق بلاغ طارئ مباشر (SOS) -->
 @if (isDirectSOSModalOpen && assetForSOS != null)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.75);" dir="rtl">
@@ -677,7 +649,7 @@
                 </div>
                 <div class="modal-body bg-light p-4">
                     <div class="alert alert-danger py-2 small mb-3 border-danger">
-                        ⚠️ <strong>تنبيه تشغيلي:</strong> سيتم تحويل حالة الماكينة <strong>[@assetForSOS.AssetCode]</strong> فوراً إلى <strong>(تحت الصيانة والإصلاح UNDER_MAINTENANCE)</strong> وإحالتها لغرفة العمليات.
+                        ⚠️ <strong>تنبيه تشغيلي:</strong> سيتم تحويل حالة الماكينة <strong>[@assetForSOS.AssetCode]</strong> فوراً إلى <strong>(تحت الصيانة والإصلاح UNDER_MAINTENANCE)</strong>.
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-dark">عنوان المشكلة أو العطل الطارئ *</label>
@@ -972,7 +944,6 @@
     private bool isSuccessFeedback = true;
     private string crateFilterStatus = "";
 
-    // مودالات الأسبات
     private bool isCrateDispatchModalOpen = false;
     private bool isCrateReceiveModalOpen = false;
     private bool isCrateSettleModalOpen = false;
@@ -983,7 +954,6 @@
     private CrateHandoverMovementModel? selectedMovementForReceive;
     private CrateHandoverMovementModel? selectedMovementForSettle;
 
-    // مودالات الماكينات
     private bool isMachineTransferModalOpen = false;
     private string selectedMachineTransferCode = "";
     private FixedAssetModel? selectedMachineToTransfer;
@@ -1188,7 +1158,7 @@
             var res = await Http.PostAsJsonAsync($"api/Crates/movements/{selectedMovementForReceive.Id}/receive", receiveCrateDto);
             if (res.IsSuccessStatusCode)
             {
-                feedbackMessage = "✅ تم تسجيل الاستلام وتحديث حركة الأسبات بنجاح!";
+                feedbackMessage = "✅ تم تسجيل الاستلاست وتحديث حركة الأسبات بنجاح!";
                 isSuccessFeedback = true;
                 isCrateReceiveModalOpen = false;
                 await LoadCrateData();
@@ -1196,7 +1166,7 @@
             else
             {
                 var err = await res.Content.ReadAsStringAsync();
-                feedbackMessage = $"❌ فشل الاستلام: {err}";
+                feedbackMessage = $"❌ فشل الاستلاست: {err}";
                 isSuccessFeedback = false;
             }
         }

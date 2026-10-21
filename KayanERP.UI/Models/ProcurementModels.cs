@@ -15,6 +15,8 @@ namespace KayanERP.UI.Models
         public decimal DiscountAmount { get; set; } = 0;
         public decimal TaxAmount { get; set; } = 0;
         public long SupplierId { get; set; } = 0;
+
+        // خاصية محسوبة لضمان دقة إجمالي السطر
         public decimal LineTotal => (RequestedQuantity * UnitPrice) - DiscountAmount + TaxAmount;
     }
 

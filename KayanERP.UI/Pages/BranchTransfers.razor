@@ -7,7 +7,7 @@
 @inject AppState State
 @inject NavigationManager Navigation
 
-<PageTitle>حوكمة إمداد الفروع والمنافسط اللوجستي - كيان Enterprise</PageTitle>
+<PageTitle>حوكمة إمداد الفروع والمنافذ اللوجستية - كيان Enterprise</PageTitle>
 
 <div class="kayan-transfers-viewport" dir="rtl">
     <!-- الشريط العلوي -->
@@ -51,7 +51,7 @@
         <ul class="nav nav-pills custom-pills-bar gap-2">
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "list" ? "active" : "")" @onclick='() => activeTab = "list"'>
-                    📋 سجل الشحنات والمنافسط (@GroupedManifests.Count)
+                    📋 سجل الشحنات والمانيفست (@GroupedManifests.Count)
                 </button>
             </li>
             <li class="nav-item">
@@ -92,19 +92,19 @@
                     </div>
                     <div class="col-md-3">
                         <select class="form-select form-select-sm bg-dark text-white border-secondary" @bind="filterBranchId">
-                            <option ="0">كل الفروع المستلمة</option>
+                            <option value="0">كل الفروع المستلمة</option>
                             @foreach (var b in branches)
                             {
-                                <option ="@b.Id">@b.BranchName</option>
+                                <option value="@b.Id">@b.BranchName</option>
                             }
                         </select>
                     </div>
                     <div class="col-md-2">
                         <select class="form-select form-select-sm bg-dark text-white border-secondary" @bind="filterStatus">
-                            <option ="">كل الحالات</option>
-                            <option ="IN_TRANSIT">في الطريق 🚚</option>
-                            <option ="IN_DISPUTE">نزاع عجز 🚨</option>
-                            <option ="COMPLETED">مكتمل ومستلم ✓</option>
+                            <option value="">كل الحالات</option>
+                            <option value="IN_TRANSIT">في الطريق 🚚</option>
+                            <option value="IN_DISPUTE">نزاع عجز 🚨</option>
+                            <option value="COMPLETED">مكتمل ومستلم ✓</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -129,9 +129,6 @@
         }
         else if (activeTab == "list")
         {
-            <!-- ========================================== -->
-            <!-- تبويب 1: السجل العام للشحنات والمنافسط     -->
-            <!-- ========================================== -->
             <div class="content-card shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-dark table-hover align-middle mb-0 text-center small border-secondary">
@@ -211,9 +208,6 @@
         }
         else if (activeTab == "dispatch")
         {
-            <!-- ========================================== -->
-            <!-- تبويب 2: شحن مانيفست متعدد الأصناف والأوعية -->
-            <!-- ========================================== -->
             <div class="content-card p-4 shadow-sm">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
@@ -225,15 +219,14 @@
                     </button>
                 </div>
 
-                <!-- ترويسة الشحنة -->
                 <div class="row g-3 mb-4 bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-50">
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-light">الفرع المستهدف <span class="text-danger">*</span></label>
-                        <select class="form-select bg-dark text-white border-secondary" ="@multiDispatch.DestinationBranchId" @onchange="OnDispatchBranchChanged">
-                            <option ="0">-- اختر الفرع --</option>
+                        <select class="form-select bg-dark text-white border-secondary" value="@multiDispatch.DestinationBranchId" @onchange="OnDispatchBranchChanged">
+                            <option value="0">-- اختر الفرع --</option>
                             @foreach (var b in branches)
                             {
-                                <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                                <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
                             }
                         </select>
                     </div>
@@ -241,10 +234,10 @@
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-light">مستودع الفرع المستلم <span class="text-danger">*</span></label>
                         <select class="form-select bg-dark text-white border-secondary" @bind="multiDispatch.DestinationWarehouseId">
-                            <option ="0">-- اختر المستودع --</option>
+                            <option value="0">-- اختر المستودع --</option>
                             @foreach (var w in branchWarehouses)
                             {
-                                <option ="@w.Id">@w.WarehouseName</option>
+                                <option value="@w.Id">@w.WarehouseName</option>
                             }
                         </select>
                     </div>
@@ -265,7 +258,6 @@
                     </div>
                 </div>
 
-                <!-- جدول أصناف المانيفست والأوعية -->
                 <div class="table-responsive mb-3">
                     <table class="table table-dark table-bordered align-middle text-center small mb-0 border-secondary">
                         <thead class="table-secondary text-dark fw-bold">
@@ -289,12 +281,12 @@
                                 <tr>
                                     <td>
                                         <select class="form-select form-select-sm bg-dark text-white border-secondary"
-                                                ="@itemRow.ItemId"
+                                                value="@itemRow.ItemId"
                                                 @onchange="(e) => OnItemSelected(itemRow, e)">
-                                            <option ="0">-- اختر المنتج التام --</option>
+                                            <option value="0">-- اختر المنتج التام --</option>
                                             @foreach (var itm in finishedItems)
                                             {
-                                                <option ="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
+                                                <option value="@itm.Id">@itm.ItemName (@itm.ItemCode)</option>
                                             }
                                         </select>
                                     </td>
@@ -308,10 +300,10 @@
                                     </td>
                                     <td>
                                         <select class="form-select form-select-sm bg-dark text-white border-secondary fw-bold" @bind="itemRow.ContainerType">
-                                            <option ="سرفيس">سرفيس (جاتوه/سواريه)</option>
-                                            <option ="صاج/صينية">صاج / صينية (شرقي/نواشف)</option>
-                                            <option ="علبة/كرتونة">علبة / كرتونة (تورت)</option>
-                                            <option ="بدون وعاء">بدون وعاء (فرط)</option>
+                                            <option value="سرفيس">سرفيس (جاتوه/سواريه)</option>
+                                            <option value="صاج/صينية">صاج / صينية (شرقي/نواشف)</option>
+                                            <option value="علبة/كرتونة">علبة / كرتونة (تورت)</option>
+                                            <option value="بدون وعاء">بدون وعاء (فرط)</option>
                                         </select>
                                     </td>
                                     <td>
@@ -346,7 +338,6 @@
                     </table>
                 </div>
 
-                <!-- زر اعتماد الشحن محمي بالصلاحية -->
                 <div class="d-flex justify-content-end gap-2">
                     <AuthorizeAction Permission="Logistics.Transfers.Dispatch">
                         <button class="btn btn-primary px-4 fw-bold shadow-sm" @onclick="SubmitMultiDispatch" disabled="@isProcessing">
@@ -362,9 +353,6 @@
         }
         else if (activeTab == "receive")
         {
-            <!-- ========================================== -->
-            <!-- تبويب 3: استلام الفرع صنفاً بصنف          -->
-            <!-- ========================================== -->
             <div class="content-card shadow-sm p-3">
                 <h5 class="text-warning fw-bold mb-3"><i class="bi bi-inbox-fill me-2"></i>شحنات في الطريق بانتظار فحص واستلام عهدة الفرع والأوعية</h5>
                 @if (!InTransitManifests.Any())
@@ -427,7 +415,6 @@
                                                            placeholder="أي ملاحظات أو كسر..." @bind="item.TempNotes" />
                                                 </td>
                                                 <td>
-                                                    <!-- زر اعتماد البند محمي بصلاحية الاستلام -->
                                                     <AuthorizeAction Permission="Logistics.Transfers.Receive">
                                                         <button class="btn btn-success btn-sm px-3 fw-bold" @onclick="() => SubmitReceiveSingleLine(item)" disabled="@isProcessing">
                                                             ✓ اعتماد البند
@@ -446,9 +433,6 @@
         }
         else if (activeTab == "dispute")
         {
-            <!-- ========================================== -->
-            <!-- تبويب 4: لجنة فض المنازعات صنفاً بصنف     -->
-            <!-- ========================================== -->
             <div class="content-card shadow-sm p-3">
                 <h5 class="text-danger fw-bold mb-3"><i class="bi bi-hammer me-2"></i>لجنة فض منازعات عجز وتلف الشحن بين الكنترول والفروع</h5>
                 @if (!DisputedItems.Any())
@@ -488,14 +472,13 @@
                                         </td>
                                         <td>
                                             <select class="form-select form-select-sm bg-dark text-white border-secondary fw-bold" @bind="trf.TempChargeTo">
-                                                <option ="عهدة سائق التوزيع">عهدة سائق التوزيع</option>
-                                                <option ="هدر وكسر أثناء النقل">هدر وكسر أثناء النقل</option>
-                                                <option ="جفاف وفقد طبيعي">جفاف وفقد طبيعي</option>
-                                                <option ="تسوية جردية معتمدة">تسوية جردية معتمدة</option>
+                                                <option value="عهدة سائق التوزيع">عهدة سائق التوزيع</option>
+                                                <option value="هدر وكسر أثناء النقل">هدر وكسر أثناء النقل</option>
+                                                <option value="جفاف وفقد طبيعي">جفاف وفقد طبيعي</option>
+                                                <option value="تسوية جردية معتمدة">تسوية جردية معتمدة</option>
                                             </select>
                                         </td>
                                         <td>
-                                            <!-- زر حسم النزاع محمي بصلاحية فض المنازعات -->
                                             <AuthorizeAction Permission="Logistics.Transfers.DisputeResolve">
                                                 <button class="btn btn-danger btn-sm px-3 fw-bold" @onclick="() => SubmitResolveDispute(trf)" disabled="@isProcessing">
                                                     ⚖️ اعتماد وترصيد
@@ -512,9 +495,7 @@
         }
     </main>
 
-    <!-- ========================================== -->
-    <!-- Modal: تفاصيل الشحنة والأوعية               -->
-    <!-- ========================================== -->
+    <!-- Modal: تفاصيل الشحنة والأوعية -->
     @if (showDetailsModal && selectedManifest != null)
     {
         <div class="modal-backdrop-custom d-print-none">
@@ -559,7 +540,7 @@
                                     <td class="font-monospace text-primary fw-bold">@l.DispatchedQty.ToString("N1") @l.Unit</td>
                                     <td>@l.InnerCount @l.ContainerType (@l.CrateCount سبت)</td>
                                     <td class="font-monospace @(l.ReceivedQty < l.DispatchedQty ? "text-danger" : "text-success") fw-bold">
-                                        @(l.ReceivedQty.Has ? $"{l.ReceivedQty.:N1} {l.Unit}" : "بانتظار الاستلام")
+                                        @(l.ReceivedQty.HasValue ? $"{l.ReceivedQty.Value:N1} {l.Unit}" : "بانتظار الاستلام")
                                     </td>
                                     <td>
                                         <span class="badge @(l.Status == "COMPLETED" ? "bg-success" : l.Status == "IN_DISPUTE" ? "bg-danger" : "bg-warning text-dark")">
@@ -582,9 +563,7 @@
         </div>
     }
 
-    <!-- ========================================== -->
-    <!-- نافذة الطباعة الرسمية A4 للمانيفست        -->
-    <!-- ========================================== -->
+    <!-- نافذة الطباعة الرسمية A4 للمانيفست -->
     @if (selectedManifestForPrint != null)
     {
         <div id="printable-manifest" class="printable-section @(showPrintModal ? "d-block" : "d-none")">
@@ -592,7 +571,7 @@
                 <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                     <div>
                         <h3 class="fw-bold mb-1">حلواني ومصانع «أبو عادل»</h3>
-                        <div class="text-muted small">إذن صرف ومنافسط شحن بضائع للفروع والمعارض</div>
+                        <div class="text-muted small">إذن صرف ومنافست شحن بضائع للفروع والمعارض</div>
                     </div>
                     <div class="text-end">
                         <h4 class="font-monospace fw-bold text-dark mb-0">@selectedManifestForPrint.ManifestBaseNumber</h4>
@@ -633,7 +612,7 @@
                                 <td class="fw-bold font-monospace">@row.DispatchedQty.ToString("N1") @row.Unit</td>
                                 <td>@row.InnerCount @row.ContainerType</td>
                                 <td class="font-monospace">@row.CrateCount سبت</td>
-                                <td class="font-monospace">@(row.ReceivedQty.Has ? $"{row.ReceivedQty:N1}" : "___________")</td>
+                                <td class="font-monospace">@(row.ReceivedQty.HasValue ? $"{row.ReceivedQty.Value:N1}" : "___________")</td>
                                 <td>@(row.Notes ?? "")</td>
                             </tr>
                         }
@@ -764,7 +743,7 @@
         padding: 2rem;
     }
 
-    @@media print {
+    @media print {
         body * {
             visibility: hidden !important;
         }
@@ -833,11 +812,11 @@
             if (!string.IsNullOrWhiteSpace(filterStatus))
                 query = query.Where(t => t.Status == filterStatus);
 
-            if (filterDateFrom.Has)
-                query = query.Where(t => t.TransferDate >= DateOnly.FromDateTime(filterDateFrom.));
+            if (filterDateFrom.HasValue)
+                query = query.Where(t => t.TransferDate >= DateOnly.FromDateTime(filterDateFrom.Value));
 
-            if (filterDateTo.Has)
-                query = query.Where(t => t.TransferDate <= DateOnly.FromDateTime(filterDateTo.));
+            if (filterDateTo.HasValue)
+                query = query.Where(t => t.TransferDate <= DateOnly.FromDateTime(filterDateTo.Value));
 
             return query
                 .GroupBy(t => GetBaseManifestNumber(t.TransferNumber))
@@ -933,7 +912,7 @@
 
     private void OnDispatchBranchChanged(ChangeEventArgs e)
     {
-        if (long.TryParse(e.?.ToString(), out long bId))
+        if (long.TryParse(e.Value?.ToString(), out long bId))
         {
             multiDispatch.DestinationBranchId = bId;
             if (bId > 0)
@@ -956,7 +935,7 @@
 
     private async Task OnItemSelected(DispatchItemRowModel row, ChangeEventArgs e)
     {
-        if (long.TryParse(e.?.ToString(), out long itemId))
+        if (long.TryParse(e.Value?.ToString(), out long itemId))
         {
             row.ItemId = itemId;
             if (itemId > 0)

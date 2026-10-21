@@ -3,7 +3,7 @@
 @using KayanERP.UI.Models
 @inject HttpClient Http
 
-<PageTitle>شجرة الوحدات وتفريعات الأصناف - حلواني أبو عادل</PageTitle>
+<PageTitle>شجرة الوحدات وتفريعات الأصناف - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
     <!-- Header Section -->
@@ -44,7 +44,7 @@
     </ul>
 
     <!-- ======================================================== -->
-    <!-- Tab 1: تفريعات الأصناف والنكهات                         -->
+    <!-- Tab 1: تفريعات الأصناف والنكهات                          -->
     <!-- ======================================================== -->
     @if (activeTab == "variants")
     {
@@ -148,7 +148,7 @@
                                     {
                                         <tr>
                                             <td><code class="fw-bold font-monospace">@v.ItemCode</code></td>
-                                            <td class="fw-bold text-start ps-3 text-dark">@v.ItemName</td>
+                                            <td class="text-start ps-3 fw-bold text-dark">@v.ItemName</td>
                                             <td><span class="badge bg-secondary">@v.ParentItemName</span></td>
                                             <td><span class="badge bg-light text-dark border">@v.Unit</span></td>
                                             <td><span class="badge @(v.Active ? "bg-success" : "bg-danger")">@(v.Active ? "نشط" : "معطل")</span></td>

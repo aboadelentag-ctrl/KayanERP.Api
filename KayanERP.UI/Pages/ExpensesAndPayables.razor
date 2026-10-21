@@ -4,7 +4,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>حسابات الموردين ومصروفات التشغيل والخدمات - حلواني أبو عادل</PageTitle>
+<PageTitle>حسابات الموردين ومصروفات التشغيل والخدمات - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
     <!-- رأس الشاشة التنفيذي -->
@@ -69,21 +69,21 @@
                 </div>
                 <div class="col-md-3">
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedCategoryFilter">
-                        <option ="">-- كافة بنود الالتزامات --</option>
-                        <option ="SUPPLIER_PURCHASE">موردو الخامات والتعبئة (AP)</option>
-                        <option ="UTILITY_GAS">غاز الأفران والصالات (Town Gas)</option>
-                        <option ="UTILITY_ELEC">كهرباء الثلاجات والإنارة</option>
-                        <option ="UTILITY_WATER">فواتير المياه والصرف</option>
-                        <option ="PAYROLL">مسيرات أجور ورواتب العمال</option>
-                        <option ="RENT">إيجارات المعارض ومقرات الفروع</option>
+                        <option value="">-- كافة بنود الالتزامات --</option>
+                        <option value="SUPPLIER_PURCHASE">موردو الخامات والتعبئة (AP)</option>
+                        <option value="UTILITY_GAS">غاز الأفران والصالات (Town Gas)</option>
+                        <option value="UTILITY_ELEC">كهرباء الثلاجات والإنارة</option>
+                        <option value="UTILITY_WATER">فواتير المياه والصرف</option>
+                        <option value="PAYROLL">مسيرات أجور ورواتب العمال</option>
+                        <option value="RENT">إيجارات المعارض ومقرات الفروع</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <select class="form-select form-select-sm fw-bold" @bind="selectedStatusFilter">
-                        <option ="">-- كافة حالات السداد --</option>
-                        <option ="UNPAID">مستحقة بالكامل (غير مسددة)</option>
-                        <option ="PARTIAL">مسددة جزئياً</option>
-                        <option ="PAID">مسددة بالكامل ✓</option>
+                        <option value="">-- كافة حالات السداد --</option>
+                        <option value="UNPAID">مستحقة بالكامل (غير مسددة)</option>
+                        <option value="PARTIAL">مسددة جزئياً</option>
+                        <option value="PAID">مسددة بالكامل ✓</option>
                     </select>
                 </div>
                 <div class="col-md-2 text-md-end text-muted small">
@@ -181,23 +181,23 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">نوع الالتزام / الفاتورة *</label>
                                 <select class="form-select form-select-sm fw-bold border-primary" @bind="newBill.Category" @bind:after="OnCategoryChanged">
-                                    <option ="SUPPLIER_PURCHASE">موردو الخامات والتعبئة (سمن، سكر، دقيق)</option>
-                                    <option ="UTILITY_GAS">فاتورة غاز الأفران والصالات (Town Gas)</option>
-                                    <option ="UTILITY_ELEC">فاتورة كهرباء الثلاجات والإنارة</option>
-                                    <option ="UTILITY_WATER">فاتورة المياه والصرف</option>
-                                    <option ="PAYROLL">مسير أجور ورواتب عمال الورديات</option>
-                                    <option ="RENT">إيجار معرض أو مقر فرع</option>
+                                    <option value="SUPPLIER_PURCHASE">موردو الخامات والتعبئة (سمن، سكر، دقيق)</option>
+                                    <option value="UTILITY_GAS">فاتورة غاز الأفران والصالات (Town Gas)</option>
+                                    <option value="UTILITY_ELEC">فاتورة كهرباء الثلاجات والإنارة</option>
+                                    <option value="UTILITY_WATER">فاتورة المياه والصرف</option>
+                                    <option value="PAYROLL">مسير أجور ورواتب عمال الورديات</option>
+                                    <option value="RENT">إيجار معرض أو مقر فرع</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">مركز التكلفة المحمّل عليه *</label>
                                 <select class="form-select form-select-sm fw-bold border-secondary" @bind="newBill.CostCenterName">
-                                    <option ="المستودع الرئيسي للخامات (WH-MAIN)">المستودع الرئيسي للخامات (WH-MAIN)</option>
-                                    <option ="صالة الإنتاج الشرقي (CC-EAST)">صالة الإنتاج الشرقي (CC-EAST)</option>
-                                    <option ="صالة الغربي والتبريد (CC-WEST)">صالة الغربي والتبريد (CC-WEST)</option>
-                                    <option ="فرع المبيعات الخارجية والتوزيع (BR-DIST)">فرع المبيعات الخارجية والتوزيع (BR-DIST)</option>
-                                    <option ="المعرض الرئيسي (المصنع)">المعرض الرئيسي (المصنع)</option>
-                                    <option ="فرع وسط البلد (BR-02)">فرع وسط البلد (BR-02)</option>
+                                    <option value="المستودع الرئيسي للخامات (WH-MAIN)">المستودع الرئيسي للخامات (WH-MAIN)</option>
+                                    <option value="صالة الإنتاج الشرقي (CC-EAST)">صالة الإنتاج الشرقي (CC-EAST)</option>
+                                    <option value="صالة الغربي والتبريد (CC-WEST)">صالة الغربي والتبريد (CC-WEST)</option>
+                                    <option value="فرع المبيعات الخارجية والتوزيع (BR-DIST)">فرع المبيعات الخارجية والتوزيع (BR-DIST)</option>
+                                    <option value="المعرض الرئيسي (المصنع)">المعرض الرئيسي (المصنع)</option>
+                                    <option value="فرع وسط البلد (BR-02)">فرع وسط البلد (BR-02)</option>
                                 </select>
                             </div>
 
@@ -207,10 +207,10 @@
                                 <div class="col-md-12">
                                     <label class="form-label small fw-bold text-danger">اختيار المورد المعتمد من قاعدة البيانات *</label>
                                     <select class="form-select form-select-sm fw-bold border-danger" @bind="selectedSupplierId" @bind:after="OnSupplierSelected">
-                                        <option ="0">-- اختر المورد المسجل في النظام --</option>
+                                        <option value="0">-- اختر المورد المسجل في النظام --</option>
                                         @foreach (var supp in suppliersLookupList)
                                         {
-                                            <option ="@supp.Id">[@supp.SupplierCode] @supp.SupplierName (@supp.Phone)</option>
+                                            <option value="@supp.Id">[@supp.SupplierCode] @supp.SupplierName (@supp.Phone)</option>
                                         }
                                     </select>
                                 </div>
@@ -220,9 +220,9 @@
                                 <div class="col-md-12">
                                     <label class="form-label small fw-bold text-primary">الفرع أو المعرض المستحق عنه الإيجار *</label>
                                     <select class="form-select form-select-sm fw-bold border-primary" @bind="newBill.CostCenterName" @bind:after="OnRentBranchSelected">
-                                        <option ="فرع وسط البلد (BR-02)">فرع وسط البلد (BR-02)</option>
-                                        <option ="المعرض الرئيسي (المصنع)">المعرض الرئيسي (المصنع)</option>
-                                        <option ="فرع المبيعات الخارجية والتوزيع (BR-DIST)">فرع المبيعات الخارجية والتوزيع (BR-DIST)</option>
+                                        <option value="فرع وسط البلد (BR-02)">فرع وسط البلد (BR-02)</option>
+                                        <option value="المعرض الرئيسي (المصنع)">المعرض الرئيسي (المصنع)</option>
+                                        <option value="فرع المبيعات الخارجية والتوزيع (BR-DIST)">فرع المبيعات الخارجية والتوزيع (BR-DIST)</option>
                                     </select>
                                 </div>
                             }

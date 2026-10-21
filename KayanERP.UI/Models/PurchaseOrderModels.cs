@@ -1,4 +1,7 @@
-﻿namespace KayanERP.UI.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace KayanERP.UI.Models
 {
     public class PurchaseOrderDetailDto
     {
@@ -11,6 +14,8 @@
         public decimal DiscountAmount { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal ReceivedQuantity { get; set; }
+
+        // خاصية محسوبة لضمان دقة إجمالي السطر
         public decimal LineTotal => (Quantity * UnitPrice) - DiscountAmount + TaxAmount;
     }
 
@@ -38,6 +43,8 @@
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountAmount { get; set; } = 0;
         public decimal TaxAmount { get; set; } = 0;
+
+        // خاصية محسوبة لضمان دقة الإجمالي قبل الإرسال
         public decimal LineTotal => (Quantity * UnitPrice) - DiscountAmount + TaxAmount;
     }
 

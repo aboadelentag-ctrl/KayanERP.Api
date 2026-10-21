@@ -1,4 +1,5 @@
 global using KayanERP.Shared.DTOs;
+
 using KayanERP.Api.Middleware;
 using KayanERP.Api.Models;
 using KayanERP.Api.Services;
@@ -37,7 +38,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 // ==============================================================
-// 3. تسجيل خدمات النظام (Services) - بديل AddApplicationServices
+// 3. تسجيل خدمات النظام
 // ==============================================================
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IMaterialReceiptService, MaterialReceiptService>();
@@ -54,7 +55,7 @@ builder.Services.AddScoped<ISupplierPriceService, SupplierPriceService>();
 builder.Services.AddScoped<IVendorQcService, VendorQcService>();
 builder.Services.AddScoped<IFinishedGoodsTransferService, FinishedGoodsTransferService>();
 builder.Services.AddScoped<ICrateService, CrateService>();
-builder.Services.AddScoped<IAuthService, AuthService>(); // أو AuthService حسب اسم كلاسك
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ==============================================================
 // 4. الـ JWT Authentication
@@ -107,15 +108,17 @@ builder.Services.AddControllers(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 // ==============================================================
-// 6. Swagger + JWT Support
+// 6. Swagger + JWT Support (متوافق مع Microsoft.OpenApi الحديث)
 // ==============================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.CustomSchemaIds(type => type.FullName?.Replace("+", ".").Replace("`", ""));
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -125,6 +128,7 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "أدخل التوكن هنا بالشكل: Bearer {token}"
     });
+
     c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
@@ -140,7 +144,8 @@ var allowedOrigins = builder.Configuration
 
 if (allowedOrigins.Length == 0)
 {
-    throw new InvalidOperationException("No CORS origins configured. Add 'Cors:AllowedOrigins' to settings.");
+    throw new InvalidOperationException(
+        "No CORS origins configured. Add 'Cors:AllowedOrigins' to settings.");
 }
 
 builder.Services.AddCors(options =>
@@ -160,15 +165,17 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ==============================================================
-// 9. Pipeline
+// 9. Pipeline (الترتيب مهم جدًا!)
 // ==============================================================
+
+app.UseExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseExceptionHandling();
 app.UseHttpsRedirection();
 app.UseCors("KayanPolicy");
 

@@ -6,7 +6,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>إدارة الأقسام وصالات الإنتاج - حلواني أبو عادل</PageTitle>
+<PageTitle>إدارة الأقسام وصالات الإنتاج - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -62,27 +62,27 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">👑 المستوى الهيكلي</label>
                             <select class="form-select form-select-sm" @bind="selectedLevelFilter">
-                                <option ="all">-- كل المستويات --</option>
-                                <option ="root">👑 إدارات رئيسية فقط</option>
-                                <option ="sub">└── صالات وأقسام فرعية</option>
+                                <option value="all">-- كل المستويات --</option>
+                                <option value="root">👑 إدارات رئيسية فقط</option>
+                                <option value="sub">└── صالات وأقسام فرعية</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-secondary mb-1">🏢 تتبع لإدارة</label>
                             <select class="form-select form-select-sm" @bind="selectedParentFilter">
-                                <option ="-1">-- كل الجهات --</option>
+                                <option value="-1">-- كل الجهات --</option>
                                 @foreach (var parent in departments.Where(d => d.ParentDepartmentId == null))
                                 {
-                                    <option ="@parent.Id">@parent.DepartmentName</option>
+                                    <option value="@parent.Id">@parent.DepartmentName</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold text-secondary mb-1">⚡ الحالة</label>
                             <select class="form-select form-select-sm" @bind="selectedStatusFilter">
-                                <option ="all">كل الحالات</option>
-                                <option ="active">🟢 مفعل فقط</option>
-                                <option ="inactive">🔴 معطل</option>
+                                <option value="all">كل الحالات</option>
+                                <option value="active">🟢 مفعل فقط</option>
+                                <option value="inactive">🔴 معطل</option>
                             </select>
                         </div>
                     </div>
@@ -220,10 +220,10 @@
                     <div class="mb-2">
                         <label class="form-label small fw-bold text-secondary">يتبع لإدارة (اختياري)</label>
                         <select class="form-select form-select-sm" @bind="currentDept.ParentDepartmentId">
-                            <option ="">-- إدارة رئيسية (لا تتبع جهة أخرى) --</option>
+                            <option value="">-- إدارة رئيسية (لا تتبع جهة أخرى) --</option>
                             @foreach (var parent in departments.Where(d => d.Id != currentDept.Id))
                             {
-                                <option ="@parent.Id">@parent.DepartmentName (@parent.DepartmentCode)</option>
+                                <option value="@parent.Id">@parent.DepartmentName (@parent.DepartmentCode)</option>
                             }
                         </select>
                     </div>
@@ -749,7 +749,6 @@
             var roots = importedPreviewList.Where(r => string.IsNullOrEmpty(r.ParentCode)).ToList();
             var children = importedPreviewList.Where(r => !string.IsNullOrEmpty(r.ParentCode)).ToList();
 
-            // 1. استيراد أو تحديث الإدارات الرئيسية أولاً
             foreach (var r in roots)
             {
                 var existing = departments.FirstOrDefault(d => d.DepartmentCode.Equals(r.DepartmentCode, StringComparison.OrdinalIgnoreCase));
@@ -772,7 +771,6 @@
 
             await LoadDepartmentsAsync();
 
-            // 2. استيراد أو تحديث الصالات والأقسام الفرعية مع ربط الأب
             foreach (var c in children)
             {
                 var existing = departments.FirstOrDefault(d => d.DepartmentCode.Equals(c.DepartmentCode, StringComparison.OrdinalIgnoreCase));

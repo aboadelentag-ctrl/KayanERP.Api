@@ -8,7 +8,7 @@
 @inject IJSRuntime JS
 @inject AppState State
 
-<PageTitle>حوكمة عهدة الصاجات والأسبتة والفوارغ - حلواني أبو عادل</PageTitle>
+<PageTitle>حوكمة عهدة الصاجات والأسبتة والفوارغ - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -306,7 +306,7 @@
     }
 
     <!-- ======================================================== -->
-    <!-- Modals: نوافذ الحركات والتحكيم                           -->
+    <!-- Modals: نوافذ الحركات والتحكيم                            -->
     <!-- ======================================================== -->
     <!-- نافذة صرف الفوارغ للمصنع والفروع (Dispatch Modal) -->
     @if (showDispatchModal)
@@ -322,8 +322,8 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">نوع الحركة *</label>
                             <select class="form-select form-select-sm fw-bold" @bind="dispatchDto.MovementType">
-                                <option ="DISPATCH_BRANCH">صرف من المصنع إلى الفرع / السائق</option>
-                                <option ="RETURN_FACTORY">إرجاع فوارغ من الفرع إلى المصنع</option>
+                                <option value="DISPATCH_BRANCH">صرف من المصنع إلى الفرع / السائق</option>
+                                <option value="RETURN_FACTORY">إرجاع فوارغ من الفرع إلى المصنع</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -331,7 +331,7 @@
                             <select class="form-select form-select-sm fw-bold" @bind="dispatchDto.ContainerName">
                                 @foreach (var cn in lookups.Containers)
                                 {
-                                    <option ="@cn.ContainerName">@cn.ContainerName (@cn.Specification)</option>
+                                    <option value="@cn.ContainerName">@cn.ContainerName (@cn.Specification)</option>
                                 }
                             </select>
                         </div>
@@ -436,10 +436,10 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">قرار اللجنة وتوجيه المسؤولية *</label>
                             <select class="form-select form-select-sm fw-bold" @bind="disputeDto.ArbitrationDecision">
-                                <option ="تحميل غرامة مالية على السائق">تحميل غرامة مالية على السائق</option>
-                                <option ="تحميل غرامة مالية على أمين مخزن الفرع">تحميل غرامة مالية على أمين مخزن الفرع</option>
-                                <option ="إهلاك كسر طبيعي على عهدة المصنع">إهلاك كسر طبيعي على عهدة المصنع</option>
-                                <option ="إعادة الصاجات المعثور عليها لمخزن التعبئة">إعادة الصاجات المعثور عليها لمخزن التعبئة</option>
+                                <option value="تحميل غرامة مالية على السائق">تحميل غرامة مالية على السائق</option>
+                                <option value="تحميل غرامة مالية على أمين مخزن الفرع">تحميل غرامة مالية على أمين مخزن الفرع</option>
+                                <option value="إهلاك كسر طبيعي على عهدة المصنع">إهلاك كسر طبيعي على عهدة المصنع</option>
+                                <option value="إعادة الصاجات المعثور عليها لمخزن التعبئة">إعادة الصاجات المعثور عليها لمخزن التعبئة</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -476,8 +476,8 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">نوع الحركة *</label>
                             <select class="form-select border-primary fw-bold" @bind="newTransaction.TransactionType">
-                                <option ="منصرف للعميل">🔴 منصرف للعميل (خروج إسبات من المصنع)</option>
-                                <option ="مستلم من العميل">🟢 مستلم من العميل (رجوع إسبات للمصنع)</option>
+                                <option value="منصرف للعميل">🔴 منصرف للعميل (خروج إسبات من المصنع)</option>
+                                <option value="مستلم من العميل">🟢 مستلم من العميل (رجوع إسبات للمصنع)</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -568,7 +568,6 @@
     private bool isLoading = false;
     private bool isProcessing = false;
 
-    // --- بيانات حاويات المصنع والفروع ---
     private List<CirculatingContainerViewDto> containersInventory = new();
     private List<CrateMovementViewDto> containerMovements = new();
     private CrateLookupsDto lookups = new();
@@ -582,7 +581,6 @@
     private CrateMovementViewDto? selectedMovementToDispute;
     private SettleDisputeDto disputeDto = new();
 
-    // --- بيانات عملاء التوزيع الخارجي ---
     private int factoryBalance = 0;
     private List<CrateClient>? clients;
     private bool showClientForm = false;
@@ -680,7 +678,6 @@
     {
         selectedMovementToReceive = m;
 
-        // لتجنب التعليق عند التجربة بالحساب نفسه، إذا كان المسلم هو نفس المستخدم الحالي يتم التبديل تلقائياً لمستلم افتراضي
         string defaultCode = !string.IsNullOrWhiteSpace(State.EmployeeCode) ? State.EmployeeCode : "EMP-045";
         string defaultName = !string.IsNullOrWhiteSpace(State.FullName) ? State.FullName : "مستلم الفرع";
 
@@ -805,9 +802,6 @@
         }
     }
 
-    // ==========================================
-    // معالجة عملاء التوزيع الخارجي
-    // ==========================================
     private void ShowAddClientForm()
     {
         currentClient = new CrateClient();
@@ -952,9 +946,6 @@
         }
     }
 
-    // ==========================================
-    // كلاسات ونماذج العرض الميداني
-    // ==========================================
     public class CrateLookupsDto
     {
         public List<ContainerLookupDto> Containers { get; set; } = new();

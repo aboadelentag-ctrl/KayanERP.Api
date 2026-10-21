@@ -76,7 +76,7 @@ namespace KayanERP.Api.Controllers
                     .Select(w => new WarehouseDto
                     {
                         Id = w.Id,
-                        BranchId = w.BranchId,
+                        BranchId = w.BranchId ?? 1L,
                         BranchName = w.Branch != null ? w.Branch.BranchName : "الفرع الرئيسي",
                         WarehouseCode = w.WarehouseCode,
                         WarehouseName = w.WarehouseName,
@@ -109,7 +109,7 @@ namespace KayanERP.Api.Controllers
                     .Select(w => new WarehouseDto
                     {
                         Id = w.Id,
-                        BranchId = w.BranchId,
+                        BranchId = w.BranchId ?? 1L,
                         BranchName = w.Branch != null ? w.Branch.BranchName : "الفرع الرئيسي",
                         WarehouseCode = w.WarehouseCode,
                         WarehouseName = w.WarehouseName,
@@ -147,8 +147,8 @@ namespace KayanERP.Api.Controllers
 
             if (exists) return BadRequest($"كود المستودع ({dto.WarehouseCode}) مستخدم بالفعل.");
 
-            long branchId = dto.BranchId.HasValue && dto.BranchId.Value > 0
-                ? dto.BranchId.Value
+            long branchId = dto.BranchId > 0
+                ? dto.BranchId
                 : (await _context.Branches.Select(b => b.Id).FirstOrDefaultAsync());
 
             if (branchId <= 0) branchId = 1;
@@ -171,7 +171,7 @@ namespace KayanERP.Api.Controllers
             await _context.SaveChangesAsync();
 
             dto.Id = warehouse.Id;
-            dto.BranchId = warehouse.BranchId;
+            dto.BranchId = warehouse.BranchId ?? branchId;
             return Ok(dto);
         }
 
@@ -179,7 +179,7 @@ namespace KayanERP.Api.Controllers
         public async Task<IActionResult> PutWarehouse(long id, [FromBody] WarehouseDto dto)
         {
             if (dto == null || id != dto.Id) return BadRequest("بيانات المستودع غير متطابقة.");
-            if (dto.ParentWarehouseId == id) return BadRequest("لا يمكن جعل المستودع تابعاً لنفسه.");
+            if (dto.ParentWarehouseId.HasValue && dto.ParentWarehouseId.Value == id) return BadRequest("لا يمكن جعل المستودع تابعاً لنفسه.");
 
             var existing = await _context.Warehouses.FindAsync(id);
             if (existing == null) return NotFound("المستودع غير موجود.");
@@ -193,9 +193,9 @@ namespace KayanERP.Api.Controllers
 
             if (exists) return BadRequest($"كود المستودع ({dto.WarehouseCode}) مستخدم في مستودع آخر.");
 
-            if (dto.BranchId.HasValue && dto.BranchId.Value > 0)
+            if (dto.BranchId > 0)
             {
-                existing.BranchId = dto.BranchId.Value;
+                existing.BranchId = dto.BranchId;
             }
 
             existing.WarehouseCode = dto.WarehouseCode;
@@ -283,9 +283,9 @@ namespace KayanERP.Api.Controllers
                             b.BranchName.Equals(item.BranchCodeOrName.Trim(), StringComparison.OrdinalIgnoreCase));
                         if (branchMatch != null) targetBranchId = branchMatch.Id;
                     }
-                    else if (item.BranchId.HasValue && item.BranchId.Value > 0)
+                    else if (item.BranchId > 0)
                     {
-                        targetBranchId = item.BranchId.Value;
+                        targetBranchId = item.BranchId;
                     }
 
                     var existing = await _context.Warehouses

@@ -103,7 +103,7 @@
 </div>
 
 @code {
-    private string selectedDepartment = "الشرقي"; // القسم الافتراضي
+    private string selectedDepartment = "الشرقي";
     private List<WorkerProductivityDto> allWorkers = new();
     private List<WorkerProductivityDto> filteredWorkers = new();
 
@@ -116,13 +116,11 @@
             new WorkerProductivityDto { Department = "الشرقي", WorkerName = "أحمد محمود", ItemName = "بسبوسة سادة", TargetPerHour = 50, ActualPerHour = 48 },
             new WorkerProductivityDto { Department = "الشرقي", WorkerName = "سيد مصطفى", ItemName = "كنافة بالكريمة", TargetPerHour = 40, ActualPerHour = 42 },
             new WorkerProductivityDto { Department = "الشرقي", WorkerName = "محمود حسن", ItemName = "بقلاوة", TargetPerHour = 30, ActualPerHour = 22 },
-
-// قسم المخبوزات
+            // قسم المخبوزات
             new WorkerProductivityDto { Department = "المخبوزات", WorkerName = "إبراهيم علي", ItemName = "باتيه بالجبنة", TargetPerHour = 100, ActualPerHour = 100 },
             new WorkerProductivityDto { Department = "المخبوزات", WorkerName = "مصطفى كامل", ItemName = "كرواسون", TargetPerHour = 80, ActualPerHour = 65 },
             new WorkerProductivityDto { Department = "المخبوزات", WorkerName = "علي جابر", ItemName = "دنش", TargetPerHour = 50, ActualPerHour = 30 },
-
-// قسم الجاتوه
+            // قسم الجاتوه
             new WorkerProductivityDto { Department = "الجاتوه", WorkerName = "شيف طارق", ItemName = "جاتوه شيكولاتة", TargetPerHour = 60, ActualPerHour = 65 }
         };
 

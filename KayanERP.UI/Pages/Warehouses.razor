@@ -6,7 +6,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>إدارة المستودعات ومراكز التخزين - حلواني أبو عادل</PageTitle>
+<PageTitle>إدارة المستودعات ومراكز التخزين - كيان ERP</PageTitle>
 
 <div class="container-fluid py-4" dir="rtl">
     <!-- Header -->
@@ -53,16 +53,16 @@
                 <div class="col-md-4">
                     <label class="form-label small fw-bold text-muted mb-1">فلترة حسب الفرع:</label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedBranchId" @bind:after="LoadWarehouses">
-                        <option ="0">كافة الفروع والمراكز الرئيسية</option>
+                        <option value="0">كافة الفروع والمراكز الرئيسية</option>
                         @foreach (var b in branches)
                         {
-                            <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                            <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
                         }
                     </select>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label small fw-bold text-muted mb-1">بحث سريع:</label>
-                    <input type="text" class="form-control form-control-sm" placeholder="ابحث بكود أو اسم المستودع..."
+                    <input type="text" class="form-control form-control-sm" placeholder="ابحث بكود أو اسم المستودع..." 
                            @bind="searchTerm" @bind:event="oninput" />
                 </div>
                 <div class="col-md-3 text-end pt-3">
@@ -188,7 +188,7 @@
                             <select class="form-select form-select-sm fw-bold border-primary" @bind="currentWarehouse.BranchId">
                                 @foreach (var b in branches)
                                 {
-                                    <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                                    <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
                                 }
                             </select>
                         </div>
@@ -204,21 +204,21 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-dark">نوع المستودع</label>
                             <select class="form-select form-select-sm" @bind="currentWarehouse.WarehouseType">
-                                <option ="خامات">مستودع خامات وتعبئة</option>
-                                <option ="منتج تام">مستودع منتج تام (حلويات/مخبوزات)</option>
-                                <option ="معرض">مستودع بيع ومعارض</option>
-                                <option ="صالة تشغيل">مستودع صالة إنتاج (وسيط)</option>
-                                <option ="تالف وهوالك">مستودع تالف ومردودات</option>
+                                <option value="خامات">مستودع خامات وتعبئة</option>
+                                <option value="منتج تام">مستودع منتج تام (حلويات/مخبوزات)</option>
+                                <option value="معرض">مستودع بيع ومعارض</option>
+                                <option value="صالة تشغيل">مستودع صالة إنتاج (وسيط)</option>
+                                <option value="تالف وهوالك">مستودع تالف ومردودات</option>
                             </select>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-dark">المستودع الأب (الشجرة الهرمية)</label>
                             <select class="form-select form-select-sm" @bind="currentWarehouse.ParentWarehouseId">
-                                <option ="">-- مستودع رئيسي مستقل (بدون أب) --</option>
+                                <option value="">-- مستودع رئيسي مستقل (بدون أب) --</option>
                                 @foreach (var p in warehouses.Where(w => w.Id != currentWarehouse.Id))
                                 {
-                                    <option ="@p.Id">@p.WarehouseName (@p.WarehouseCode)</option>
+                                    <option value="@p.Id">@p.WarehouseName (@p.WarehouseCode)</option>
                                 }
                             </select>
                         </div>

@@ -18,9 +18,6 @@ namespace KayanERP.Api.Controllers
             _orderService = orderService;
         }
 
-        // ==============================================================
-        // 1. استعراض كافة أوامر التشغيل والإنتاج
-        // ==============================================================
         [HttpGet]
         public async Task<ActionResult<List<ProductionOrderListDto>>> GetOrders()
         {
@@ -35,9 +32,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. جلب تفاصيل أمر تشغيل محدد
-        // ==============================================================
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductionOrderListDto>> GetOrder(long id)
         {
@@ -55,9 +49,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 3. إصدار أمر تشغيل جديد
-        // ==============================================================
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CreateProductionOrderDto dto)
         {

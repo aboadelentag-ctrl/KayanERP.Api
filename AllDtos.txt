@@ -1,0 +1,1476 @@
+﻿=== FILE: AssetsAndAccountingDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class CreateFixedAssetDto
+{
+    public string AssetCode { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public string? BrandModel { get; set; }
+    public string? SerialNumber { get; set; }
+    public string? CustodianCode { get; set; }
+    public string? CustodianName { get; set; }
+    public DateTime InstallationDate { get; set; }
+}
+
+public class UpdateFixedAssetDto : CreateFixedAssetDto
+{
+    public long Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class AccountDto
+{
+    public long Id { get; set; }
+    public string AccountCode { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public int Type { get; set; }
+    public long? ParentId { get; set; }
+    public int Level { get; set; } = 1;
+    public bool IsSubAccount { get; set; } = true;
+    public decimal CurrentBalance { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class AccountCreateDto
+{
+    public string AccountCode { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string AccountType { get; set; } = string.Empty; // تمت الإضافة
+    public long? ParentAccountId { get; set; } // تمت الإضافة
+    public int Type { get; set; }
+    public long? ParentId { get; set; }
+    public int Level { get; set; } = 1;
+    public bool IsSubAccount { get; set; } = true;
+    public decimal CurrentBalance { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+=== FILE: AuthDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class LoginRequestDto
+{
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+public class AuthResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public long CompanyId { get; set; }
+    public string Role { get; set; } = string.Empty;
+}
+
+public class TenantVerifyRequest
+{
+    public string TenantCode { get; set; } = string.Empty;
+    public string TenantKey { get; set; } = string.Empty;
+}
+
+public class UserTenantLoginRequest
+{
+    public long CompanyId { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+public class RefreshTokenRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class CreateRoleDto
+{
+    public string Name { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string? Description { get; set; }
+    public long CompanyId { get; set; }
+    public List<string> Permissions { get; set; } = new();
+}
+
+public class UpdateRolePermissionsDto
+{
+    public List<string> Permissions { get; set; } = new();
+}
+
+public class CreateUserDto
+{
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string? FullName { get; set; }
+    public long CompanyId { get; set; }
+    public long? RoleId { get; set; }
+    public string? RoleName { get; set; }
+    public string? DepartmentName { get; set; }
+    public long? EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+}
+
+public class UpdateUserStatusDto
+{
+    public bool IsActive { get; set; }
+    public string? NewPassword { get; set; }
+}
+
+public class UpdateUserPermissionsDto
+{
+    public List<string> Permissions { get; set; } = new();
+}
+
+=== FILE: CrateDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class CrateLookupsDto
+{
+    public List<CustomerItemDto> Customers { get; set; } = new();
+    public List<ItemLookupDto> Crates { get; set; } = new();
+    public List<ContainerLookupDto> Containers { get; set; } = new();
+    public List<DepartmentDto> Departments { get; set; } = new();
+    public List<WarehouseDto> Warehouses { get; set; } = new();
+}
+
+public class ContainerLookupDto
+{
+    public long Id { get; set; }
+    public string ContainerName { get; set; } = string.Empty;
+    public string? Specification { get; set; }
+    public int TotalFactoryQuantity { get; set; }
+}
+
+public class CirculatingContainerViewDto
+{
+    public long Id { get; set; }
+    public string CrateName { get; set; } = string.Empty;
+    public string ContainerName { get => CrateName; set => CrateName = value; }
+    public long CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public int QuantityInCirculation { get; set; }
+    public decimal TotalDepositAmount { get; set; }
+    public string? Specification { get; set; }
+    public int TotalFactoryQuantity { get; set; }
+    public int InPackagingWarehouseQuantity { get; set; }
+    public int WithDriversAndBranchesQuantity { get; set; }
+    public int DisputedQuantity { get; set; }
+    public int DamagedQuantity { get; set; }
+}
+
+public class CrateMovementViewDto
+{
+    public long Id { get; set; }
+    public string? MovementNumber { get; set; }
+    public DateTime MovementDate { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public string? ContainerName { get; set; }
+    public decimal DispatchedQuantity { get; set; }
+    public decimal ReceivedQuantity { get; set; }
+    public decimal ShortageQuantity { get; set; }
+    public int DamagedCount { get; set; }
+    public string? SourceLocation { get; set; }
+    public string? DestinationLocation { get; set; }
+    public string? DispatchedByCode { get; set; }
+    public string? DispatchedByName { get; set; }
+    public string? ReceivedByCode { get; set; }
+    public string? ReceivedByName { get; set; }
+    public DateTime? ReceivedAt { get; set; }
+    public string? ReceiveNotes { get; set; }
+    public string? Status { get; set; }
+    public string? ArbitrationDecision { get; set; }
+    public string? ArbitrationText { get; set; }
+    public string? FinancialPenalty { get; set; }
+    public string? Reference { get; set; }
+}
+
+public class CrateClientTransactionViewDto
+{
+    public long Id { get; set; }
+    public long CrateClientId { get; set; }
+    public long CustomerId { get => CrateClientId; set => CrateClientId = value; }
+    public string ClientName { get; set; } = string.Empty;
+    public string CustomerName { get => ClientName; set => ClientName = value; }
+    public DateTime TransactionDate { get; set; }
+    public string TransactionType { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public decimal Amount { get; set; }
+    public string? Notes { get; set; }
+    public string? DriverName { get; set; }
+    public int ClientCurrentBalance { get; set; }
+}
+
+public class DispatchCrateDto
+{
+    public long CustomerId { get; set; }
+    public long CrateId { get; set; }
+    public int Quantity { get; set; }
+    public int DispatchedQuantity { get => Quantity; set => Quantity = value; }
+    public DateTime DispatchDate { get; set; }
+    public string? ContainerName { get; set; }
+    public string? MovementType { get; set; }
+    public string? DispatchedByCode { get; set; }
+    public string? DispatchedByName { get; set; }
+    public string? SourceLocation { get; set; }
+    public string? DestinationLocation { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ReceiveCrateDto
+{
+    public long CustomerId { get; set; }
+    public long CrateId { get; set; }
+    public int Quantity { get; set; }
+    public DateTime ReceiveDate { get; set; }
+    public string? ReceivedByCode { get; set; }
+    public string? ReceivedByName { get; set; }
+    public int ActualReceivedQuantity { get; set; }
+    public int DamagedCount { get; set; }
+    public string? ReceiveNotes { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class SettleDisputeDto
+{
+    public long CustomerId { get; set; }
+    public decimal SettlementAmount { get; set; }
+    public string? ArbitratedByCode { get; set; }
+    public string? ArbitratedByName { get; set; }
+    public string? ArbitrationDecision { get; set; }
+    public string? ArbitrationText { get; set; }
+    public decimal FinancialPenalty { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CreateCrateClientTransactionDto
+{
+    public long CrateClientId { get; set; }
+    public long CustomerId { get => CrateClientId; set => CrateClientId = value; }
+    public long CrateId { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitDeposit { get; set; }
+    public string TransactionType { get; set; } = string.Empty;
+    public string? DriverName { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CrateTransactionCreateDto
+{
+    public long CrateId { get; set; }
+    public int Quantity { get; set; }
+    public string Type { get; set; } = string.Empty;
+}
+
+=== FILE: FinishedGoodsTransferDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+// ==========================================
+// 1. الكيانات الأساسية (Views)
+// ==========================================
+public class FinishedGoodsTransferViewDto
+{
+    public long Id { get; set; }
+    public string TransferNumber { get; set; } = string.Empty;
+    public DateOnly TransferDate { get; set; }
+    public string SourceWarehouseName { get; set; } = string.Empty;
+    public string DestinationWarehouseName { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string ItemCode { get; set; } = string.Empty;
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public decimal ProdDispatchedQty { get; set; }
+    public int ProdDispatchedCount { get; set; }
+    public string? ProdNotes { get; set; }
+    public decimal? CostingActualQty { get; set; }
+    public int? CostingActualCount { get; set; }
+    public decimal? CostingWeightDiff { get; set; }
+    public int? CostingCountDiff { get; set; }
+    public bool CostingDiscrepancyFlag { get; set; }
+    public string? CostingDisputeStatus { get; set; }
+    public string? CostingDisputeReason { get; set; }
+    public string? CostingDisputeChargeTo { get; set; }
+    public decimal? QcApprovedQty { get; set; }
+    public decimal? QcSampleQty { get; set; }
+    public decimal? QcReworkQty { get; set; }
+    public decimal? QcScrapQty { get; set; }
+    public decimal? ReceivedActualQty { get; set; }
+    public int? ReceivedActualCount { get; set; }
+    public bool HasDispute { get; set; }
+    public string? DisputeReason { get; set; }
+    public string? DisputeStatus { get; set; }
+    public string? ControlDisputeChargeTo { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class TransferLookupsDto
+{
+    public List<TransferWarehouseLookupDto> Warehouses { get; set; } = new();
+    public List<FinishedItemLookupDto> FinishedItems { get; set; } = new();
+}
+
+public class TransferWarehouseLookupDto
+{
+    public long Id { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string WarehouseCode { get; set; } = string.Empty;
+    public string? WarehouseType { get; set; }
+}
+
+public class FinishedItemLookupDto
+{
+    public long Id { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string? ItemType { get; set; }
+    public string? Unit { get; set; }
+    public long? DepartmentId { get; set; }
+    public int? ShelfLifeDays { get; set; }
+}
+
+// ==========================================
+// 2. DTOs الخاصة بالعمليات (Operations)
+// ==========================================
+public class CreateTransferRequestDto
+{
+    public long SourceWarehouseId { get; set; }
+    public long DestinationWarehouseId { get; set; }
+    public long ItemId { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public decimal DispatchedQty { get; set; }
+    public int DispatchedCount { get; set; }
+    public string? Notes { get; set; }
+    public string? SubmittedBy { get; set; }
+}
+
+public class CostingAuditDto
+{
+    public long TransferId { get; set; }
+    public decimal ActualWeight { get; set; }
+    public int ActualCount { get; set; }
+    public string? AuditorName { get; set; }
+    public string? Notes { get; set; }
+    public bool EscalateDispute { get; set; }
+}
+
+public class ResolveCostingDisputeDto
+{
+    public long TransferId { get; set; }
+    public decimal FinalAcceptedWeight { get; set; }
+    public int FinalAcceptedCount { get; set; }
+    public string? ResolvedBy { get; set; }
+    public string? ChargeTo { get; set; }
+    public string? ResolutionNotes { get; set; }
+}
+
+public class QcInspectionDto
+{
+    public long TransferId { get; set; }
+    public decimal SampleQty { get; set; }
+    public decimal ReworkQty { get; set; }
+    public decimal ScrapQty { get; set; }
+    public string? InspectorName { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ControlReceiptDto
+{
+    public long TransferId { get; set; }
+    public decimal ReceivedQty { get; set; }
+    public int ReceivedCount { get; set; }
+    public string? ReceiverName { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ResolveDisputeDto
+{
+    public long TransferId { get; set; }
+    public decimal FinalAcceptedQty { get; set; }
+    public string? ResolvedBy { get; set; }
+    public string? ResolutionNotes { get; set; }
+    public string? ChargeTo { get; set; }
+}
+
+=== FILE: HrDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class EmployeeListDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? JobTitle { get; set; }
+    public string? Department { get; set; }
+    public string? DepartmentName { get; set; }
+    public bool IsActive { get; set; }
+    public bool Active { get; set; }
+}
+
+public class CreateEmployeeDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public long? JobTitleId { get; set; }
+    public long? DepartmentId { get; set; }
+    public long? ManagerId { get; set; }
+    public DateTime HireDate { get; set; }
+    public bool Active { get; set; }
+}
+
+public class UpdateEmployeeDto : CreateEmployeeDto
+{
+    public long Id { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class EmployeeCreateDto : CreateEmployeeDto { }
+
+=== FILE: InventoryDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class ItemApiDto
+{
+    public long Id { get; set; }
+    public long CompanyId { get; set; }
+    public long CategoryId { get; set; }
+    public long? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string ItemType { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+    public bool Active { get; set; }
+    public bool HasExpiryDate { get; set; }
+    public int? ShelfLifeDays { get; set; }
+    public decimal ReorderLevel { get; set; }
+    public decimal SafetyStock { get; set; }
+    public decimal MaxStock { get; set; }
+    public decimal BasePrice { get; set; }
+    public string? Barcode { get; set; }
+    public bool HasVariants { get; set; }
+    public bool IsVariant { get; set; }
+    public bool IsMerged { get; set; }
+    public bool IsContainer { get; set; }
+    public bool MultiUom { get; set; }
+    public bool HideDetailPrint { get; set; }
+    public long? ParentItemId { get; set; }
+    public List<ItemVariantApiDto> Variants { get; set; } = new();
+}
+
+public class ItemVariantApiDto { public long Id { get; set; } public string VariantCode { get; set; } = string.Empty; public string VariantName { get; set; } = string.Empty; public decimal? PriceOverride { get; set; } public string? Barcode { get; set; } }
+
+public class ItemVariantDto
+{
+    public long Id { get; set; }
+    public long? ParentItemId { get; set; }
+    public string? ParentItemName { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string? ItemType { get; set; }
+    public string? Unit { get; set; }
+    public bool Active { get; set; }
+}
+
+public class ItemVariantCreateDto
+{
+    public long ParentItemId { get; set; }
+    public string VariantCode { get; set; } = string.Empty;
+    public string VariantName { get; set; } = string.Empty;
+    public string? Unit { get; set; }
+    public decimal PackingFactor { get; set; }
+    public string? PackingUnit { get; set; }
+}
+
+public class QuickItemCreateDto { public string Name { get; set; } = string.Empty; public string Code { get; set; } = string.Empty; public long CategoryId { get; set; } public long BaseUomId { get; set; } }
+public class BulkQuickImportRequest { public string RawData { get; set; } = string.Empty; public long DefaultCategoryId { get; set; } public List<QuickItemCreateDto> Items { get; set; } = new(); }
+
+public class StockBalanceListItemDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public long WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string WarehouseCode { get; set; } = string.Empty;
+    public long? BranchId { get; set; }
+    public string? BranchName { get; set; }
+    public string? CategoryName { get; set; }
+    public string? Unit { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal ReservedQuantity { get; set; }
+    public decimal AvailableQuantity { get; set; }
+    public decimal ReorderLevel { get; set; }
+    public decimal SafetyStock { get; set; }
+    public decimal BasePrice { get; set; }
+    public decimal TotalStock { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class StockBalanceViewDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public long WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string? Unit { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal AvailableQuantity { get; set; }
+    public decimal ReservedQuantity { get; set; }
+    public decimal AvgCost { get; set; }
+    public decimal TotalValue { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+}
+
+public class StockBalanceDetailedDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string ItemType { get; set; } = string.Empty;
+    public string Unit { get; set; } = "كجم";
+    public long WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal ReservedQuantity { get; set; }
+    public decimal AvailableQuantity { get; set; }
+    public decimal EstimatedUnitCost { get; set; }
+    public decimal Total { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+}
+
+public class StockKpiSummaryDto
+{
+    public int TotalItemsCount { get; set; }
+    public int TotalItems { get => TotalItemsCount; set => TotalItemsCount = value; }
+    public decimal TotalStockQuantity { get; set; }
+    public decimal TotalAvailableQuantity { get; set; }
+    public decimal EstimatedStock { get; set; }
+    public decimal TotalInventoryValue { get => EstimatedStock; set => EstimatedStock = value; }
+    public int LowStockCount { get; set; }
+    public int LowStockItems { get => LowStockCount; set => LowStockCount = value; }
+    public int OutOfStockCount { get; set; }
+    public int OutOfStockItems { get => OutOfStockCount; set => OutOfStockCount = value; }
+}
+
+public class StockOperationResultDto { public bool Success { get; set; } public string Message { get; set; } = string.Empty; public long? ReferenceId { get; set; } public decimal CurrentBalance { get; set; } }
+
+public class InitialStockDto
+{
+    public long ItemId { get; set; }
+    public long WarehouseId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class StockMovementItemLedgerDto
+{
+    public long Id { get; set; }
+    public long MovementId { get; set; }
+    public DateTime Date { get; set; }
+    public DateTime MovementDate { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public string? ReferenceType { get; set; }
+    public long? ReferenceId { get; set; }
+    public long WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
+    public decimal InQty { get; set; }
+    public decimal OutQty { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal Balance { get; set; }
+    public decimal UnitCost { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class StockMovementDto
+{
+    public long Id { get; set; }
+    public DateTime MovementDate { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public string? ReferenceType { get; set; } = string.Empty;
+    public long? ReferenceId { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class StockLedgerLineDto
+{
+    public long MovementId { get; set; }
+    public DateTime MovementDate { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public string MovementTypeLabel { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string BranchName { get; set; } = string.Empty;
+    public decimal InQuantity { get; set; }
+    public decimal OutQuantity { get; set; }
+    public decimal BalanceAfter { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal TotalCost { get; set; }
+    public string BatchNumber { get; set; } = string.Empty;
+    public string ExpiryDate { get; set; } = string.Empty;
+    public string ReferenceType { get; set; } = string.Empty;
+    public long? ReferenceId { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class StockCardLookupsResponse { public List<ItemLookupDto> Items { get; set; } = new(); public List<WarehouseDto> Warehouses { get; set; } = new(); }
+
+public class StockCardReportDto
+{
+    public long ItemId { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal OpeningBalance { get; set; }
+    public decimal ClosingBalance { get; set; }
+    public decimal TotalInbound { get; set; }
+    public decimal TotalOutbound { get; set; }
+    public List<StockLedgerLineDto> Lines { get; set; } = new();
+    public List<StockMovementItemLedgerDto> Movements { get => Lines.Select(l => new StockMovementItemLedgerDto { Id = l.MovementId, MovementId = l.MovementId, MovementDate = l.MovementDate, MovementType = l.MovementType, InQty = l.InQuantity, OutQty = l.OutQuantity, Balance = l.BalanceAfter, UnitCost = l.UnitCost, WarehouseName = l.WarehouseName }).ToList(); }
+}
+
+public class ItemStockSummaryDto
+{
+    public long ItemId { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public long WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string? Unit { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public decimal AvailableQuantity { get; set; }
+    public decimal ReservedQuantity { get; set; }
+    public bool HasExpiryDate { get; set; }
+    public decimal ReorderLevel { get; set; }
+    public decimal SafetyStock { get; set; }
+    public decimal MaxStock { get; set; }
+    public decimal TotalIn { get; set; }
+    public decimal TotalOut { get; set; }
+    public decimal CurrentBalance { get; set; }
+    public string? StockStatus { get; set; }
+    public string? StatusMessage { get; set; }
+}
+
+public class ItemBatchStockDto { public long ItemId { get; set; } public string BatchNumber { get; set; } = string.Empty; public DateTime? ExpiryDate { get; set; } public decimal Quantity { get; set; } }
+
+public class ItemStockCardDetailDto
+{
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal CurrentBalance { get; set; }
+    public ItemStockSummaryDto? Summary { get; set; }
+    public List<ItemBatchStockDto> Batches { get; set; } = new();
+    public List<StockLedgerLineDto> Ledger { get; set; } = new();
+    public List<StockMovementItemLedgerDto> Movements { get; set; } = new();
+}
+
+public class StockMovementLedgerDto { public long Id { get; set; } public DateTime MovementDate { get; set; } public string MovementType { get; set; } = string.Empty; public decimal Quantity { get; set; } public decimal Balance { get; set; } public string? Reference { get; set; } }
+
+public class StockBalanceImportDto { public long ItemId { get; set; } public long WarehouseId { get; set; } public decimal Quantity { get; set; } public string? Notes { get; set; } }
+
+public class InventoryDashboardSummaryDto
+{
+    public decimal TotalInventory { get; set; }
+    public decimal RawMaterials { get; set; }
+    public decimal Wip { get; set; }
+    public decimal FinishedGoods { get; set; }
+    public int TotalStockRecords { get; set; }
+    public int LowStockCount { get; set; }
+    public int OutOfStockCount { get; set; }
+    public int ExpiringLotsCount { get; set; }
+}
+public class StockLookupsDto
+{
+    public List<BranchForBalanceDto> Branches { get; set; } = new();
+    public List<WarehouseForBalanceDto> Warehouses { get; set; } = new();
+}
+
+public class BranchForBalanceDto
+{
+    public long Id { get; set; }
+    public string BranchCode { get; set; } = string.Empty;
+    public string BranchName { get; set; } = string.Empty;
+}
+
+public class WarehouseForBalanceDto
+{
+    public long Id { get; set; }
+    public long? BranchId { get; set; }
+    public string WarehouseCode { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+}
+
+=== FILE: LookupsDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class CompanyLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; }
+public class BranchLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public long CompanyId { get; set; } }
+public class WarehouseDto
+{
+    public long Id { get; set; }
+    public string? BranchName { get; set; }
+    public long? BranchId { get; set; }
+    public string WarehouseCode { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string? WarehouseType { get; set; }
+    public long? ParentWarehouseId { get; set; }
+    public string? ParentWarehouseName { get; set; }
+    public string? Description { get; set; }
+    public bool Active { get; set; }
+}
+public class WarehouseCreateDto { public string WarehouseCode { get; set; } = string.Empty; public string WarehouseName { get; set; } = string.Empty; public string? WarehouseType { get; set; } public string? Description { get; set; } }
+public class WarehouseBranchLookupDto { public long Id { get; set; } public string BranchCode { get; set; } = string.Empty; public string BranchName { get; set; } = string.Empty; }
+public class WarehouseImportDto { public string? WarehouseCode { get; set; } public string? WarehouseName { get; set; } public string? WarehouseType { get; set; } public string? Description { get; set; } public bool Active { get; set; } = true; public string? BranchCodeOrName { get; set; } public long? BranchId { get; set; } public string? ParentWarehouseCodeOrName { get; set; } }
+
+public class ItemCategoryDto { public long Id { get; set; } public long CompanyId { get; set; } public string CategoryCode { get; set; } = string.Empty; public string CategoryName { get; set; } = string.Empty; public string? ItemType { get; set; } public string? Description { get; set; } public bool Active { get; set; } public DateTime? CreatedAt { get; set; } public DateTime? UpdatedAt { get; set; } }
+public class CreateItemCategoryDto { public string CategoryCode { get; set; } = string.Empty; public string CategoryName { get; set; } = string.Empty; public string? ItemType { get; set; } public string? Description { get; set; } public bool Active { get; set; } = true; }
+
+public class UomConversionDto { public long Id { get; set; } public long ItemId { get; set; } public string? ItemName { get; set; } public string FromUnit { get; set; } = string.Empty; public string ToUnit { get; set; } = string.Empty; public decimal ConversionFactor { get; set; } public string? Notes { get; set; } }
+public class UomConversionCreateDto { public long ItemId { get; set; } public string FromUnit { get; set; } = string.Empty; public string ToUnit { get; set; } = string.Empty; public decimal ConversionFactor { get; set; } public string? Notes { get; set; } }
+
+public class ParentItemLookupDto { public long Id { get; set; } public string ItemCode { get; set; } = string.Empty; public string ItemName { get; set; } = string.Empty; public string? Unit { get; set; } }
+public class ItemLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string Code { get; set; } = string.Empty; public string? Barcode { get; set; } public decimal? Price { get; set; } }
+
+public class DepartmentDto { public long Id { get; set; } public long CompanyId { get; set; } public string DepartmentName { get; set; } = string.Empty; public string DepartmentCode { get; set; } = string.Empty; public long? ParentDepartmentId { get; set; } public string? Description { get; set; } public bool Active { get; set; } }
+public class DepartmentCreateDto { public string DepartmentName { get; set; } = string.Empty; public string DepartmentCode { get; set; } = string.Empty; public long? ParentDepartmentId { get; set; } public string? Description { get; set; } public bool Active { get; set; } }
+
+public class JobTitleLookupDto { public long Id { get; set; } public string TitleName { get; set; } = string.Empty; public decimal HourlyRate { get; set; } public int JobGrade { get; set; } public bool Active { get; set; } }
+public class CreateJobTitleDto { public string TitleName { get; set; } = string.Empty; public decimal HourlyRate { get; set; } public int JobGrade { get; set; } }
+
+=== FILE: ProductionDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class ProductionOrderListDto
+{
+    public long Id { get; set; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public DateTime OrderDate { get; set; }
+    public string? Status { get; set; }
+    public string? WarehouseName { get; set; }
+    public int ItemsCount { get; set; }
+    public string? Notes { get; set; }
+    public long ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal PlannedQuantity { get; set; }
+    public decimal ProducedQuantity { get; set; }
+    public List<ProductionOrderDetailViewDto> Details { get; set; } = new();
+}
+
+public class ProductionOrderDetailViewDto { public long Id { get; set; } public long ItemId { get; set; } public string ItemName { get; set; } = string.Empty; public decimal Quantity { get; set; } public string? ItemCode { get; set; } public string? RecipeName { get; set; } public decimal PlannedQuantity { get; set; } public decimal ProducedQuantity { get; set; } public string? Unit { get; set; } public string? BatchNumber { get; set; } public string? Status { get; set; } public List<ProductionOrderMaterialViewDto> Materials { get; set; } = new(); }
+public class ProductionOrderMaterialViewDto { public long Id { get; set; } public long ItemId { get; set; } public string? ItemCode { get; set; } public string ItemName { get; set; } = string.Empty; public decimal Quantity { get; set; } public decimal RequiredQuantity { get; set; } public decimal ConsumedQuantity { get; set; } public string? Unit { get; set; } }
+
+public class CreateProductionOrderDto
+{
+    public string? OrderNumber { get; set; }
+    public long CompanyId { get; set; }
+    public long WarehouseId { get; set; }
+    public long ProductId { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal PlannedQuantity { get; set; }
+    public DateTime PlannedStartDate { get; set; }
+    public DateTime? PlannedEndDate { get; set; }
+    public string? Notes { get; set; }
+    public List<ProductionOrderItemDto> Items { get; set; } = new();
+}
+
+public class ProductionOrderItemDto { public long ItemId { get; set; } public long? RecipeId { get; set; } public decimal Quantity { get; set; } public decimal PlannedQuantity { get; set; } public string? Unit { get; set; } public string? Notes { get; set; } public long? DetailId { get; set; } public decimal ProducedQuantity { get; set; } public decimal NormalScrapQuantity { get; set; } public decimal AbnormalScrapQuantity { get; set; } public string? ScrapReason { get; set; } public string? BatchNumber { get; set; } }
+
+public class CreateBatchOrderDto
+{
+    public string? OrderNumber { get; set; }
+    public long CompanyId { get; set; }
+    public long WarehouseId { get; set; }
+    public long ProductId { get; set; }
+    public decimal BatchSize { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime OrderDate { get; set; }
+    public DateTime StartDate { get; set; }
+    public string? Notes { get; set; }
+    public List<ProductionOrderItemDto> Items { get; set; } = new();
+}
+
+public class ActiveProductionOrderDto
+{
+    public long Id { get; set; }
+    public long OrderId { get => Id; set => Id = value; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public DateTime OrderDate { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public DateTime StartedAt { get; set; }
+    public string? CurrentStage { get; set; }
+    public string? Status { get; set; }
+    public long? WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
+    public long? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? Notes { get; set; }
+    public List<ActiveProductionOrderDetailDto> Details { get; set; } = new();
+}
+
+public class ActiveProductionOrderDetailDto { public long Id { get; set; } public long DetailId { get; set; } public long ItemId { get; set; } public string? ItemCode { get; set; } public string ItemName { get; set; } = string.Empty; public string? ItemType { get; set; } public decimal PlannedQuantity { get; set; } public decimal ProducedQuantity { get; set; } public decimal WasteQuantity { get; set; } public string? Unit { get; set; } public long? RecipeId { get; set; } public string? RecipeName { get; set; } public string? Status { get; set; } public string? BatchNumber { get; set; } }
+
+public class OrderExecutionFullDto
+{
+    public long Id { get; set; }
+    public long OrderId { get => Id; set => Id = value; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public DateTime OrderDate { get; set; }
+    public string? Status { get; set; }
+    public string? WarehouseName { get; set; }
+    public List<OrderExecutionItemDto> Items { get; set; } = new();
+    public List<ProductionStageExecutionDto> Stages { get; set; } = new();
+}
+
+public class OrderExecutionItemDto { public long Id { get; set; } public long DetailId { get; set; } public long ItemId { get; set; } public string? ItemCode { get; set; } public string ItemName { get; set; } = string.Empty; public string? ItemType { get; set; } public string? Unit { get; set; } public decimal PlannedQuantity { get; set; } public decimal Quantity { get; set; } public decimal ProducedQuantity { get; set; } public decimal NormalScrapQuantity { get; set; } public decimal AbnormalScrapQuantity { get; set; } public string? ScrapReason { get; set; } public string? Status { get; set; } public string? BatchNumber { get; set; } public DateTime? ExpiryDate { get; set; } public List<OrderExecutionMaterialDto> Materials { get; set; } = new(); }
+public class OrderExecutionMaterialDto { public long Id { get; set; } public long ComponentItemId { get; set; } public string? ComponentCode { get; set; } public string? ComponentName { get; set; } public string? MaterialName { get => ComponentName; set => ComponentName = value; } public string? Unit { get; set; } public decimal RequiredQuantity { get; set; } public decimal ActualConsumedQuantity { get; set; } public decimal Quantity { get; set; } public decimal UnitCost { get; set; } }
+public class ProductionStageExecutionDto { public long StageId { get; set; } public string StageName { get; set; } = string.Empty; public string Status { get; set; } = string.Empty; public DateTime? StartedAt { get; set; } public DateTime? CompletedAt { get; set; } }
+
+public class CompleteOrderFinalizeDto
+{
+    public long OrderId { get; set; }
+    public decimal ActualProducedQuantity { get; set; }
+    public decimal ScrapQuantity { get; set; }
+    public string? Notes { get; set; }
+    public List<ProductionOrderItemDto> Items { get; set; } = new();
+}
+
+public class BatchCostRequestDto
+{
+    public long BatchId { get; set; }
+    public long ProductionOrderId { get; set; }
+    public decimal MaterialCost { get; set; }
+    public List<MaterialUsedDto> MaterialsUsed { get; set; } = new();
+    public decimal LaborCost { get; set; }
+    public decimal LaborCostPerHour { get; set; }
+    public decimal OverheadCost { get; set; }
+    public decimal OverheadCostPerBatch { get; set; }
+    public decimal TotalQuantity { get; set; }
+}
+
+public class MaterialUsedDto
+{
+    public long ItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal QuantityUsed { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+
+public class BatchCostCalculationResultDto
+{
+    public long BatchId { get; set; }
+    public long Id { get => BatchId; set => BatchId = value; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public decimal ProducedQuantity { get; set; }
+    public decimal ActualHoursWorked { get; set; }
+    public decimal TotalBatchCost { get; set; }
+    public decimal TotalCost { get; set; }
+    public decimal UnitCost { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public CostBreakdownDto? CostBreakdown { get; set; }
+}
+
+public class CostBreakdownDto { public decimal MaterialsCost { get; set; } public decimal TotalMaterialsCost { get => MaterialsCost; set => MaterialsCost = value; } public decimal LaborCost { get; set; } public decimal TotalLaborCost { get => LaborCost; set => LaborCost = value; } public decimal OverheadCost { get; set; } }
+
+public class BatchCostCalculationRequestDto
+{
+    public long ProductionOrderId { get; set; }
+    public bool IncludeMaterials { get; set; } = true;
+    public bool IncludeLabor { get; set; } = true;
+    public decimal ActualRawMaterialsCost { get; set; }
+    public decimal LaborCostPerHour { get; set; }
+    public decimal OverheadCost { get; set; }
+}
+
+public class ProductionOperationsLookupsDto
+{
+    public List<ProductionOrderListDto> ActiveOrders { get; set; } = new();
+    public List<ItemLookupDto> Items { get; set; } = new();
+    public List<ProductionDepartmentLookupDto> Departments { get; set; } = new();
+    public List<ProductionWarehouseLookupDto> Warehouses { get; set; } = new();
+    public List<ProductionEmployeeLookupDto> Employees { get; set; } = new();
+}
+
+public class ProductionDepartmentLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string DepartmentName { get => Name; set => Name = value; } public string? DepartmentCode { get; set; } }
+public class ProductionWarehouseLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string WarehouseName { get => Name; set => Name = value; } public string? WarehouseCode { get; set; } }
+public class ProductionItemLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string? ItemCode { get; set; } public string ItemName { get => Name; set => Name = value; } public string? ItemType { get; set; } public string? Unit { get; set; } public long? DepartmentId { get; set; } public string? DepartmentName { get; set; } public decimal CurrentStock { get; set; } }
+public class ProductionEmployeeLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string? EmployeeCode { get; set; } public long? DepartmentId { get; set; } public string? DepartmentName { get; set; } public string? JobTitle { get; set; } }
+
+public class ShiftProductivityDto
+{
+    public long ShiftId { get; set; }
+    public string ShiftName { get; set; } = string.Empty;
+    public long ProductionOrderId { get; set; }
+    public decimal TotalProducedQuantity { get; set; }
+    public decimal ProducedQuantity { get => TotalProducedQuantity; set => TotalProducedQuantity = value; }
+    public decimal TargetQuantity { get; set; }
+    public decimal EfficiencyPercentage { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public List<ShiftCrewMemberDto> CrewMembers { get; set; } = new();
+}
+
+public class ShiftCrewMemberDto { public long EmployeeId { get; set; } public string Name { get; set; } = string.Empty; public decimal HoursWorked { get; set; } public string? AttendanceStatus { get; set; } }
+
+public class DepartmentKpiDto
+{
+    public long DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public decimal TargetValue { get; set; }
+    public decimal ActualValue { get; set; }
+    public decimal AchievementPercentage { get; set; }
+    public decimal TotalHours { get; set; }
+    public decimal TotalProduced { get; set; }
+    public decimal TotalLaborCost { get; set; }
+    public decimal ProductivityPerHour { get; set; }
+    public decimal EstimatedWaste { get; set; }
+}
+
+public class DetailedAttendanceLogDto
+{
+    public long Id { get; set; }
+    public long EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? EmployeeCode { get; set; }
+    public DateTime LogDate { get; set; }
+    public DateTime Date { get => LogDate; set => LogDate = value; }
+    public DateTime? CheckIn { get; set; }
+    public DateTime? CheckOut { get; set; }
+    public decimal? WorkingHours { get => HoursWorked; set => HoursWorked = value ?? 0; }
+    public decimal HoursWorked { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? AttendanceStatus { get; set; }
+    public decimal HourlyRate { get; set; }
+    public decimal LaborCost { get; set; }
+    public decimal ProducedQuantity { get; set; }
+    public decimal ProductivityPerHour { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class EmployeeDossierDto
+{
+    public long EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? EmployeeCode { get; set; }
+    public string JobTitle { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
+    public DateTime HireDate { get; set; }
+    public bool IsActive { get; set; }
+    public List<string> Skills { get; set; } = new();
+    public int TotalOrdersExecuted { get; set; }
+    public decimal TotalQuantityProduced { get; set; }
+    public decimal TotalWorkingHours { get; set; }
+    public decimal TotalLaborCost { get; set; }
+    public decimal ProductionPerHour { get; set; }
+    public decimal TotalWaste { get; set; }
+    public decimal WastePercentage { get; set; }
+    public string? Evaluation { get; set; }
+}
+
+public class ProductionSubmissionDto { public long OrderId { get; set; } public long CompanyId { get; set; } public long WarehouseId { get; set; } public long ProductItemId { get; set; } public long UserId { get; set; } public decimal ProducedQuantity { get; set; } public decimal Quantity { get => ProducedQuantity; set => ProducedQuantity = value; } public decimal ActualHours { get; set; } public decimal WasteCost { get; set; } public DateTime SubmissionDate { get; set; } public string? Notes { get; set; } }
+
+// الجودة (تم نقلها هنا لتوحيد الملفات)
+public class QualityInspectionCreateDto
+{
+    public long PurchaseOrderId { get; set; }
+    public long ProductionOrderId { get; set; }
+    public long ItemId { get; set; }
+    public decimal InspectedQuantity { get; set; }
+    public decimal PassedQuantity { get; set; }
+    public decimal FailedQuantity { get; set; }
+    public bool IsGmpPassed { get; set; }
+    public bool IsHaccpPassed { get; set; }
+    public bool IsWeightsPassed { get; set; }
+    public string? InspectorName { get; set; }
+    public string? InspectorNotes { get; set; }
+    public string? Notes { get; set; }
+}
+
+=== FILE: PurchasingDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class SupplierDto { public long Id { get; set; } public long CompanyId { get; set; } public string SupplierCode { get; set; } = string.Empty; public string SupplierName { get; set; } = string.Empty; public string? Phone { get; set; } public string? Email { get; set; } public string? Address { get; set; } public string? TaxNumber { get; set; } public string? PaymentTerms { get; set; } public decimal? CreditLimit { get; set; } public bool Active { get; set; } public string? Notes { get; set; } public DateTime? CreatedAt { get; set; } }
+public class SupplierCreateDto { public string? SupplierCode { get; set; } public string SupplierName { get; set; } = string.Empty; public string? Phone { get; set; } public string? Email { get; set; } public string? Address { get; set; } public string? TaxNumber { get; set; } public string? PaymentTerms { get; set; } = "نقدي"; public bool Active { get; set; } = true; public string? Notes { get; set; } }
+public class SupplierViewDto { public long Id { get; set; } public long CompanyId { get; set; } public string SupplierCode { get; set; } = string.Empty; public string SupplierName { get; set; } = string.Empty; public string? ContactPerson { get; set; } public string? Phone { get; set; } public string? Email { get; set; } public string? Address { get; set; } public string? TaxNumber { get; set; } public string? PaymentTerms { get; set; } public decimal? Balance { get; set; } public bool Active { get; set; } = true; public string? Notes { get; set; } public DateTime? CreatedAt { get; set; } }
+public class SupplierCreateUpdateDto { public string? SupplierCode { get; set; } public string SupplierName { get; set; } = string.Empty; public string? ContactPerson { get; set; } public string? Phone { get; set; } public string? Email { get; set; } public string? Address { get; set; } public string? TaxNumber { get; set; } public string? PaymentTerms { get; set; } = "نقدي"; public bool Active { get; set; } = true; public string? Notes { get; set; } }
+public class SupplierLookupDto { public long Id { get; set; } public string SupplierName { get; set; } = string.Empty; public string SupplierCode { get; set; } = string.Empty; }
+
+public class SupplierItemPriceDto { public long Id { get; set; } public long SupplierId { get; set; } public string? SupplierCode { get; set; } public string? SupplierName { get; set; } public long ItemId { get; set; } public string? ItemCode { get; set; } public string ItemName { get; set; } = string.Empty; public string? Unit { get; set; } public decimal Price { get; set; } public string? Currency { get; set; } public DateTime? ValidFrom { get; set; } public DateTime? ValidTo { get; set; } public DateTime? EffectiveDate { get; set; } public int? LeadTimeDays { get; set; } public int? DeliveryDays { get; set; } public bool IsPreferred { get; set; } public string? Notes { get; set; } }
+public class CreateSupplierPriceDto { public long SupplierId { get; set; } public long ItemId { get; set; } public decimal Price { get; set; } public string? Currency { get; set; } public DateTime? ValidFrom { get; set; } public DateTime? ValidTo { get; set; } public DateTime? EffectiveDate { get; set; } public int? LeadTimeDays { get; set; } public int? DeliveryDays { get; set; } public bool IsPreferred { get; set; } public string? Notes { get; set; } }
+public class SupplierPriceOperationResultDto { public bool Success { get; set; } public long? Id { get; set; } public string Message { get; set; } = string.Empty; }
+
+public class PurchaseRequestDto { public long Id { get; set; } public string RequestNumber { get; set; } = string.Empty; public DateTime RequestDate { get; set; } public string Status { get; set; } = string.Empty; public long? WarehouseId { get; set; } public string? WarehouseName { get; set; } public string? Notes { get; set; } }
+public class PurchaseRequestCreateDto { public string? RequestNumber { get; set; } public DateTime RequestDate { get; set; } public long? WarehouseId { get; set; } public string? Notes { get; set; } public List<PurchaseRequestLineCreateDto> Lines { get; set; } = new(); }
+public class PurchaseRequestLineCreateDto { public long ItemId { get; set; } public decimal Quantity { get; set; } public decimal RequestedQuantity { get => Quantity; set => Quantity = value; } public string? Notes { get; set; } }
+public class PurchaseRequestItemLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string ItemCode { get => Name; set => Name = value; } public string ItemName { get => Name; set => Name = value; } public string Code { get; set; } = string.Empty; public string? Unit { get; set; } }
+public class PurchaseRequestDepartmentLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string DepartmentName { get => Name; set => Name = value; } }
+public class PurchaseRequestWarehouseLookupDto { public long Id { get; set; } public string Name { get; set; } = string.Empty; public string WarehouseName { get => Name; set => Name = value; } }
+
+public class PurchaseOrderDto { public long Id { get; set; } public string OrderNumber { get; set; } = string.Empty; public DateTime OrderDate { get; set; } public long SupplierId { get; set; } public string SupplierName { get; set; } = string.Empty; public string Status { get; set; } = string.Empty; public decimal TotalAmount { get; set; } public List<PurchaseOrderLineDto> Lines { get; set; } = new(); }
+public class PurchaseOrderCreateDto { public long SupplierId { get; set; } public long? WarehouseId { get; set; } public DateTime OrderDate { get; set; } public string? Notes { get; set; } public List<PurchaseOrderLineCreateDto> Lines { get; set; } = new(); }
+public class PurchaseOrderLineCreateDto { public long ItemId { get; set; } public decimal Quantity { get; set; } public decimal UnitPrice { get; set; } public string? Notes { get; set; } }
+public class PurchaseOrderLineDto { public long Id { get; set; } public long LineId { get => Id; set => Id = value; } public long ItemId { get; set; } public string? ItemCode { get; set; } public string ItemName { get; set; } = string.Empty; public decimal Quantity { get; set; } public decimal OrderedQuantity { get => Quantity; set => Quantity = value; } public decimal UnitPrice { get; set; } public decimal UnitCost { get => UnitPrice; set => UnitPrice = value; } public decimal Total { get; set; } public bool HasExpiryDate { get; set; } public int? ShelfLifeDays { get; set; } }
+public class PurchaseOrderResultDto { public bool Success { get; set; } public string? OrderNumber { get; set; } public long? OrderId { get; set; } public string Message { get; set; } = string.Empty; }
+public class PoApproveDto { public long OrderId { get; set; } public string? ApprovalNotes { get; set; } }
+public class PurchaseOrderLookupDto { public long Id { get; set; } public string OrderNumber { get; set; } = string.Empty; public DateTime OrderDate { get; set; } public string? SupplierName { get; set; } public long? WarehouseId { get; set; } public string? WarehouseName { get; set; } public List<PurchaseOrderLineDto> Lines { get; set; } = new(); }
+public class PurchaseOrderLookupsDto { public List<PurchaseOrderLookupDto> PurchaseOrders { get; set; } = new(); public List<SupplierDto> Suppliers { get; set; } = new(); public List<WarehouseDto> Warehouses { get; set; } = new(); public List<ItemLookupDto> Items { get; set; } = new(); }
+
+public class MaterialReceiptLookupsDto { public List<PurchaseOrderLookupDto> PurchaseOrders { get; set; } = new(); public List<WarehouseDto> Warehouses { get; set; } = new(); public List<SupplierDto> Suppliers { get; set; } = new(); }
+public class PendingInvoiceDto { public long Id { get; set; } public long InvoiceId { get => Id; set => Id = value; } public string InvoiceNumber { get; set; } = string.Empty; public long SupplierId { get; set; } public string SupplierName { get; set; } = string.Empty; public DateTime InvoiceDate { get; set; } public decimal TotalAmount { get; set; } public List<PendingInvoiceLineDto> Lines { get; set; } = new(); }
+public class PendingInvoiceLineDto { public long LineId { get; set; } public long ItemId { get; set; } public string ItemCode { get; set; } = string.Empty; public string ItemName { get; set; } = string.Empty; public decimal OrderedQty { get; set; } public decimal ReceivedQty { get; set; } public decimal RemainingQty { get; set; } }
+public class MaterialReceiptResultDto { public bool Success { get; set; } public string? ReceiptNumber { get; set; } public long? ReceiptId { get; set; } public string Message { get; set; } = string.Empty; }
+public class MaterialReceiptPostDto { public long PurchaseOrderId { get; set; } public long InvoiceId { get => PurchaseOrderId; set => PurchaseOrderId = value; } public long WarehouseId { get; set; } public DateTime ReceiptDate { get; set; } public List<MaterialReceiptLinePostDto> Lines { get; set; } = new(); }
+public class MaterialReceiptLinePostDto { public long LineId { get; set; } public long ItemId { get; set; } public decimal ReceivedQuantity { get; set; } public decimal ReceivedQty { get => ReceivedQuantity; set => ReceivedQuantity = value; } public bool IsQcPassed { get; set; } = true; public string? BatchNumber { get; set; } public DateTime? ExpiryDate { get; set; } }
+public class MaterialReceiptDto
+{
+    public long Id { get; set; }
+    public string ReceiptNumber { get; set; } = string.Empty;
+    public DateTime ReceiptDate { get; set; }
+    public long PurchaseOrderId { get; set; }
+    public string PurchaseOrderNumber { get; set; } = string.Empty;
+    public long WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string? QcInspectorName { get; set; }
+    public string? CoaNumber { get; set; }
+    public List<MaterialReceiptLineDto> Lines { get; set; } = new();
+}
+public class MaterialReceiptLineDto { public long Id { get; set; } public long ItemId { get; set; } public string ItemName { get; set; } = string.Empty; public decimal OrderedQuantity { get; set; } public decimal ReceivedQuantity { get; set; } public string? QcStatus { get; set; } public decimal? AcceptedQuantity { get; set; } public decimal? RejectedQuantity { get; set; } public string? RejectionReason { get; set; } public bool HasExpiryDate { get; set; } public string? BatchNumber { get; set; } public DateTime? ExpiryDate { get; set; } }
+
+public class PurchaseInvoiceCreateDto { public long SupplierId { get; set; } public DateTime InvoiceDate { get; set; } public string InvoiceNumber { get; set; } = string.Empty; public decimal TotalAmount { get; set; } public string? Notes { get; set; } }
+
+public class VendorQcScoreDto { public long SupplierId { get; set; } public string SupplierName { get; set; } = string.Empty; public decimal Score { get; set; } public int TotalInspections { get; set; } public int FailedInspections { get; set; } public int TotalShipments { get; set; } public decimal TotalReceivedQty { get; set; } public decimal TotalAcceptedQty { get; set; } public decimal TotalRejectedQty { get; set; } public decimal AcceptanceRate { get; set; } public string? QualityGrade { get; set; } public int RejectionIncidentsCount { get; set; } }
+public class QcInspectionHistoryDto { public long Id { get; set; } public long MovementId { get; set; } public long SupplierId { get; set; } public string SupplierName { get; set; } = string.Empty; public long ItemId { get; set; } public string ItemCode { get; set; } = string.Empty; public string ItemName { get; set; } = string.Empty; public string MovementType { get; set; } = string.Empty; public decimal Quantity { get; set; } public DateTime InspectionDate { get; set; } public string Status { get; set; } = string.Empty; public string? Notes { get; set; } }
+
+=== FILE: PurchasingExtraDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class PurchaseOrderCreateLineDto
+{
+    public long ItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public string? Notes { get; set; }
+}
+
+=== FILE: RecipeDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class RecipeDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public long FinishedProductId { get; set; }
+    public string FinishedProductName { get; set; } = string.Empty;
+    public decimal YieldQuantity { get; set; }
+    public List<RecipeLineDto> Lines { get; set; } = new();
+}
+
+public class RecipeLineDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public string? UnitName { get; set; }
+}
+
+public class SaveRecipeDto
+{
+    public long? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public long FinishedProductId { get; set; }
+    public decimal YieldQuantity { get; set; }
+    public List<RecipeLineDto> Lines { get; set; } = new();
+}
+
+public class RecipeImportPreviewDto
+{
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public bool IsValid { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+=== FILE: RequisitionDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+// ==========================================
+// 1. طلبات الصرف (Material Requisitions)
+// ==========================================
+public class RequisitionLookupsDto
+{
+    public List<ItemLookupDto> Items { get; set; } = new();
+    public List<DepartmentDto> Departments { get; set; } = new();
+    public List<WarehouseDto> Warehouses { get; set; } = new();
+}
+
+public class RequisitionDetailDto
+{
+    public long Id { get; set; }
+    public string RequisitionNumber { get; set; } = string.Empty;
+    public DateTime RequisitionDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public long DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public List<RequisitionLineDto> Lines { get; set; } = new();
+}
+
+public class RequisitionLineDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal RequestedQuantity { get; set; }
+    public decimal ApprovedQuantity { get; set; }
+    public decimal DispatchedQuantity { get; set; }
+}
+
+public class CreateRequisitionDto
+{
+    public long DepartmentId { get; set; }
+    public DateTime RequisitionDate { get; set; }
+    public string? Notes { get; set; }
+    public List<RequisitionLineCreateDto> Lines { get; set; } = new();
+}
+
+public class RequisitionLineCreateDto
+{
+    public long ItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class FefoBatchSuggestionDto
+{
+    public long ItemId { get; set; }
+    public long BatchId { get; set; }
+    public string BatchNumber { get; set; } = string.Empty;
+    public DateTime? ExpiryDate { get; set; }
+    public decimal AvailableQuantity { get; set; }
+}
+
+public class DispatchRequisitionDto
+{
+    public long RequisitionId { get; set; }
+    public long WarehouseId { get; set; }
+    public List<DispatchRequisitionLineDto> Lines { get; set; } = new();
+}
+
+public class DispatchRequisitionLineDto
+{
+    public long RequisitionLineId { get; set; }
+    public decimal DispatchedQuantity { get; set; }
+}
+
+public class ReceiveLineItemDto
+{
+    public long RequisitionLineId { get; set; }
+    public decimal ReceivedQuantity { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ResolveDiscrepancyDto
+{
+    public long RequisitionId { get; set; }
+    public string ResolutionAction { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+}
+
+public class RequisitionLifecycleAuditDto
+{
+    public long Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string PerformedBy { get; set; } = string.Empty;
+    public DateTime PerformedAt { get; set; }
+    public string? Notes { get; set; }
+}
+
+// ==========================================
+// 2. المشتريات والتوريد (Procurement)
+// ==========================================
+public class ProcurementPendingRequestDto
+{
+    public long Id { get; set; }
+    public string RequestNumber { get; set; } = string.Empty;
+    public DateTime RequestDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = string.Empty;
+}
+
+public class ProcurementConvertDto
+{
+    public long RequestId { get; set; }
+    public long SupplierId { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ProcurementApprovedInvoiceDto
+{
+    public long InvoiceId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public decimal ApprovedAmount { get; set; }
+    public DateTime ApprovalDate { get; set; }
+}
+
+=== FILE: SalesDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class CustomerItemDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string CustomerCode { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Address { get; set; }
+    public string? TaxNumber { get; set; }
+    public decimal? CreditLimit { get; set; }
+    public string? PaymentTerms { get; set; }
+    public decimal Balance { get; set; }
+    public long CompanyId { get; set; }
+    public string? CustomerType { get; set; }
+    public bool IsActive { get; set; }
+    public bool Active { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CreateCustomerDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerCode { get; set; } = string.Empty;
+    public string? CustomerType { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Address { get; set; }
+    public string? TaxNumber { get; set; }
+    public decimal CreditLimit { get; set; }
+    public string? PaymentTerms { get; set; }
+    public bool Active { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class UpdateCustomerDto : CreateCustomerDto
+{
+    public long Id { get; set; }
+}
+
+public class SalesInvoiceViewDto
+{
+    public long Id { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime InvoiceDate { get; set; }
+    public long CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? PaymentMethod { get; set; }
+    public string? Notes { get; set; }
+    public List<SalesInvoiceLineViewDto> Lines { get; set; } = new();
+}
+
+public class SalesInvoiceLineViewDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal Total { get; set; }
+}
+
+public class SalesInvoiceResultDto
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public long? InvoiceId { get; set; }
+    public string? InvoiceNumber { get; set; }
+    public decimal TotalAmount { get; set; }
+    public int ItemsCount { get; set; }
+}
+
+public class ExtendedSalesInvoiceCreateDto
+{
+    public long CustomerId { get; set; }
+    public long BranchId { get; set; }
+    public DateTime InvoiceDate { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? Notes { get; set; }
+    public List<SalesInvoiceLineCreateDto> InvoiceLines { get; set; } = new();
+    public List<SalesInvoiceLineCreateDto> Lines { get => InvoiceLines; set => InvoiceLines = value; }
+    public decimal Discount { get; set; }
+    public decimal Tax { get; set; }
+}
+
+public class SalesInvoiceCreateDto
+{
+    public long CustomerId { get; set; }
+    public DateTime InvoiceDate { get; set; }
+    public List<SalesInvoiceLineCreateDto> Lines { get; set; } = new();
+}
+
+public class SalesInvoiceLineCreateDto
+{
+    public long ItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+
+public class SalesLookupsDto
+{
+    public List<CustomerItemDto> Customers { get; set; } = new();
+    public List<WarehouseDto> Warehouses { get; set; } = new();
+    public List<ItemLookupDto> Items { get; set; } = new();
+}
+
+public class SalesWarehouseLookupDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+=== FILE: StockTransferDtos.cs ===
+namespace KayanERP.Shared.DTOs;
+
+public class StockTransferLookupsDto
+{
+    public List<WarehouseDto> Warehouses { get; set; } = new();
+    public List<ItemLookupDto> Items { get; set; } = new();
+}
+
+public class StockTransferDetailDto
+{
+    public long Id { get; set; }
+    public string TransferNumber { get; set; } = string.Empty;
+    public DateTime TransferDate { get; set; }
+    public long FromWarehouseId { get; set; }
+    public string FromWarehouseName { get; set; } = string.Empty;
+    public long ToWarehouseId { get; set; }
+    public string ToWarehouseName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public string? DriverName { get; set; }
+    public string? VehicleNumber { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? ReceivedBy { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public DateTime? DispatchedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public List<StockTransferLineDto> Lines { get; set; } = new();
+    public List<StockTransferLineDetailDto> LinesDetail { get => Lines.Select(l => new StockTransferLineDetailDto { Id = l.Id, ItemId = l.ItemId, ItemName = l.ItemName, Quantity = l.Quantity, ReceivedQuantity = l.ReceivedQuantity }).ToList(); }
+}
+
+public class StockTransferLineDto
+{
+    public long Id { get; set; }
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal ReceivedQuantity { get; set; }
+}
+
+public class StockTransferLineDetailDto : StockTransferLineDto
+{
+    public string? ItemCode { get; set; }
+    public string? Unit { get; set; }
+    public decimal DispatchedQty { get => Quantity; set => Quantity = value; }
+    public decimal ReceivedQty { get => ReceivedQuantity; set => ReceivedQuantity = value; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public decimal UnitCost { get; set; }
+    public string? LineStatus { get; set; }
+    public string? DiscrepancyReason { get; set; }
+    public string? ResolutionNotes { get; set; }
+    public decimal LossQty { get; set; }
+}
+
+public class AvailableStockInfoDto
+{
+    public long ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public long WarehouseId { get; set; }
+    public decimal AvailableQuantity { get; set; }
+    public decimal TotalAvailableQty { get => AvailableQuantity; set => AvailableQuantity = value; }
+    public List<AvailableBatchItemDto> Batches { get; set; } = new();
+}
+
+public class AvailableBatchItemDto { public long BatchId { get; set; } public string BatchNumber { get; set; } = string.Empty; public DateTime? ExpiryDate { get; set; } public decimal Quantity { get; set; } public decimal AvailableQty { get; set; } public decimal UnitCost { get; set; } }
+
+public class CreateStockTransferDto
+{
+    public long FromWarehouseId { get; set; }
+    public long ToWarehouseId { get; set; }
+    public DateTime TransferDate { get; set; }
+    public string? Notes { get; set; }
+    public string? DriverName { get; set; }
+    public string? VehicleNumber { get; set; }
+    public string? DispatchedBy { get; set; }
+    public List<StockTransferLineCreateDto> Lines { get; set; } = new();
+}
+
+public class StockTransferLineCreateDto
+{
+    public long ItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal DispatchedQty { get => Quantity; set => Quantity = value; }
+    public decimal UnitCost { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+}
+
+public class ConfirmTransferLineReceiveDto
+{
+    public long LineId { get; set; }
+    public long TransferLineId { get => LineId; set => LineId = value; }
+    public decimal ReceivedQuantity { get; set; }
+    public decimal ReceivedQty { get => ReceivedQuantity; set => ReceivedQuantity = value; }
+    public bool IsAccepted { get; set; } = true;
+    public string? DiscrepancyReason { get; set; }
+    public string? ReceivedBy { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class ResolveTransferDisputeDto
+{
+    public long TransferId { get; set; }
+    public long LineId { get; set; }
+    public decimal FinalApprovedQty { get; set; }
+    public decimal LossQty { get; set; }
+    public string Resolution { get; set; } = string.Empty;
+    public string? ResolutionNotes { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class TransferItemLookupDto
+{
+    public long Id { get; set; }
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public string? Unit { get; set; }
+    public string? ItemType { get; set; }
+}
+

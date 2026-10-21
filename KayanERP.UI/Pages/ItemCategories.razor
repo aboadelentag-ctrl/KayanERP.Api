@@ -3,7 +3,7 @@
 @inject HttpClient Http
 @using System.Net.Http.Json
 
-<PageTitle>تصنيفات الأصناف والمواد - حلواني أبو عادل</PageTitle>
+<PageTitle>تصنيفات الأصناف والمواد - كيان ERP</PageTitle>
 
 <div class="container-fluid mt-4" dir="rtl">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
@@ -175,7 +175,7 @@
         string.IsNullOrWhiteSpace(searchTerm)
             ? categories
             : categories.Where(c => (c.CategoryName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                   (c.CategoryCode?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+                                     (c.CategoryCode?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
 
     protected override async Task OnInitializedAsync()
     {
@@ -198,13 +198,13 @@
             }
             else
             {
-                companiesList = new List<CompanyDropdownDto> { new CompanyDropdownDto { Id = 1, CompanyName = "شركة حلواني أبو عادل" } };
+                companiesList = new List<CompanyDropdownDto> { new CompanyDropdownDto { Id = 1, CompanyName = "شركة كيان ERP" } };
                 currentCategory.CompanyId = 1;
             }
         }
         catch
         {
-            companiesList = new List<CompanyDropdownDto> { new CompanyDropdownDto { Id = 1, CompanyName = "شركة حلواني أبو عادل" } };
+            companiesList = new List<CompanyDropdownDto> { new CompanyDropdownDto { Id = 1, CompanyName = "شركة كيان ERP" } };
             currentCategory.CompanyId = 1;
         }
     }

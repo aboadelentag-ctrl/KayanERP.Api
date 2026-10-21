@@ -33,7 +33,7 @@ namespace KayanERP.Api.Services
                 {
                     Id = s.Id,
                     CompanyId = s.CompanyId,
-                    SupplierCode = s.SupplierCode,
+                    SupplierCode = s.SupplierCode ?? string.Empty,
                     SupplierName = s.SupplierName,
                     Phone = s.Phone,
                     Email = s.Email,
@@ -67,7 +67,7 @@ namespace KayanERP.Api.Services
                 Address = dto.Address?.Trim(),
                 TaxNumber = dto.TaxNumber?.Trim(),
                 PaymentTerms = dto.PaymentTerms?.Trim() ?? "نقدي",
-                CreditLimit = dto.CreditLimit ?? 0,
+                CreditLimit = dto.CreditLimit,
                 Active = dto.Active,
                 Notes = dto.Notes?.Trim(),
                 CreatedAt = DateTime.UtcNow,

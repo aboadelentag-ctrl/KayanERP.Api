@@ -5,7 +5,7 @@
 @using System.Text.Json
 @using System.Net.Http.Json
 
-<PageTitle>لوحة المؤشرات والتقارير الرقابية - حلواني أبو عادل</PageTitle>
+<PageTitle>لوحة المؤشرات والتقارير الرقابية - كيان ERP</PageTitle>
 
 <style>
     @@media print {
@@ -34,7 +34,7 @@
     
     <!-- ترويسة الطباعة الرسمية -->
     <div class="print-header text-center mb-4 pb-3 border-bottom border-2 border-dark">
-        <h2 class="fw-bold m-0 text-dark">حلواني أبو عادل - نظام تخطيط وإدارة الموارد (ERP)</h2>
+        <h2 class="fw-bold m-0 text-dark">كيان ERP- نظام تخطيط وإدارة الموارد (ERP)</h2>
         <h4 class="text-secondary mt-1">تقرير استجابات الرقابة الميدانية ومحاضر التشغيل</h4>
         <div class="d-flex justify-content-between mt-3 text-muted small">
             <span>تاريخ وتوقيت الاستخراج: <strong>@DateTime.Now.ToString("yyyy-MM-dd HH:mm")</strong></span>
@@ -365,11 +365,9 @@
     {
         try
         {
-            // 1. جلب النماذج الفعالة
             var forms = await Http.GetFromJsonAsync<List<DynamicFormDto>>(formsApiUrl);
             if (forms != null) formsList = forms.Where(f => f.IsActive).ToList();
 
-            // 2. جلب الأقسام والصالات الحقيقية من قاعدة بيانات المصنع مباشرة
             departmentsList = await Http.GetFromJsonAsync<List<string>>("api/FormImport/erp-lookups/departments");
         }
         catch (Exception ex)

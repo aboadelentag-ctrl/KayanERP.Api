@@ -7,7 +7,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-<PageTitle>أرصدة المخازن اللحظية والرقابة على المخزون - حلواني أبو عادل</PageTitle>
+<PageTitle>أرصدة المخازن اللحظية والرقابة على المخزون - كيان ERP</PageTitle>
 
 <div class="container-fluid py-4" dir="rtl">
     <!-- Header -->
@@ -106,20 +106,20 @@
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">الفرع:</label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedBranchId" @bind:after="OnBranchChanged">
-                        <option ="0">كافة الفروع</option>
+                        <option value="0">كافة الفروع</option>
                         @foreach (var b in branches)
                         {
-                            <option ="@b.Id">@b.BranchName (@b.BranchCode)</option>
+                            <option value="@b.Id">@b.BranchName (@b.BranchCode)</option>
                         }
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">المستودع:</label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedWarehouseId" @bind:after="LoadData">
-                        <option ="0">كافة المستودعات</option>
+                        <option value="0">كافة المستودعات</option>
                         @foreach (var w in availableWarehouses)
                         {
-                            <option ="@w.Id">@w.WarehouseName (@w.WarehouseCode)</option>
+                            <option value="@w.Id">@w.WarehouseName (@w.WarehouseCode)</option>
                         }
                     </select>
                 </div>

@@ -1,10 +1,9 @@
-﻿using KayanERP.Shared.DTOs;
-using KayanERP.Api.Services;
-using KayanERP.Shared.DTOs;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using KayanERP.Shared.DTOs;
+using KayanERP.Api.Services;
 
 namespace KayanERP.Api.Controllers
 {
@@ -20,9 +19,6 @@ namespace KayanERP.Api.Controllers
             _orderService = orderService;
         }
 
-        // ==============================================================
-        // 1. القوائم المرجعية
-        // ==============================================================
         [HttpGet("lookups")]
         public async Task<ActionResult<PurchaseOrderLookupsDto>> GetLookups()
         {
@@ -30,9 +26,6 @@ namespace KayanERP.Api.Controllers
             return Ok(result);
         }
 
-        // ==============================================================
-        // 2. جلب كافة أوامر الشراء
-        // ==============================================================
         [HttpGet]
         public async Task<ActionResult<List<PurchaseOrderDto>>> GetOrders()
         {
@@ -40,9 +33,6 @@ namespace KayanERP.Api.Controllers
             return Ok(orders);
         }
 
-        // ==============================================================
-        // 3. جلب أمر شراء محدد
-        // ==============================================================
         [HttpGet("{id:long}")]
         public async Task<ActionResult<PurchaseOrderDto>> GetOrder(long id)
         {
@@ -54,12 +44,8 @@ namespace KayanERP.Api.Controllers
             return Ok(order);
         }
 
-        // ==============================================================
-        // 4. إصدار أمر شراء جديد
-        // ==============================================================
         [HttpPost]
-        public async Task<ActionResult<PurchaseOrderResultDto>> CreateOrder(
-            [FromBody] PurchaseOrderCreateDto dto)
+        public async Task<ActionResult<PurchaseOrderResultDto>> CreateOrder([FromBody] PurchaseOrderCreateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -68,9 +54,6 @@ namespace KayanERP.Api.Controllers
             return Ok(result);
         }
 
-        // ==============================================================
-        // 5. اعتماد الفاتورة وتخصيص الموردين
-        // ==============================================================
         [HttpPost("approve-invoice")]
         public async Task<IActionResult> ApproveInvoice([FromBody] PoApproveDto dto)
         {

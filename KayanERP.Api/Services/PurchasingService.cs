@@ -49,15 +49,14 @@ namespace KayanERP.Api.Services
                     .Where(i => itemIds.Contains(i.Id))
                     .ToDictionaryAsync(i => i.Id, i => new { i.ItemCode, i.ItemName, i.HasExpiryDate, i.ShelfLifeDays });
 
-                var linesDto = poLines.Select(l => new PurchaseOrderLineDto
+                var linesDto = poLines.Select(l => new PurchaseOrderLineCreateDto
                 {
+                    LineId = l.Id,
                     ItemId = l.ItemId,
                     ItemCode = itemsMap.ContainsKey(l.ItemId) ? itemsMap[l.ItemId].ItemCode : "",
                     ItemName = itemsMap.ContainsKey(l.ItemId) ? itemsMap[l.ItemId].ItemName : "صنف غير معرف",
-                    OrderedQuantity = l.Quantity - l.ReceivedQuantity,
-                    UnitCost = l.UnitPrice,
-                    HasExpiryDate = itemsMap.ContainsKey(l.ItemId) ? itemsMap[l.ItemId].HasExpiryDate : true,
-                    ShelfLifeDays = itemsMap.ContainsKey(l.ItemId) ? itemsMap[l.ItemId].ShelfLifeDays : null
+                    Quantity = l.Quantity - l.ReceivedQuantity,
+                    UnitPrice = l.UnitPrice
                 }).ToList();
 
                 result.Add(new PurchaseOrderLookupDto
@@ -67,7 +66,7 @@ namespace KayanERP.Api.Services
                     SupplierName = supplierName,
                     WarehouseId = ord.WarehouseId,
                     WarehouseName = warehouseName,
-                    OrderDate = ord.OrderDate.ToString("yyyy-MM-dd"),
+                    OrderDate = ord.OrderDate.ToDateTime(TimeOnly.MinValue),
                     Lines = linesDto
                 });
             }

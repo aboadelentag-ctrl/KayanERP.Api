@@ -11,7 +11,7 @@
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager Nav
 
-<PageTitle>غرفة عمليات المهام الطارئة (SOS) - حلواني أبو عادل</PageTitle>
+<PageTitle>غرفة عمليات المهام الطارئة (SOS) - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -158,10 +158,9 @@
                                             || (!string.IsNullOrEmpty(t.SenderEmployeeName) && t.SenderEmployeeName.Equals(State.FullName, StringComparison.OrdinalIgnoreCase));
 
                             var isTargetDept = !string.IsNullOrEmpty(t.TargetDepartment) && 
-                                               (t.TargetDepartment.Contains(State.DepartmentName, StringComparison.OrdinalIgnoreCase) || 
-                                                State.DepartmentName.Contains(t.TargetDepartment, StringComparison.OrdinalIgnoreCase));
+                                             (t.TargetDepartment.Contains(State.DepartmentName, StringComparison.OrdinalIgnoreCase) || 
+                                              State.DepartmentName.Contains(t.TargetDepartment, StringComparison.OrdinalIgnoreCase));
 
-                            // الصلاحية متاحة للمدير العام (Admin) دائماً حتى لو كان هو من أطلق البلاغ
                             var canManage = (isTargetDept || State.Role == "Admin") && (!isCreator || State.Role == "Admin");
 
                             <tr>
@@ -224,7 +223,6 @@
                                 <td>
                                     <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
 
-                                        <!-- 1. تكليف فني صيانة -->
                                         @if ((t.Status == "PENDING" || t.Status == "NEW") && canManage)
                                         {
                                             <button class="btn btn-sm btn-primary fw-bold py-1 px-2 shadow-sm" title="تحويل وتكليف فني صيانة" @onclick="() => OpenDelegateModal(t)">
@@ -232,7 +230,6 @@
                                             </button>
                                         }
 
-                                        <!-- 2. بدء التنفيذ الميداني -->
                                         @if ((t.Status == "PENDING" || t.Status == "ASSIGNED") && canManage)
                                         {
                                             <button class="btn btn-sm btn-warning text-dark fw-bold py-1 px-2 shadow-sm" title="بدء أعمال الإصلاح" @onclick="() => RespondToTask(t.Id)">
@@ -240,7 +237,6 @@
                                             </button>
                                         }
 
-                                        <!-- 3. إغلاق البلاغ بالدليل واستعادة الماكينة -->
                                         @if (t.Status == "IN_PROGRESS" && canManage)
                                         {
                                             <button class="btn btn-sm btn-success fw-bold py-1 px-2 shadow-sm" title="توثيق الإصلاح وإعادة الماكينة للخدمة" @onclick="() => OpenCompleteModal(t)">
@@ -248,7 +244,6 @@
                                             </button>
                                         }
 
-                                        <!-- 4. إشعار الراسل إذا لم يكن مديراً -->
                                         @if (isCreator && State.Role != "Admin" && t.Status != "CLOSED")
                                         {
                                             <span class="badge bg-light text-muted border py-1 px-2 small">
@@ -256,7 +251,6 @@
                                             </span>
                                         }
 
-                                        <!-- 5. استعراض التفاصيل الكاملة -->
                                         <button class="btn btn-sm btn-outline-dark fw-bold py-1 px-2" @onclick="() => OpenFullDetailsModal(t)">
                                             🔍 التفاصيل
                                         </button>
@@ -876,7 +870,6 @@
             var res = await Http.PostAsJsonAsync("api/EmergencyTasks", newTask);
             if (res.IsSuccessStatusCode)
             {
-                // تحويل الماكينة فوراً إلى UNDER_MAINTENANCE في قاعدة البيانات
                 if (!string.IsNullOrEmpty(newTask.AssetCode))
                 {
                     var machine = fixedAssetsList.FirstOrDefault(m => m.AssetCode == newTask.AssetCode);
@@ -964,7 +957,6 @@
 
     private void CloseCompleteModal() => isCompleteModalOpen = false;
 
-    // إغلاق البلاغ بالدليل وإعادة تشغيل الأصل تلقائياً
     private async Task ConfirmCompleteTask()
     {
         if (completingTask == null || string.IsNullOrWhiteSpace(closureNotes)) return;
@@ -981,7 +973,6 @@
         var res = await Http.PostAsJsonAsync($"api/EmergencyTasks/{completingTask.Id}/complete", dto);
         if (res.IsSuccessStatusCode)
         {
-            // إعادة الماكينة لوضع التشغيل الطبيعي OPERATIONAL فوراً
             if (!string.IsNullOrEmpty(completingTask.AssetCode))
             {
                 var machine = fixedAssetsList.FirstOrDefault(m => m.AssetCode == completingTask.AssetCode);

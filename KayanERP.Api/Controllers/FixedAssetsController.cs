@@ -20,9 +20,6 @@ namespace KayanERP.Api.Controllers
             _context = context;
         }
 
-        // ==============================================================
-        // 1. استعراض الأصول والماكينات مع الفلاتر
-        // ==============================================================
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
@@ -61,9 +58,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 2. استعراض السجل التاريخي الكامل للماكينة (Asset Dossier)
-        // ==============================================================
         [HttpGet("{id:long}/history")]
         public async Task<IActionResult> GetHistory(long id)
         {
@@ -92,9 +86,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 3. قيد أصل ثابت وماكينة جديدة
-        // ==============================================================
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateFixedAssetDto dto)
         {
@@ -105,8 +96,8 @@ namespace KayanERP.Api.Controllers
                 if (await _context.FixedAssets.AnyAsync(a => a.AssetCode.ToLower() == dto.AssetCode.Trim().ToLower()))
                     return BadRequest(new { message = "كود الأصل مسجل مسبقاً لمعدة أخرى!" });
 
-                var empCode = User.FindFirst("EmployeeCode") ?? "EMP";
-                var empName = User.FindFirst(ClaimTypes.Name) ?? "مسؤول النظام";
+                var empCode = User.FindFirst("EmployeeCode")?.Value ?? "EMP";
+                var empName = User.FindFirst(ClaimTypes.Name)?.Value ?? "مسؤول النظام";
 
                 var asset = new FixedAsset
                 {
@@ -149,9 +140,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 4. تعديل الأصل ونقل العهدة (تم تنقيح الصياغة وحذف علامات الـ Diff)
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] UpdateFixedAssetDto dto)
         {
@@ -165,8 +153,8 @@ namespace KayanERP.Api.Controllers
 
                 if (asset == null) return NotFound(new { message = "الأصل غير موجود" });
 
-                var empCode = User.FindFirst("EmployeeCode") ?? "EMP";
-                var empName = User.FindFirst(ClaimTypes.Name) ?? "المشرف";
+                var empCode = User.FindFirst("EmployeeCode")?.Value ?? "EMP";
+                var empName = User.FindFirst(ClaimTypes.Name)?.Value ?? "المشرف";
 
                 if (asset.Department != dto.Department || asset.CustodianCode != dto.CustodianCode)
                 {
@@ -199,9 +187,6 @@ namespace KayanERP.Api.Controllers
             }
         }
 
-        // ==============================================================
-        // 5. حذف الأصل بعد التحقق الرقابي
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {

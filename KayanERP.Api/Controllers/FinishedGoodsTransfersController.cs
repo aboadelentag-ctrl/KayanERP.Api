@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using KayanERP.Api.Models;
 using KayanERP.Shared.DTOs;
 using KayanERP.Api.Services;
 
@@ -11,81 +14,53 @@ namespace KayanERP.Api.Controllers
     [ApiController]
     public class FinishedGoodsTransfersController : ControllerBase
     {
-        private readonly IFinishedGoodsTransferService _transferService;
+        private readonly IFinishedGoodsTransferService _service;
 
-        public FinishedGoodsTransfersController(IFinishedGoodsTransferService transferService)
+        public FinishedGoodsTransfersController(IFinishedGoodsTransferService service)
         {
-            _transferService = transferService;
-        }
-
-        [HttpGet("lookups")]
-        public async Task<ActionResult<TransferLookupsDto>> GetLookups()
-        {
-            try
-            {
-                var result = await _transferService.GetLookupsAsync();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"خطأ في جلب البيانات المرجعية للمنتج التام: {ex.Message}");
-            }
+            _service = service;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<FinishedGoodsTransferViewDto>>> GetAll()
         {
-            try
-            {
-                var list = await _transferService.GetAllTransfersAsync();
-                return Ok(list);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"خطأ في جلب بيانات التحويلات: {ex.Message}");
-            }
+            var result = await _service.GetAllTransfersAsync();
+            return Ok(result);
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> Create([FromBody] CreateTransferRequestDto dto)
+        [HttpGet("lookups")]
+        public async Task<ActionResult<TransferLookupsDto>> GetLookups()
+        {
+            var result = await _service.GetLookupsAsync();
+            return Ok(result);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateTransfer([FromBody] CreateTransferRequestDto dto)
         {
             try
             {
-                var res = await _transferService.CreateTransferAsync(dto);
-                return Ok(res);
+                var result = await _service.CreateTransferAsync(dto);
+                return Ok(new { success = result });
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest($"تعذر إنشاء إذن التحويل: {ex.InnerException?.Message ?? ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPost("audit-costing")]
         public async Task<IActionResult> AuditCosting([FromBody] CostingAuditDto dto)
         {
-            try
-            {
-                var res = await _transferService.AuditCostingAsync(dto);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"خطأ أثناء تدقيق ميزان التكاليف: {ex.InnerException?.Message ?? ex.Message}");
-            }
+            var result = await _service.AuditCostingAsync(dto);
+            return Ok(new { success = result });
         }
 
         [HttpPost("resolve-costing-dispute")]
-        public async Task<IActionResult> ResolveCostingDispute([FromBody] ResolveCostingDisputeDto dto)
+        public async Task<ActionResult<ResolveCostingDisputeDto>> ResolveCostingDispute([FromBody] ResolveCostingDisputeDto dto)
         {
-            try
-            {
-                var res = await _transferService.ResolveCostingDisputeAsync(dto);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"خطأ أثناء فض نزاع التكاليف: {ex.InnerException?.Message ?? ex.Message}");
-            }
+            var result = await _service.ResolveCostingDisputeAsync(dto);
+            return Ok(result);
         }
 
         [HttpPost("inspect-qc")]
@@ -93,55 +68,41 @@ namespace KayanERP.Api.Controllers
         {
             try
             {
-                var res = await _transferService.InspectQcAsync(dto);
-                return Ok(res);
+                var result = await _service.InspectQcAsync(dto);
+                return Ok(new { success = result });
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest($"خطأ أثناء فحص الجودة: {ex.InnerException?.Message ?? ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
 
-        [HttpPost("resubmit-rework")]
-        public async Task<IActionResult> ReSubmitRework([FromBody] ReSubmitReworkDto dto)
+        [HttpPost("re-submit-rework")]
+        public async Task<IActionResult> ReSubmitRework([FromQuery] long transferId, [FromQuery] decimal adjustedQty, [FromQuery] int adjustedCount, [FromQuery] string notes)
         {
-            try
-            {
-                var res = await _transferService.ReSubmitReworkAsync(dto.TransferId, dto.AdjustedQty, dto.AdjustedCount, dto.Notes);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"خطأ أثناء إعادة إرسال المرتجع المعدل: {ex.InnerException?.Message ?? ex.Message}");
-            }
+            var result = await _service.ReSubmitReworkAsync(transferId, adjustedQty, adjustedCount, notes);
+            return Ok(new { success = result });
         }
 
         [HttpPost("receive-control")]
-        public async Task<IActionResult> ReceiveControl([FromBody] ControlReceiptDto dto)
+        public async Task<IActionResult> ReceiveAtControl([FromBody] ControlReceiptDto dto)
         {
             try
             {
-                var res = await _transferService.ReceiveAtControlAsync(dto);
-                return Ok(res);
+                var result = await _service.ReceiveAtControlAsync(dto);
+                return Ok(new { success = result });
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest($"خطأ أثناء استلام مخزن الكنترول: {ex.InnerException?.Message ?? ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPost("resolve-dispute")]
         public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeDto dto)
         {
-            try
-            {
-                var res = await _transferService.ResolveDisputeAsync(dto);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"خطأ أثناء فض نزاع الكنترول: {ex.InnerException?.Message ?? ex.Message}");
-            }
+            var result = await _service.ResolveDisputeAsync(dto);
+            return Ok(new { success = result });
         }
     }
 }

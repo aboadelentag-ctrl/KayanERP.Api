@@ -10,7 +10,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>معايير وبطاقات خلطات التصنيع (BOM) - حلواني أبو عادل</PageTitle>
+<PageTitle>معايير وبطاقات خلطات التصنيع (BOM) - كيان ERP</PageTitle>
 
 <div class="container-fluid px-4 py-3" dir="rtl">
 
@@ -87,48 +87,48 @@
             <div class="row g-2 align-items-center">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-secondary mb-1">🔍 البحث بكود الوصفة أو اسم الخلطة</label>
-                    <input type="text" class="form-control form-control-sm" placeholder="ابحث بكود الوصفة، اسم الخلطة، أو المنتج..." 
+                    <input type="text" class="form-control form-control-sm" placeholder="ابحث بكود الوصفة، اسم الخلطة، أو المنتج..."
                            @bind="searchTerm" @bind:event="oninput" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-secondary mb-1">🏭 مرحلة التصنيع (الوردية)</label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedStageFilter">
-                        <option ="all">-- كل المراحل والورديات --</option>
-                        <option ="semi_weight">🥣 نصف مصنع وزني (عجائن / شربات - كجم)</option>
-                        <option ="semi_piece">🍰 نصف مصنع قطعي (بلكات اسبونج / تارت)</option>
-                        <option ="finished">🎂 تفنيش منتج تام (أوردرات الوردية 2)</option>
+                        <option value="all">-- كل المراحل والورديات --</option>
+                        <option value="semi_weight">🥣 نصف مصنع وزني (عجائن / شربات - كجم)</option>
+                        <option value="semi_piece">🍰 نصف مصنع قطعي (بلكات اسبونج / تارت)</option>
+                        <option value="finished">🎂 تفنيش منتج تام (أوردرات الوردية 2)</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-secondary mb-1">⚖️ وحدة الوجبة</label>
                     <select class="form-select form-select-sm" @bind="selectedUnitFilter">
-                        <option ="all">كل الوحدات</option>
-                        <option ="كجم">كجم (وزن)</option>
-                        <option ="صاج">صاج</option>
-                        <option ="بلكة">بلكة</option>
-                        <option ="قطعة">قطعة</option>
-                        <option ="دستة">دستة</option>
-                        <option ="حلة">حلة</option>
+                        <option value="all">كل الوحدات</option>
+                        <option value="كجم">كجم (وزن)</option>
+                        <option value="صاج">صاج</option>
+                        <option value="بلكة">بلكة</option>
+                        <option value="قطعة">قطعة</option>
+                        <option value="دستة">دستة</option>
+                        <option value="حلة">حلة</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-secondary mb-1">🎯 الصنف المستهدف</label>
                     <select class="form-select form-select-sm" @bind="selectedProductFilter">
-                        <option ="0">-- كل الأصناف --</option>
+                        <option value="0">-- كل الأصناف --</option>
                         @if (targetProductsList != null)
                         {
                             @foreach (var p in targetProductsList)
                             {
-                                <option ="@p.Id">@p.ItemName</option>
+                                <option value="@p.Id">@p.ItemName</option>
                             }
                         }
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-1">
                     <select class="form-select form-select-sm flex-fill" @bind="selectedStatusFilter">
-                        <option ="all">كل الحالات</option>
-                        <option ="active">نشطة</option>
-                        <option ="inactive">معطلة</option>
+                        <option value="all">كل الحالات</option>
+                        <option value="active">نشطة</option>
+                        <option value="inactive">معطلة</option>
                     </select>
                     <button class="btn btn-outline-danger btn-sm fw-bold" title="إلغاء الفلاتر" @onclick="ResetFilters">✕</button>
                 </div>
@@ -172,18 +172,18 @@
                                 ➕ صنف جديد غير مسجل؟
                             </button>
                         </div>
-                        <select class="form-select border-primary fw-bold" ="@activeRecipe.ProductItemId" @onchange="OnTargetProductSelected">
-                            <option ="0">-- اختر المنتج المراد تصنيعه --</option>
+                        <select class="form-select border-primary fw-bold" value="@activeRecipe.ProductItemId" @onchange="OnTargetProductSelected">
+                            <option value="0">-- اختر المنتج المراد تصنيعه --</option>
                             <optgroup label="🎂 منتجات تامة (أوردرات وتفنيش الوردية الثانية)">
                                 @foreach (var p in targetProductsList.Where(i => i.ItemType == "منتج تام"))
                                 {
-                                    <option ="@p.Id">@p.ItemName (@p.ItemCode)</option>
+                                    <option value="@p.Id">@p.ItemName (@p.ItemCode)</option>
                                 }
                             </optgroup>
                             <optgroup label="🥣 أصناف نصف مصنعة / وسيطة (تجهيز الوردية الأولى)">
                                 @foreach (var p in targetProductsList.Where(i => i.ItemType == "منتج وسيط" || i.ItemType == "نصف مصنع"))
                                 {
-                                    <option ="@p.Id">@p.ItemName (@p.ItemCode)</option>
+                                    <option value="@p.Id">@p.ItemName (@p.ItemCode)</option>
                                 }
                             </optgroup>
                         </select>
@@ -209,12 +209,12 @@
                     <div class="col-md-2">
                         <label class="form-label small fw-bold">وحدة الوجبة</label>
                         <select class="form-select fw-bold" @bind="activeRecipe.BatchUnit">
-                            <option ="كجم">كجم (وزن)</option>
-                            <option ="صاج">صاج</option>
-                            <option ="بلكة">بلكة</option>
-                            <option ="قطعة">قطعة</option>
-                            <option ="دستة">دستة</option>
-                            <option ="حلة">حلة</option>
+                            <option value="كجم">كجم (وزن)</option>
+                            <option value="صاج">صاج</option>
+                            <option value="بلكة">بلكة</option>
+                            <option value="قطعة">قطعة</option>
+                            <option value="دستة">دستة</option>
+                            <option value="حلة">حلة</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -223,7 +223,7 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-bold text-primary">عدد القطع (0 إذا كان بالوزن)</label>
-                        <input type="number" class="form-control font-monospace text-center fw-bold border-primary" 
+                        <input type="number" class="form-control font-monospace text-center fw-bold border-primary"
                                placeholder="0 للأصناف الوزنية" @bind="activeRecipe.PiecesPerBatch" />
                         <small class="text-muted" style="font-size: 0.72rem;">0 للبسبوسة والعجائن، >0 للجاتوه والقطع</small>
                     </div>
@@ -275,17 +275,17 @@
                                     <tr>
                                         <td>
                                             <select class="form-select form-select-sm fw-bold" @bind="line.ComponentItemId" @bind:after="() => UpdateLineItemInfo(line)">
-                                                <option ="0">-- اختر المكون أو الخامة --</option>
+                                                <option value="0">-- اختر المكون أو الخامة --</option>
                                                 <optgroup label="🥣 أصناف نصف مصنعة (بلكات اسبونج، عجائن، كريمة)">
                                                     @foreach (var rm in allIngredientsList.Where(i => i.ItemType == "منتج وسيط" || i.ItemType == "نصف مصنع"))
                                                     {
-                                                        <option ="@rm.Id">@rm.ItemName (@rm.ItemCode)</option>
+                                                        <option value="@rm.Id">@rm.ItemName (@rm.ItemCode)</option>
                                                     }
                                                 </optgroup>
                                                 <optgroup label="🌾 خامات ومستلزمات إنتاج أولية">
                                                     @foreach (var rm in allIngredientsList.Where(i => i.ItemType == "خامات" || (i.ItemType != "منتج وسيط" && i.ItemType != "نصف مصنع" && i.ItemType != "منتج تام")))
                                                     {
-                                                        <option ="@rm.Id">@rm.ItemName (@rm.ItemCode)</option>
+                                                        <option value="@rm.Id">@rm.ItemName (@rm.ItemCode)</option>
                                                     }
                                                 </optgroup>
                                             </select>
@@ -294,7 +294,7 @@
                                             <input type="number" step="0.001" class="form-control form-control-sm text-center fw-bold text-primary font-monospace" @bind="line.Quantity" />
                                         </td>
                                         <td>
-                                            <input class="form-control form-control-sm text-center bg-white" readonly ="@line.Unit" />
+                                            <input class="form-control form-control-sm text-center bg-white" readonly value="@line.Unit" />
                                         </td>
                                         <td>
                                             <input type="number" step="0.1" class="form-control form-control-sm text-center font-monospace" @bind="line.WastePercentage" />
@@ -369,7 +369,7 @@
 
                             <tr @key="r.Id">
                                 <td><code class="fw-bold font-monospace">@r.RecipeCode</code></td>
-                                <td class="fw-bold text-start ps-3 text-primary">@r.RecipeName</td>
+                                <td class="text-start ps-3 fw-bold text-primary">@r.RecipeName</td>
                                 <td class="fw-bold text-dark">
                                     <div>@r.ProductItemName</div>
                                     @if (isSemi)
@@ -428,19 +428,19 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-secondary">نوع الصنف *</label>
                         <select class="form-select form-select-sm fw-bold" @bind="newQuickItem.ItemType">
-                            <option ="نصف مصنع">🥣 نصف مصنع / وسيط (تجهيز الوردية الأولى)</option>
-                            <option ="منتج تام">🎂 منتج تام جاهز للبيع (تفنيش الوردية الثانية)</option>
-                            <option ="خامات">🌾 خامات ومستلزمات إنتاج أولية</option>
+                            <option value="نصف مصنع">🥣 نصف مصنع / وسيط (تجهيز الوردية الأولى)</option>
+                            <option value="منتج تام">🎂 منتج تام جاهز للبيع (تفنيش الوردية الثانية)</option>
+                            <option value="خامات">🌾 خامات ومستلزمات إنتاج أولية</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-secondary">الوحدة الافتراضية *</label>
                         <select class="form-select form-select-sm fw-bold" @bind="newQuickItem.Unit">
-                            <option ="كجم">كجم</option>
-                            <option ="بلكة">بلكة</option>
-                            <option ="قطعة">قطعة</option>
-                            <option ="صاج">صاج</option>
-                            <option ="دستة">دستة</option>
+                            <option value="كجم">كجم</option>
+                            <option value="بلكة">بلكة</option>
+                            <option value="قطعة">قطعة</option>
+                            <option value="صاج">صاج</option>
+                            <option value="دستة">دستة</option>
                         </select>
                     </div>
                 </div>
@@ -469,7 +469,7 @@
                 </div>
                 <div class="modal-body p-3">
                     <div class="alert alert-info py-2 small mb-3">
-                        <i class="bi bi-info-circle me-1"></i> 
+                        <i class="bi bi-info-circle me-1"></i>
                         يتعرف النظام تلقائياً على كود الوصفة ويقوم بتجميع بنود الخامات التابعة لكل وجبة، ومطابقتها مع دليل الأصناف.
                     </div>
 
@@ -535,8 +535,8 @@
                 </div>
                 <div class="modal-footer bg-light py-2 d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary btn-sm px-3" @onclick="CloseImportModal">إلغاء</button>
-                    <button type="button" class="btn btn-success btn-sm px-4 fw-bold shadow-sm" 
-                            disabled="@(isSavingImport || !importedPreviewList.Any(r => r.ProductItemId > 0))" 
+                    <button type="button" class="btn btn-success btn-sm px-4 fw-bold shadow-sm"
+                            disabled="@(isSavingImport || !importedPreviewList.Any(r => r.ProductItemId > 0))"
                             @onclick="ProcessAndSaveImportAsync">
                         @if (isSavingImport)
                         {
@@ -613,19 +613,22 @@
     }
 
     private int CountWeightSemiFinished =>
-        recipesList?.Count(r => {
+        recipesList?.Count(r =>
+        {
             var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
             return item != null && (item.ItemType == "منتج وسيط" || item.ItemType == "نصف مصنع") && (r.PiecesPerBatch == 0 || r.BatchUnit == "كجم");
         }) ?? 0;
 
     private int CountPieceSemiFinished =>
-        recipesList?.Count(r => {
+        recipesList?.Count(r =>
+        {
             var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
             return item != null && (item.ItemType == "منتج وسيط" || item.ItemType == "نصف مصنع") && (r.PiecesPerBatch > 0 && r.BatchUnit != "كجم");
         }) ?? 0;
 
     private int CountFinishedRecipes =>
-        recipesList?.Count(r => {
+        recipesList?.Count(r =>
+        {
             var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
             return item == null || item.ItemType == "منتج تام";
         }) ?? 0;
@@ -643,7 +646,7 @@
 
     private void OnTargetProductSelected(ChangeEventArgs e)
     {
-        if (long.TryParse(e.?.ToString(), out var selectedId))
+        if (long.TryParse(e.Value?.ToString(), out var selectedId))
         {
             activeRecipe.ProductItemId = selectedId;
             var item = allItems?.FirstOrDefault(i => i.Id == selectedId);
@@ -702,21 +705,24 @@
 
             if (selectedStageFilter == "semi_weight")
             {
-                query = query.Where(r => {
+                query = query.Where(r =>
+                {
                     var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
                     return item != null && (item.ItemType == "منتج وسيط" || item.ItemType == "نصف مصنع") && (r.PiecesPerBatch == 0 || r.BatchUnit == "كجم");
                 });
             }
             else if (selectedStageFilter == "semi_piece")
             {
-                query = query.Where(r => {
+                query = query.Where(r =>
+                {
                     var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
                     return item != null && (item.ItemType == "منتج وسيط" || item.ItemType == "نصف مصنع") && (r.PiecesPerBatch > 0 && r.BatchUnit != "كجم");
                 });
             }
             else if (selectedStageFilter == "finished")
             {
-                query = query.Where(r => {
+                query = query.Where(r =>
+                {
                     var item = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
                     return item == null || item.ItemType == "منتج تام";
                 });
@@ -909,7 +915,7 @@
                 if (created != null && isEditing)
                 {
                     activeRecipe.ProductItemId = created.Id;
-                    OnTargetProductSelected(new ChangeEventArgs {  = created.Id.ToString() });
+                    OnTargetProductSelected(new ChangeEventArgs { Value = created.Id.ToString() });
                 }
             }
             else
@@ -959,7 +965,7 @@
                 }
 
                 var targetItem = allItems?.FirstOrDefault(i => i.Id == r.ProductItemId);
-                string stage = (targetItem != null && (targetItem.ItemType == "منتج وسيط" || targetItem.ItemType == "نصف مصنع")) 
+                string stage = (targetItem != null && (targetItem.ItemType == "منتج وسيط" || targetItem.ItemType == "نصف مصنع"))
                     ? (r.PiecesPerBatch > 0 ? "تجهيز وسيط قطعي (وردية 1)" : "تجهيز وسيط وزني (وردية 1)")
                     : "تفنيش تام (وردية 2)";
                 var statusStr = r.Active ? "نشطة" : "معطلة";

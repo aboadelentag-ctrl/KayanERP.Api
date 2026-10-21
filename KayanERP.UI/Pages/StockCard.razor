@@ -6,7 +6,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>كارت الصنف والمسار المخزني اللحظي - حلواني أبو عادل</PageTitle>
+<PageTitle>كارت الصنف والمسار المخزني اللحظي - كيان ERP</PageTitle>
 
 <div class="container-fluid py-4" dir="rtl">
     <!-- Header -->
@@ -37,20 +37,20 @@
                 <div class="col-md-4">
                     <label class="form-label small fw-bold text-dark mb-1">اختر الصنف <span class="text-danger">*</span></label>
                     <select class="form-select form-select-sm fw-bold border-primary" @bind="selectedItemId" @bind:after="LoadLedger">
-                        <option ="0">-- اختر الصنف لعرض حركته --</option>
+                        <option value="0">-- اختر الصنف لعرض حركته --</option>
                         @foreach (var itm in lookups.Items)
                         {
-                            <option ="@itm.Id">@itm.ItemName (@itm.ItemCode) - [@itm.CategoryName]</option>
+                            <option value="@itm.Id">@itm.ItemName (@itm.ItemCode) - [@itm.CategoryName]</option>
                         }
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-dark mb-1">المستودع / الفرع</label>
                     <select class="form-select form-select-sm fw-bold" @bind="selectedWarehouseId" @bind:after="LoadLedger">
-                        <option ="0">كافة المستودعات والفروع وصالات التشغيل</option>
+                        <option value="0">كافة المستودعات والفروع وصالات التشغيل</option>
                         @foreach (var w in lookups.Warehouses)
                         {
-                            <option ="@w.Id">@w.WarehouseName</option>
+                            <option value="@w.Id">@w.WarehouseName</option>
                         }
                     </select>
                 </div>
@@ -232,12 +232,12 @@
 
     private void ApplyQueryParameters()
     {
-        if (QueryItemId.Has && QueryItemId. > 0 && selectedItemId != QueryItemId.)
+        if (QueryItemId.HasValue && QueryItemId.Value > 0 && selectedItemId != QueryItemId.Value)
         {
-            selectedItemId = QueryItemId.;
-            if (QueryWarehouseId.Has && QueryWarehouseId. > 0)
+            selectedItemId = QueryItemId.Value;
+            if (QueryWarehouseId.HasValue && QueryWarehouseId.Value > 0)
             {
-                selectedWarehouseId = QueryWarehouseId.;
+                selectedWarehouseId = QueryWarehouseId.Value;
             }
         }
     }
@@ -269,8 +269,8 @@
         {
             var queryParams = new List<string> { $"itemId={selectedItemId}" };
             if (selectedWarehouseId > 0) queryParams.Add($"warehouseId={selectedWarehouseId}");
-            if (fromDate.Has) queryParams.Add($"fromDate={fromDate.:yyyy-MM-dd}");
-            if (toDate.Has) queryParams.Add($"toDate={toDate.:yyyy-MM-dd}");
+            if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+            if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
 
             string queryString = "?" + string.Join("&", queryParams);
             report = await Http.GetFromJsonAsync<StockCardReportDto>($"api/stockcard/ledger{queryString}");

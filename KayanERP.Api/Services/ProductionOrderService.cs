@@ -22,7 +22,7 @@ namespace KayanERP.Api.Services
         // ==============================================================
         public async Task<List<ProductionOrderListDto>> GetAllOrdersAsync()
         {
-            return await _context.ProductionOrders
+            var list = await _context.ProductionOrders
                 .AsNoTracking()
                 .Include(p => p.Warehouse)
                 .Include(p => p.ProductionOrderDetails)
@@ -30,30 +30,31 @@ namespace KayanERP.Api.Services
                 .Include(p => p.ProductionOrderDetails)
                     .ThenInclude(d => d.Recipe)
                 .OrderByDescending(p => p.Id)
-                .Select(o => new ProductionOrderListDto
-                {
-                    Id = o.Id,
-                    OrderNumber = o.OrderNumber,
-                    WarehouseName = o.Warehouse != null ? o.Warehouse.WarehouseName : "المخزن الرئيسي",
-                    OrderDate = o.OrderDate.ToString("yyyy-MM-dd"),
-                    Status = o.Status,
-                    ItemsCount = o.ProductionOrderDetails.Count,
-                    Notes = o.Notes,
-                    Details = o.ProductionOrderDetails.Select(d => new ProductionOrderDetailViewDto
-                    {
-                        Id = d.Id,
-                        ItemId = d.ItemId,
-                        ItemCode = d.Item != null ? d.Item.ItemCode : string.Empty,
-                        ItemName = d.Item != null ? d.Item.ItemName : string.Empty,
-                        RecipeName = d.Recipe != null ? d.Recipe.RecipeName : string.Empty,
-                        PlannedQuantity = d.PlannedQuantity,
-                        ProducedQuantity = d.ProducedQuantity,
-                        Unit = d.Unit,
-                        BatchNumber = d.BatchNumber ?? string.Empty,
-                        Status = d.Status
-                    }).ToList()
-                })
                 .ToListAsync();
+
+            return list.Select(o => new ProductionOrderListDto
+            {
+                Id = o.Id,
+                OrderNumber = o.OrderNumber,
+                WarehouseName = o.Warehouse != null ? o.Warehouse.WarehouseName : "المخزن الرئيسي",
+                OrderDate = o.OrderDate.ToDateTime(TimeOnly.MinValue),
+                Status = o.Status,
+                ItemsCount = o.ProductionOrderDetails.Count,
+                Notes = o.Notes,
+                Details = o.ProductionOrderDetails.Select(d => new ProductionOrderDetailViewDto
+                {
+                    Id = d.Id,
+                    ItemId = d.ItemId,
+                    ItemCode = d.Item != null ? d.Item.ItemCode : string.Empty,
+                    ItemName = d.Item != null ? d.Item.ItemName : string.Empty,
+                    RecipeName = d.Recipe != null ? d.Recipe.RecipeName : string.Empty,
+                    PlannedQuantity = d.PlannedQuantity,
+                    ProducedQuantity = d.ProducedQuantity,
+                    Unit = d.Item != null ? d.Item.Unit : string.Empty,
+                    BatchNumber = !string.IsNullOrEmpty(d.Notes) ? d.Notes : string.Empty,
+                    Status = d.Status
+                }).ToList()
+            }).ToList();
         }
 
         // ==============================================================
@@ -81,7 +82,7 @@ namespace KayanERP.Api.Services
                 Id = o.Id,
                 OrderNumber = o.OrderNumber,
                 WarehouseName = o.Warehouse != null ? o.Warehouse.WarehouseName : string.Empty,
-                OrderDate = o.OrderDate.ToString("yyyy-MM-dd"),
+                OrderDate = o.OrderDate.ToDateTime(TimeOnly.MinValue),
                 Status = o.Status,
                 ItemsCount = o.ProductionOrderDetails.Count,
                 Notes = o.Notes,
@@ -94,8 +95,8 @@ namespace KayanERP.Api.Services
                     RecipeName = d.Recipe != null ? d.Recipe.RecipeName : string.Empty,
                     PlannedQuantity = d.PlannedQuantity,
                     ProducedQuantity = d.ProducedQuantity,
-                    Unit = d.Unit,
-                    BatchNumber = d.BatchNumber ?? string.Empty,
+                    Unit = d.Item != null ? d.Item.Unit : string.Empty,
+                    BatchNumber = !string.IsNullOrEmpty(d.Notes) ? d.Notes : string.Empty,
                     Status = d.Status,
                     Materials = d.ProductionOrderStages
                         .SelectMany(s => s.ProductionStageMaterials)
@@ -125,7 +126,7 @@ namespace KayanERP.Api.Services
             {
                 DateTime now = DateTime.UtcNow;
                 string generatedOrderNo = string.IsNullOrWhiteSpace(dto.OrderNumber)
-                    ? $"PRD-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(100, 999)}"
+                    ? $"PRD-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(100, 999)}"
                     : dto.OrderNumber.Trim();
 
                 // 1. إنشاء رأس أمر التشغيل
@@ -134,7 +135,7 @@ namespace KayanERP.Api.Services
                     CompanyId = dto.CompanyId > 0 ? dto.CompanyId : 1,
                     WarehouseId = dto.WarehouseId,
                     OrderNumber = generatedOrderNo,
-                    OrderDate = dto.OrderDate,
+                    OrderDate = dto.OrderDate != default ? DateOnly.FromDateTime(dto.OrderDate) : DateOnly.FromDateTime(DateTime.UtcNow),
                     Status = "Pending_Execution",
                     Notes = dto.Notes,
                     CreatedAt = now,
@@ -157,7 +158,7 @@ namespace KayanERP.Api.Services
                 // 3. معالجة تفاصيل الأصناف ومراحل التشغيل
                 foreach (var itemInput in dto.Items)
                 {
-                    if (!recipesMap.TryGet(itemInput.RecipeId, out var recipe))
+                    if (!recipesMap.TryGetValue(itemInput.RecipeId, out var recipe) || recipe == null)
                         continue;
 
                     string lotNumber = $"LOT-{dto.OrderDate:yyyyMMdd}-{itemInput.ItemId}-{itemCounter++}";
@@ -169,11 +170,9 @@ namespace KayanERP.Api.Services
                         RecipeId = itemInput.RecipeId,
                         PlannedQuantity = itemInput.PlannedQuantity,
                         ProducedQuantity = 0,
-                        Unit = itemInput.Unit,
-                        BatchNumber = lotNumber,
+                        WasteQuantity = 0,
                         Status = "Planned",
-                        CreatedAt = now,
-                        UpdatedAt = now
+                        Notes = lotNumber
                     };
 
                     _context.ProductionOrderDetails.Add(detail);
@@ -198,23 +197,26 @@ namespace KayanERP.Api.Services
                         ? (itemInput.PlannedQuantity / recipe.BatchQuantity)
                         : itemInput.PlannedQuantity;
 
-                    foreach (var line in recipe.RecipeLines)
+                    if (recipe.RecipeLines != null)
                     {
-                        decimal requiredQty = (line.Quantity * batchMultiplier) * (1m + (line.WastePercentage / 100m));
-
-                        var stageMaterial = new ProductionStageMaterial
+                        foreach (var line in recipe.RecipeLines)
                         {
-                            ProductionStageId = stage.Id,
-                            ItemId = line.ComponentItemId,
-                            RequiredQuantity = Math.Round(requiredQty, 3),
-                            ConsumedQuantity = 0,
-                            Unit = line.Unit,
-                            WastePercentage = line.WastePercentage,
-                            RecipeLineId = line.Id,
-                            CreatedAt = now
-                        };
+                            decimal requiredQty = (line.Quantity * batchMultiplier) * (1m + (line.WastePercentage / 100m));
 
-                        _context.ProductionStageMaterials.Add(stageMaterial);
+                            var stageMaterial = new ProductionStageMaterial
+                            {
+                                ProductionStageId = stage.Id,
+                                ItemId = line.ComponentItemId,
+                                RequiredQuantity = Math.Round(requiredQty, 3),
+                                ConsumedQuantity = 0,
+                                Unit = line.Unit,
+                                WastePercentage = line.WastePercentage,
+                                RecipeLineId = line.Id,
+                                CreatedAt = now
+                            };
+
+                            _context.ProductionStageMaterials.Add(stageMaterial);
+                        }
                     }
                 }
 

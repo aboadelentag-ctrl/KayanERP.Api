@@ -1,4 +1,6 @@
-﻿namespace KayanERP.UI.Models
+﻿using System;
+
+namespace KayanERP.UI.Models
 {
     public class SupplierDto
     {

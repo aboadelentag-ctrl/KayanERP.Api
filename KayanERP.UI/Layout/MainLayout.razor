@@ -7,22 +7,21 @@
 @inject NavigationManager Nav
 
 <div class="page" dir="rtl">
-    <!-- القائمة الجانبية للنظام -->
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <!-- الشريط العلوي التنفيذي المعتمد لمصنع حلواني أبو عادل -->
         <div class="top-row px-4 d-flex justify-content-between align-items-center bg-white shadow-sm border-bottom py-2">
             
-            <!-- الشعار والهوية -->
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-danger p-2 fs-6 shadow-sm">حلواني أبو عادل</span>
-                <span class="text-muted small fw-bold d-none d-md-inline">نظام تخطيط وإدارة الموارد والإنتاج الصناعي (ERP)</span>
+                <!-- اسم الشركة أصبح ديناميكياً -->
+                <span class="badge bg-danger p-2 fs-6 shadow-sm">
+                    @(string.IsNullOrEmpty(State.CompanyName) ? "مجموعة كيان" : State.CompanyName)
+                </span>
+                <span class="text-muted small fw-bold d-none d-md-inline">نظام تخطيط وإدارة الموارد (ERP)</span>
             </div>
 
-            <!-- بيانات الموظف النشط وزر تسجيل الخروج -->
             <div class="d-flex align-items-center gap-3">
                 @if (State.IsLoggedIn)
                 {
@@ -58,7 +57,6 @@
             </div>
         </div>
 
-        <!-- مساحة عرض الشاشات والصفحات -->
         <article class="content px-4 py-3">
             @Body
         </article>
@@ -68,10 +66,8 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-        // 1. الاشتراك في حدث تغير الجلسة لتحديث الواجهة فوراً
         State.OnChange += StateHasChanged;
 
-        // 2. التحقق الآمن من الجلسة في التخزين المحلي
         try
         {
             var token = await LocalStorage.GetItemAsync<string>("authToken");
@@ -92,23 +88,24 @@
                 var fullName = await LocalStorage.GetItemAsync<string>("fullName");
                 var role = await LocalStorage.GetItemAsync<string>("userRole");
                 var dept = await LocalStorage.GetItemAsync<string>("departmentName");
+                var companyName = await LocalStorage.GetItemAsync<string>("companyName");
                 var perms = await LocalStorage.GetItemAsync<List<string>>("userPermissions");
 
                 State.SetUserSession(
-                    0,
-                    !string.IsNullOrEmpty(empCode) ? empCode : (user ?? "EMP"),
-                    user ?? "admin",
-                    fullName ?? "أحمد عبد العزيز",
-                    role ?? "Admin",
-                    null,
-                    dept ?? "الإدارة العليا والتشغيل",
-                    perms ?? new List<string>()
+                    userId: 0, 
+                    username: user ?? "admin", 
+                    fullName: fullName ?? "مستخدم النظام", 
+                    role: role ?? "Admin", 
+                    empCode: empCode ?? "EMP", 
+                    deptName: dept ?? "الإدارة العليا", 
+                    departmentIdOrExtra: null, 
+                    permissions: perms ?? new List<string>(),
+                    companyName: companyName ?? "مجموعة كيان"
                 );
             }
         }
         catch
         {
-            // حماية الـ Layout من الانهيار في القراءة الأولى للكاش
         }
     }
 
@@ -116,13 +113,11 @@
     {
         try
         {
-            // مسح بيانات الجلسة بالكامل من المتصفح والذاكرة
             await LocalStorage.ClearAsync();
             State.ClearSession();
         }
         catch { }
 
-        // التوجيه الإجباري لشاشة تسجيل الدخول
         Nav.NavigateTo("login", forceLoad: true);
     }
 

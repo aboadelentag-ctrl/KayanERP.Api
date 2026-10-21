@@ -30,10 +30,11 @@ namespace KayanERP.Api.Services
                 .AsNoTracking()
                 .Where(s => s.Active)
                 .OrderBy(s => s.SupplierName)
-                .Select(s => new SupplierLookupDto
+                .Select(s => new SupplierDto
                 {
                     Id = s.Id,
-                    SupplierName = s.SupplierName
+                    SupplierName = s.SupplierName,
+                    SupplierCode = s.SupplierCode ?? string.Empty
                 })
                 .ToListAsync();
 
@@ -51,7 +52,10 @@ namespace KayanERP.Api.Services
                 .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    Name = w.Branch != null ? $"{w.WarehouseName} - [{w.Branch.BranchName}]" : w.WarehouseName
+                    BranchId = w.BranchId ?? 1L,
+                    WarehouseCode = w.WarehouseCode,
+                    WarehouseName = w.WarehouseName,
+                    Name = w.Branch != null ? $"{w.WarehouseName} [{w.Branch.BranchName}]" : w.WarehouseName
                 })
                 .ToListAsync();
 
@@ -64,7 +68,10 @@ namespace KayanERP.Api.Services
                     .Select(w => new WarehouseLookupDto
                     {
                         Id = w.Id,
-                        Name = w.Branch != null ? $"{w.WarehouseName} - [{w.Branch.BranchName}]" : w.WarehouseName
+                        BranchId = w.BranchId ?? 1L,
+                        WarehouseCode = w.WarehouseCode,
+                        WarehouseName = w.WarehouseName,
+                        Name = w.Branch != null ? $"{w.WarehouseName} [{w.Branch.BranchName}]" : w.WarehouseName
                     })
                     .ToListAsync();
             }
@@ -89,31 +96,31 @@ namespace KayanERP.Api.Services
 
             query = query.Where(p => p.PurchaseOrderLines.Any(l => (l.Quantity - l.ReceivedQuantity) > 0));
 
-            return await query
+            var orders = await query
                 .OrderByDescending(p => p.Id)
-                .Select(p => new PendingInvoiceDto
-                {
-                    InvoiceId = p.Id,
-                    InvoiceNumber = p.OrderNumber,
-                    InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
-                    SupplierId = p.SupplierId,
-                    SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "غير محدد",
-                    TotalAmount = p.TotalAmount,
-                    Lines = p.PurchaseOrderLines
-                        .Where(l => (l.Quantity - l.ReceivedQuantity) > 0)
-                        .Select(l => new PendingInvoiceLineDto
-                        {
-                            LineId = l.Id,
-                            ItemId = l.ItemId,
-                            ItemCode = l.Item != null ? l.Item.ItemCode : string.Empty,
-                            ItemName = l.Item != null ? l.Item.ItemName : string.Empty,
-                            OrderedQty = l.Quantity,
-                            ReceivedQty = l.ReceivedQuantity,
-                            RemainingQty = l.Quantity - l.ReceivedQuantity,
-                            UnitPrice = l.UnitPrice
-                        }).ToList()
-                })
                 .ToListAsync();
+
+            return orders.Select(p => new PendingInvoiceDto
+            {
+                InvoiceId = p.Id,
+                InvoiceNumber = p.OrderNumber,
+                InvoiceDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
+                SupplierId = p.SupplierId,
+                SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "غير محدد",
+                TotalAmount = p.TotalAmount,
+                Lines = p.PurchaseOrderLines
+                    .Where(l => (l.Quantity - l.ReceivedQuantity) > 0)
+                    .Select(l => new PurchaseOrderLineCreateDto
+                    {
+                        LineId = l.Id,
+                        ItemId = l.ItemId,
+                        ItemCode = l.Item?.ItemCode ?? string.Empty,
+                        ItemName = l.Item?.ItemName ?? string.Empty,
+                        Quantity = l.Quantity,
+                        ReceivedQuantity = l.ReceivedQuantity,
+                        UnitPrice = l.UnitPrice
+                    }).ToList()
+            }).ToList();
         }
 
         public async Task<MaterialReceiptResultDto> ProcessMaterialReceiptAsync(MaterialReceiptPostDto dto)
@@ -146,8 +153,10 @@ namespace KayanERP.Api.Services
 
                     if (item.ReceivedQty > 0)
                     {
+                        long itemId = poLine?.ItemId ?? item.ItemId;
+
                         var balance = await _context.StockBalances
-                            .FirstOrDefaultAsync(b => b.WarehouseId == dto.WarehouseId && b.ItemId == poLine!.ItemId);
+                            .FirstOrDefaultAsync(b => b.WarehouseId == dto.WarehouseId && b.ItemId == itemId);
 
                         if (balance != null)
                         {
@@ -155,13 +164,13 @@ namespace KayanERP.Api.Services
                             balance.AvailableQuantity = balance.Quantity - balance.ReservedQuantity;
                             balance.LastUpdatedAt = now;
                         }
-                        else if (poLine != null)
+                        else
                         {
                             _context.StockBalances.Add(new StockBalance
                             {
                                 CompanyId = order.CompanyId,
                                 WarehouseId = dto.WarehouseId,
-                                ItemId = poLine.ItemId,
+                                ItemId = itemId,
                                 Quantity = item.ReceivedQty,
                                 AvailableQuantity = item.ReceivedQty,
                                 ReservedQuantity = 0,
@@ -176,10 +185,10 @@ namespace KayanERP.Api.Services
                         {
                             CompanyId = order.CompanyId,
                             WarehouseId = dto.WarehouseId,
-                            ItemId = poLine!.ItemId,
+                            ItemId = itemId,
                             MovementType = item.IsQcPassed ? "PURCHASE_RECEIPT" : "QC_REJECTED",
                             Quantity = item.ReceivedQty,
-                            UnitCost = poLine.UnitPrice,
+                            UnitCost = poLine?.UnitPrice ?? item.UnitPrice,
                             ReferenceType = "PURCHASE_ORDER",
                             ReferenceId = order.Id,
                             Notes = qcNote,

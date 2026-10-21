@@ -133,7 +133,7 @@ namespace KayanERP.Api.Controllers
                 Phone = dto.Phone?.Trim(),
                 Email = dto.Email?.Trim(),
                 Address = dto.Address?.Trim(),
-                CreditLimit = dto.CreditLimit >= 0 ? dto.CreditLimit : 0,
+                CreditLimit = dto.CreditLimit,
                 PaymentTerms = dto.PaymentTerms?.Trim(),
                 TaxNumber = dto.TaxNumber?.Trim(),
                 Active = dto.Active,
@@ -182,7 +182,7 @@ namespace KayanERP.Api.Controllers
             customer.Phone = dto.Phone?.Trim();
             customer.Email = dto.Email?.Trim();
             customer.Address = dto.Address?.Trim();
-            customer.CreditLimit = dto.CreditLimit >= 0 ? dto.CreditLimit : customer.CreditLimit;
+            customer.CreditLimit = dto.CreditLimit;
             customer.PaymentTerms = dto.PaymentTerms?.Trim();
             customer.TaxNumber = dto.TaxNumber?.Trim();
             customer.Active = dto.Active;

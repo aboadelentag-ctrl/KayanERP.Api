@@ -25,27 +25,21 @@ namespace KayanERP.Api.Controllers
             _tenantContext = tenantContext;
         }
 
-       
-        // ==============================================================
-        // 3. جلب الموظفين
-        // ==============================================================
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EmployeeListItemDto>>> GetEmployees()
+        public async Task<ActionResult<IEnumerable<EmployeeListDto>>> GetEmployees()
         {
             var employees = await _context.Employees
                 .AsNoTracking()
                 .Include(e => e.Department)
                 .Include(e => e.JobTitle)
                 .OrderBy(e => e.EmployeeCode)
-                .Select(e => new EmployeeListItemDto
+                .Select(e => new EmployeeListDto
                 {
                     Id = e.Id,
                     Name = e.Name,
                     EmployeeCode = e.EmployeeCode,
-                    JobTitleId = e.JobTitleId,
-                    JobTitle = e.JobTitle != null ? e.JobTitle.TitleName : null,
-                    DepartmentId = e.DepartmentId,
-                    DepartmentName = e.Department != null ? e.Department.DepartmentName : null,
+                    JobTitle = e.JobTitle != null ? e.JobTitle.TitleName : string.Empty,
+                    DepartmentName = e.Department != null ? e.Department.DepartmentName : string.Empty,
                     Active = e.Active
                 })
                 .ToListAsync();
@@ -53,9 +47,6 @@ namespace KayanERP.Api.Controllers
             return Ok(employees);
         }
 
-        // ==============================================================
-        // 4. إضافة موظف جديد
-        // ==============================================================
         [HttpPost]
         public async Task<ActionResult> CreateEmployee([FromBody] CreateEmployeeDto dto)
         {
@@ -64,12 +55,10 @@ namespace KayanERP.Api.Controllers
 
             var companyId = _tenantContext.CompanyId;
 
-            // توليد كود فريد
             string code = !string.IsNullOrWhiteSpace(dto.EmployeeCode)
                 ? dto.EmployeeCode.Trim()
                 : $"EMP-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
-            // التحقق من عدم التكرار داخل نفس الشركة
             var codeExists = await _context.Employees
                 .AnyAsync(e => e.CompanyId == companyId &&
                                e.EmployeeCode.ToLower() == code.ToLower());
@@ -77,22 +66,20 @@ namespace KayanERP.Api.Controllers
             if (codeExists)
                 return Conflict(new { message = $"كود الموظف ({code}) مستخدم بالفعل." });
 
-            // التحقق من القسم (داخل نفس الشركة)
-            long? deptId = dto.DepartmentId;
-            if (deptId.Has && deptId > 0)
+            long? deptId = dto.DepartmentId > 0 ? dto.DepartmentId : null;
+            if (deptId.HasValue)
             {
                 var deptExists = await _context.Departments
-                    .AnyAsync(d => d.Id == deptId && d.CompanyId == companyId);
+                    .AnyAsync(d => d.Id == deptId.Value && d.CompanyId == companyId);
                 if (!deptExists)
                     return BadRequest(new { message = "القسم المحدد غير موجود." });
             }
 
-            // التحقق من المسمى الوظيفي
-            long? jobTitleId = dto.JobTitleId;
-            if (jobTitleId.Has && jobTitleId > 0)
+            long? jobTitleId = dto.JobTitleId > 0 ? dto.JobTitleId : null;
+            if (jobTitleId.HasValue)
             {
                 var titleExists = await _context.JobTitles
-                    .AnyAsync(j => j.Id == jobTitleId && j.CompanyId == companyId);
+                    .AnyAsync(j => j.Id == jobTitleId.Value && j.CompanyId == companyId);
                 if (!titleExists)
                     return BadRequest(new { message = "المسمى الوظيفي غير موجود." });
             }
@@ -119,9 +106,6 @@ namespace KayanERP.Api.Controllers
             });
         }
 
-        // ==============================================================
-        // 5. تعديل بيانات موظف
-        // ==============================================================
         [HttpPut("{id:long}")]
         public async Task<IActionResult> UpdateEmployee(long id, [FromBody] UpdateEmployeeDto dto)
         {
@@ -129,11 +113,9 @@ namespace KayanERP.Api.Controllers
             if (employee == null)
                 return NotFound(new { message = "الموظف غير موجود." });
 
-            // ⚠️ تأكيد إن الموظف يخص الشركة الحالية
             if (employee.CompanyId != _tenantContext.CompanyId)
                 return Forbid();
 
-            // ⚠️ نحدّث الحقول المسموح بها فقط — نتجاهل CompanyId
             if (!string.IsNullOrWhiteSpace(dto.Name))
                 employee.Name = dto.Name.Trim();
 
@@ -147,14 +129,14 @@ namespace KayanERP.Api.Controllers
                     employee.EmployeeCode = dto.EmployeeCode.Trim();
             }
 
-            if (dto.DepartmentId.Has && dto.DepartmentId > 0)
+            if (dto.DepartmentId > 0)
             {
                 var deptExists = await _context.Departments
                     .AnyAsync(d => d.Id == dto.DepartmentId && d.CompanyId == employee.CompanyId);
                 if (deptExists) employee.DepartmentId = dto.DepartmentId;
             }
 
-            if (dto.JobTitleId.Has && dto.JobTitleId > 0)
+            if (dto.JobTitleId > 0)
             {
                 var titleExists = await _context.JobTitles
                     .AnyAsync(j => j.Id == dto.JobTitleId && j.CompanyId == employee.CompanyId);
@@ -167,9 +149,6 @@ namespace KayanERP.Api.Controllers
             return NoContent();
         }
 
-        // ==============================================================
-        // 6. تبديل حالة الموظف
-        // ==============================================================
         [HttpPut("{id:long}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(long id)
         {
@@ -186,9 +165,6 @@ namespace KayanERP.Api.Controllers
             return Ok(new { active = employee.Active, message = "تم تغيير حالة العامل بنجاح." });
         }
 
-        // ==============================================================
-        // 7. حذف موظف (Soft Delete دايمًا)
-        // ==============================================================
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> DeleteEmployee(long id)
         {
@@ -199,7 +175,6 @@ namespace KayanERP.Api.Controllers
             if (employee.CompanyId != _tenantContext.CompanyId)
                 return Forbid();
 
-            // ⚠️ Soft Delete — أأمن من Hard Delete (بيحافظ على الـ Relationships)
             employee.Active = false;
             await _context.SaveChangesAsync();
 

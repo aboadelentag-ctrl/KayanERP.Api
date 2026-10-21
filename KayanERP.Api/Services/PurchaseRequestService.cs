@@ -1,6 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using KayanERP.Api.Models;
 using KayanERP.Shared.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace KayanERP.Api.Services
 {
@@ -25,13 +29,14 @@ namespace KayanERP.Api.Services
         public async Task<List<PurchaseRequestItemLookupDto>> GetItemsLookupAsync()
         {
             return await _context.Items
+                .AsNoTracking()
                 .Where(i => i.Active)
                 .Select(i => new PurchaseRequestItemLookupDto
                 {
                     Id = i.Id,
                     ItemCode = i.ItemCode,
                     ItemName = i.ItemName,
-                    Unit = i.Unit // تم ربط الحقل الفعلي للوحدة هنا
+                    Unit = i.Unit ?? "وحدة"
                 })
                 .ToListAsync();
         }
@@ -39,6 +44,7 @@ namespace KayanERP.Api.Services
         public async Task<List<PurchaseRequestDepartmentLookupDto>> GetDepartmentsLookupAsync()
         {
             return await _context.Departments
+                .AsNoTracking()
                 .Select(d => new PurchaseRequestDepartmentLookupDto
                 {
                     Id = d.Id,
@@ -50,6 +56,7 @@ namespace KayanERP.Api.Services
         public async Task<List<PurchaseRequestWarehouseLookupDto>> GetWarehousesLookupAsync()
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .Where(w => w.Active)
                 .Select(w => new PurchaseRequestWarehouseLookupDto
                 {
@@ -62,6 +69,7 @@ namespace KayanERP.Api.Services
         public async Task<List<PurchaseRequestDto>> GetAllRequestsAsync()
         {
             return await _context.PurchaseOrders
+                .AsNoTracking()
                 .OrderByDescending(p => p.Id)
                 .Select(p => new PurchaseRequestDto
                 {
@@ -69,7 +77,7 @@ namespace KayanERP.Api.Services
                     RequestNumber = p.OrderNumber,
                     WarehouseId = p.WarehouseId,
                     WarehouseName = _context.Warehouses.Where(w => w.Id == p.WarehouseId).Select(w => w.WarehouseName).FirstOrDefault() ?? "مخزن غير محدد",
-                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.Min),
+                    RequestDate = p.OrderDate.ToDateTime(TimeOnly.MinValue),
                     Status = p.Status,
                     Notes = string.Empty
                 })
@@ -87,7 +95,7 @@ namespace KayanERP.Api.Services
                 .FirstOrDefaultAsync();
 
             if (validSupplierId == 0)
-                throw new Exception("لا يوجد مورد مسجل في قاعدة البيانات لربط الطلب المبدئي به.");
+                throw new InvalidOperationException("لا يوجد مورد مسجل في قاعدة البيانات لربط الطلب المبدئي به.");
 
             var validCompanyId = await _context.Companies
                 .OrderBy(c => c.Id)
@@ -97,10 +105,10 @@ namespace KayanERP.Api.Services
             if (validCompanyId == 0) validCompanyId = 1;
 
             string generatedNumber = string.IsNullOrWhiteSpace(dto.RequestNumber)
-                ? $"PR-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(100, 999)}"
-                : dto.RequestNumber;
+                ? $"PR-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(100, 999)}"
+                : dto.RequestNumber.Trim();
 
-            long targetWarehouseId = dto.WarehouseId ?? 1;
+            long targetWarehouseId = dto.WarehouseId > 0 ? dto.WarehouseId : 1L;
 
             var po = new PurchaseOrder
             {

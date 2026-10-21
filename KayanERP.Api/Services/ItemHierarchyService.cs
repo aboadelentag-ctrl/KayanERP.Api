@@ -29,9 +29,6 @@ namespace KayanERP.Api.Services
             _context = context;
         }
 
-        // ==============================================================
-        // 1. معاملات تحويل الوحدات القياسية والخاصة
-        // ==============================================================
         public async Task<List<UomConversionDto>> GetAllConversionsAsync()
         {
             return await _context.ItemUomConversions
@@ -40,7 +37,7 @@ namespace KayanERP.Api.Services
                 .Select(c => new UomConversionDto
                 {
                     Id = c.Id,
-                    ItemId = c.ItemId,
+                    ItemId = c.ItemId ?? 0,
                     ItemName = c.ItemId != null
                         ? (_context.Items.Where(i => i.Id == c.ItemId).Select(i => i.ItemName).FirstOrDefault() ?? "صنف")
                         : "تحويل قياسي عام للمصنع",
@@ -62,7 +59,6 @@ namespace KayanERP.Api.Services
             string fromUnit = dto.FromUnit.Trim();
             string toUnit = dto.ToUnit.Trim();
 
-            // فحص وجود معامل سابق لتحديثه بدلاً من تكراره (Upsert)
             var existing = await _context.ItemUomConversions
                 .FirstOrDefaultAsync(c => c.ItemId == itemId &&
                     ((c.FromUnit.ToLower() == fromUnit.ToLower() && c.ToUnit.ToLower() == toUnit.ToLower()) ||
@@ -94,15 +90,11 @@ namespace KayanERP.Api.Services
             return true;
         }
 
-        // ==============================================================
-        // 2. محرك التحويل الرياضي المحصن مع الأسبقية للصنف الخاص
-        // ==============================================================
         public async Task<decimal> ConvertUnitAsync(decimal quantity, string fromUnit, string toUnit, long? itemId)
         {
             if (string.Equals(fromUnit, toUnit, StringComparison.OrdinalIgnoreCase))
                 return quantity;
 
-            // استرجاع كافة القواعد المطابقة (الخاصة بالصنف والعامة للمصنع)
             var rules = await _context.ItemUomConversions
                 .AsNoTracking()
                 .Where(c => (c.ItemId == itemId || c.ItemId == null) &&
@@ -112,8 +104,7 @@ namespace KayanERP.Api.Services
 
             if (!rules.Any()) return quantity;
 
-            // إعطاء الأسبقية التامة للمعامل الخاص بالصنف أولاً
-            var rule = rules.OrderByDescending(c => c.ItemId.Has).First();
+            var rule = rules.OrderByDescending(c => c.ItemId.HasValue).First();
 
             if (rule.ConversionFactor <= 0) return quantity;
 
@@ -123,9 +114,6 @@ namespace KayanERP.Api.Services
                 return quantity / rule.ConversionFactor;
         }
 
-        // ==============================================================
-        // 3. قوائم الأصناف الأساسية والتفريعات
-        // ==============================================================
         public async Task<List<ParentItemLookupDto>> GetParentItemsLookupAsync()
         {
             return await _context.Items
@@ -155,8 +143,8 @@ namespace KayanERP.Api.Services
                     ItemName = i.ItemName,
                     ItemType = i.ItemType,
                     Unit = i.Unit,
-                    ParentItemId = i.ParentItemId,
-                    ParentItemName = _context.Items.Where(p => p.Id == parentId).Select(p => p.ItemName).FirstOrDefault() ?? "",
+                    ParentItemId = i.ParentItemId ?? 0L,
+                    ParentItemName = _context.Items.Where(p => p.Id == parentId).Select(p => p.ItemName).FirstOrDefault() ?? string.Empty,
                     Active = i.Active
                 })
                 .ToListAsync();
@@ -175,8 +163,8 @@ namespace KayanERP.Api.Services
                     ItemName = i.ItemName,
                     ItemType = i.ItemType,
                     Unit = i.Unit,
-                    ParentItemId = i.ParentItemId,
-                    ParentItemName = _context.Items.Where(p => p.Id == i.ParentItemId).Select(p => p.ItemName).FirstOrDefault() ?? "",
+                    ParentItemId = i.ParentItemId ?? 0L,
+                    ParentItemName = _context.Items.Where(p => p.Id == i.ParentItemId).Select(p => p.ItemName).FirstOrDefault() ?? string.Empty,
                     Active = i.Active
                 })
                 .ToListAsync();
@@ -190,7 +178,6 @@ namespace KayanERP.Api.Services
             var parent = await _context.Items.FindAsync(dto.ParentItemId);
             if (parent == null) return false;
 
-            // توليد كود تفريع فريد تلقائياً إذا تُرك فارغاً
             string variantCode = dto.VariantCode?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(variantCode))
             {
@@ -198,11 +185,10 @@ namespace KayanERP.Api.Services
                 variantCode = $"{parent.ItemCode}-{(count + 1):D2}";
             }
 
-            // فحص عدم التكرار للكود
             bool codeExists = await _context.Items.AnyAsync(i => i.ItemCode.ToLower() == variantCode.ToLower());
             if (codeExists)
             {
-                variantCode = $"{variantCode}-{new Random().Next(10, 99)}";
+                variantCode = $"{variantCode}-{Random.Shared.Next(10, 99)}";
             }
 
             var variantItem = new Item
@@ -222,12 +208,11 @@ namespace KayanERP.Api.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            parent.IsVariant = true; // وسم الصنف الأساسي بوجود نكهات وتفريعات تابعة
+            parent.IsVariant = true;
 
             _context.Items.Add(variantItem);
             await _context.SaveChangesAsync();
 
-            // حفظ معامل التعبئة التلقائي للصنف الفرعي إن وُجد (مثل: 1 بلكة = 48 قطعة)
             if (dto.PackingFactor > 0 && !string.IsNullOrWhiteSpace(dto.PackingUnit))
             {
                 var packingConversion = new ItemUomConversion

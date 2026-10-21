@@ -45,7 +45,7 @@ namespace KayanERP.Api.Controllers
                     Id = i.Id,
                     CompanyId = i.CompanyId,
                     CategoryId = i.CategoryId,
-                    DepartmentId = i.DepartmentId,
+                    DepartmentId = i.DepartmentId ?? 0,
                     DepartmentName = i.Department != null ? i.Department.DepartmentName : (i.DepartmentName ?? "-"),
                     ItemCode = i.ItemCode,
                     ItemName = i.ItemName,
@@ -53,7 +53,7 @@ namespace KayanERP.Api.Controllers
                     Unit = i.Unit,
                     Active = i.Active,
                     HasExpiryDate = i.HasExpiryDate,
-                    ShelfLifeDays = i.ShelfLifeDays,
+                    ShelfLifeDays = i.ShelfLifeDays ?? 0,
                     ReorderLevel = i.ReorderLevel,
                     SafetyStock = i.SafetyStock,
                     MaxStock = i.MaxStock,
@@ -97,7 +97,7 @@ namespace KayanERP.Api.Controllers
                 Id = item.Id,
                 CompanyId = item.CompanyId,
                 CategoryId = item.CategoryId,
-                DepartmentId = item.DepartmentId,
+                DepartmentId = item.DepartmentId ?? 0,
                 DepartmentName = item.Department != null ? item.Department.DepartmentName : item.DepartmentName,
                 ItemCode = item.ItemCode,
                 ItemName = item.ItemName,
@@ -105,7 +105,7 @@ namespace KayanERP.Api.Controllers
                 Unit = item.Unit,
                 Active = item.Active,
                 HasExpiryDate = item.HasExpiryDate,
-                ShelfLifeDays = item.ShelfLifeDays,
+                ShelfLifeDays = item.ShelfLifeDays ?? 0,
                 ReorderLevel = item.ReorderLevel,
                 SafetyStock = item.SafetyStock,
                 MaxStock = item.MaxStock,
@@ -152,10 +152,10 @@ namespace KayanERP.Api.Controllers
 
             long? targetDeptId = null;
             string? targetDeptName = null;
-            if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
+            if (dto.DepartmentId > 0)
             {
                 var dept = await _context.Departments
-                    .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId.Value && d.CompanyId == companyId);
+                    .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId && d.CompanyId == companyId);
                 if (dept != null)
                 {
                     targetDeptId = dept.Id;
@@ -178,7 +178,7 @@ namespace KayanERP.Api.Controllers
                     Unit = string.IsNullOrWhiteSpace(dto.Unit) ? "قطعة" : dto.Unit,
                     Active = dto.Active,
                     HasExpiryDate = dto.HasExpiryDate,
-                    ShelfLifeDays = dto.HasExpiryDate ? (dto.ShelfLifeDays ?? 4) : null,
+                    ShelfLifeDays = dto.HasExpiryDate ? (dto.ShelfLifeDays > 0 ? dto.ShelfLifeDays : 4) : null,
                     ReorderLevel = dto.ReorderLevel,
                     SafetyStock = dto.SafetyStock,
                     MaxStock = dto.MaxStock,
@@ -260,10 +260,10 @@ namespace KayanERP.Api.Controllers
                     return Conflict(new { message = $"كود الصنف [{dto.ItemCode.Trim()}] مسجل مسبقاً." });
             }
 
-            if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
+            if (dto.DepartmentId > 0)
             {
                 var dept = await _context.Departments
-                    .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId.Value && d.CompanyId == item.CompanyId);
+                    .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId && d.CompanyId == item.CompanyId);
                 if (dept != null)
                 {
                     item.DepartmentId = dept.Id;

@@ -166,7 +166,6 @@
     private bool isLoading = true;
     private string errorMessage = "";
 
-    // التواريخ الافتراضية (من بداية الشهر الحالي إلى اليوم)
     private DateOnly startDate = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
     private DateOnly endDate = DateOnly.FromDateTime(DateTime.Now);
     private long selectedDepartmentId = 0;
@@ -199,7 +198,6 @@
         errorMessage = "";
         try
         {
-            // إرسال التواريخ والقسم المختار إلى الـ API الفعلي
             string url = $"api/Reports/efficiency?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}&departmentId={selectedDepartmentId}";
             var result = await Http.GetFromJsonAsync<ReportResultDto>(url);
 
@@ -219,9 +217,6 @@
         }
     }
 
-    // ==========================================
-    // DTOs
-    // ==========================================
     public class ReportResultDto
     {
         public KpiSummaryDto Summary { get; set; } = new();

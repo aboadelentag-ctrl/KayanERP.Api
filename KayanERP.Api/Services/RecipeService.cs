@@ -36,7 +36,7 @@ namespace KayanERP.Api.Services
                 decimal totalCost = 0;
                 foreach (var line in r.RecipeLines.Where(l => l.Quantity > 0))
                 {
-                    decimal cost = latestCosts.TryGet(line.ComponentItemId, out var unitCost) ? unitCost : 0;
+                    decimal cost = latestCosts.TryGetValue(line.ComponentItemId, out var unitCost) ? unitCost : 0;
                     decimal waste = line.WastePercentage;
                     totalCost += (line.Quantity * (1m + (waste / 100m))) * cost;
                 }
@@ -54,9 +54,9 @@ namespace KayanERP.Api.Services
                     BatchUnit = r.BatchUnit,
                     YieldQuantity = r.YieldQuantity,
                     YieldUnit = r.YieldUnit,
-                    PiecesPerBatch = r.PiecesPerBatch,
+                    PiecesPerBatch = r.PiecesPerBatch ?? 0m,
                     WastePercentage = r.WastePercentage,
-                    PreparationTimeMinutes = r.PreparationTimeMinutes,
+                    PreparationTimeMinutes = r.PreparationTimeMinutes ?? 0,
                     Active = r.Active,
                     Notes = r.Notes,
                     LinesCount = r.RecipeLines.Count(l => l.Quantity > 0),
@@ -91,7 +91,9 @@ namespace KayanERP.Api.Services
                 .Where(l => l.Quantity > 0)
                 .Select(l =>
                 {
-                    decimal unitCost = latestCosts.TryGet(l.ComponentItemId, out var cost) ? cost : 0;
+                    decimal unitCost = latestCosts.TryGetValue(l.ComponentItemId, out var cost) ? cost : 0;
+                    decimal lineTotal = (l.Quantity * (1m + (l.WastePercentage / 100m))) * unitCost;
+
                     return new RecipeLineDto
                     {
                         Id = l.Id,
@@ -102,6 +104,7 @@ namespace KayanERP.Api.Services
                         Unit = l.Unit,
                         WastePercentage = l.WastePercentage,
                         UnitCost = unitCost,
+                        LineTotalCost = Math.Round(lineTotal, 2),
                         Notes = l.Notes
                     };
                 }).ToList();
@@ -121,9 +124,9 @@ namespace KayanERP.Api.Services
                 BatchUnit = r.BatchUnit,
                 YieldQuantity = r.YieldQuantity,
                 YieldUnit = r.YieldUnit,
-                PiecesPerBatch = r.PiecesPerBatch,
+                PiecesPerBatch = r.PiecesPerBatch ?? 0m,
                 WastePercentage = r.WastePercentage,
-                PreparationTimeMinutes = r.PreparationTimeMinutes,
+                PreparationTimeMinutes = r.PreparationTimeMinutes ?? 0,
                 Active = r.Active,
                 Notes = r.Notes,
                 LinesCount = linesDto.Count,

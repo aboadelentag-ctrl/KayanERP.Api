@@ -5,41 +5,22 @@ namespace KayanERP.UI.Services
 {
     public class AppState
     {
-        public long UserId { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string FullName { get; set; } = string.Empty;
-        public long CompanyId { get; set; } = 1;
-        public string TenantName { get; set; } = string.Empty;
-        public string TenantCode { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-        public string EmployeeCode { get; set; } = string.Empty;
-        public string DepartmentName { get; set; } = string.Empty;
-        public long? DepartmentId { get; set; }
-
-        public bool IsLoggedIn => UserId > 0 || !string.IsNullOrEmpty(Username);
-
-        private HashSet<string> _permissions = new(StringComparer.OrdinalIgnoreCase);
-
         public event Action? OnChange;
 
-        // 1. التوقيع الجديد الخاص بشاشة تسجيل دخول المستأجر (Login.razor - 9 معاملات)
-        public void SetUserSession(long userId, string username, string fullName, long companyId, string companyName, string role, string empCode, string deptName, IEnumerable<string>? permissions)
-        {
-            UserId = userId;
-            Username = username;
-            FullName = fullName;
-            CompanyId = companyId;
-            TenantName = companyName;
-            Role = role;
-            EmployeeCode = empCode;
-            DepartmentName = deptName;
+        public bool IsLoggedIn { get; private set; }
+        public long UserId { get; private set; }
+        public string Username { get; private set; } = string.Empty;
+        public string FullName { get; private set; } = string.Empty;
+        public string Role { get; private set; } = string.Empty;
+        public string EmployeeCode { get; private set; } = string.Empty;
+        public string DepartmentName { get; private set; } = string.Empty;
+        public long? DepartmentId { get; private set; }
+        public List<string> Permissions { get; private set; } = new();
 
-            _permissions = new HashSet<string>(permissions ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
-            NotifyStateChanged();
-        }
+        // خاصية اسم الشركة الجديدة لدعم Multi-Tenant
+        public string CompanyName { get; private set; } = string.Empty;
 
-        // 2. التوقيع القديم لشاشات MainLayout و EmergencyTasks و UsersManagement (8 معاملات)
-        public void SetUserSession(long userId, string username, string fullName, string role, string empCode, string deptName, object? departmentIdOrExtra, IEnumerable<string>? permissions)
+        public void SetUserSession(long userId, string username, string fullName, string role, string empCode, string deptName, long? departmentIdOrExtra, List<string> permissions, string companyName = "مجموعة كيان")
         {
             UserId = userId;
             Username = username;
@@ -47,52 +28,12 @@ namespace KayanERP.UI.Services
             Role = role;
             EmployeeCode = empCode;
             DepartmentName = deptName;
+            DepartmentId = departmentIdOrExtra;
+            Permissions = permissions ?? new List<string>();
+            CompanyName = string.IsNullOrEmpty(companyName) ? "مجموعة كيان" : companyName;
 
-            if (departmentIdOrExtra is long dId) DepartmentId = dId;
-            else if (long.TryParse(departmentIdOrExtra?.ToString(), out long parsedId)) DepartmentId = parsedId;
-
-            _permissions = new HashSet<string>(permissions ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            IsLoggedIn = true;
             NotifyStateChanged();
-        }
-
-        // 3. التوقيع القديم الخاص بشاشة Home.razor (5 معاملات نصية)
-        public void SetUserSession(string username, string fullName, string role, string departmentName, IEnumerable<string>? permissions)
-        {
-            Username = username;
-            FullName = fullName;
-            Role = role;
-            DepartmentName = departmentName;
-
-            _permissions = new HashSet<string>(permissions ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
-            NotifyStateChanged();
-        }
-
-        // 4. توقيع مبسط إضافي للشركات (5 معاملات)
-        public void SetUserSession(long userId, string username, string fullName, long companyId, string companyName)
-        {
-            UserId = userId;
-            Username = username;
-            FullName = fullName;
-            CompanyId = companyId;
-            TenantName = companyName;
-            NotifyStateChanged();
-        }
-
-        public bool HasPermission(string permission)
-        {
-            if (string.IsNullOrWhiteSpace(permission)) return true;
-            if (_permissions.Contains("*")) return true;
-            return _permissions.Contains(permission.Trim());
-        }
-
-        public bool HasAnyPermission(params string[] perms)
-        {
-            if (_permissions.Contains("*")) return true;
-            foreach (var p in perms)
-            {
-                if (_permissions.Contains(p.Trim())) return true;
-            }
-            return false;
         }
 
         public void ClearSession()
@@ -100,11 +41,14 @@ namespace KayanERP.UI.Services
             UserId = 0;
             Username = string.Empty;
             FullName = string.Empty;
-            CompanyId = 0;
-            TenantName = string.Empty;
             Role = string.Empty;
+            EmployeeCode = string.Empty;
+            DepartmentName = string.Empty;
             DepartmentId = null;
-            _permissions.Clear();
+            Permissions = new List<string>();
+            CompanyName = string.Empty;
+
+            IsLoggedIn = false;
             NotifyStateChanged();
         }
 

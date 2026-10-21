@@ -43,10 +43,12 @@ namespace KayanERP.Api.Services
                            !w.WarehouseName.Contains("المشتريات") &&
                            !w.WarehouseName.Contains("المبيعات"))
                 .OrderBy(w => w.WarehouseName)
-                .Select(w => new TransferWarehouseLookupDto
+                .Select(w => new WarehouseLookupDto
                 {
                     Id = w.Id,
-                    WarehouseName = w.WarehouseName
+                    BranchId = w.BranchId ?? 1L,
+                    WarehouseName = w.WarehouseName,
+                    WarehouseCode = w.WarehouseCode
                 })
                 .ToListAsync();
 
@@ -54,9 +56,10 @@ namespace KayanERP.Api.Services
                 .AsNoTracking()
                 .Where(i => i.Active)
                 .OrderBy(i => i.ItemName)
-                .Select(i => new TransferItemLookupDto
+                .Select(i => new ItemLookupDto
                 {
                     Id = i.Id,
+                    ItemId = i.Id,
                     ItemCode = i.ItemCode,
                     ItemName = i.ItemName,
                     Unit = i.Unit ?? "وحدة",
@@ -179,7 +182,7 @@ namespace KayanERP.Api.Services
             return new AvailableStockInfoDto
             {
                 TotalAvailableQty = totalQty,
-                Batches = batches.OrderBy(b => b.ExpiryDate ?? DateTime.Max).ToList()
+                Batches = batches.OrderBy(b => b.ExpiryDate ?? DateTime.MaxValue).ToList()
             };
         }
 
@@ -198,7 +201,7 @@ namespace KayanERP.Api.Services
             try
             {
                 DateTime now = DateTime.UtcNow;
-                string trNumber = $"TR-{now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+                string trNumber = $"TR-{now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
 
                 var transfer = new StockTransfer
                 {
@@ -232,7 +235,7 @@ namespace KayanERP.Api.Services
                         Quantity = lineDto.DispatchedQty,
                         ReceivedQuantity = 0,
                         BatchNumber = !string.IsNullOrWhiteSpace(lineDto.BatchNumber) ? lineDto.BatchNumber.Trim() : $"LOT-{now:yyyyMMdd}-{lineDto.ItemId}",
-                        ExpiryDate = lineDto.ExpiryDate.Has ? DateTime.SpecifyKind(lineDto.ExpiryDate..Date, DateTimeKind.Utc) : null,
+                        ExpiryDate = lineDto.ExpiryDate.HasValue ? DateTime.SpecifyKind(lineDto.ExpiryDate.Value.Date, DateTimeKind.Utc) : null,
                         UnitCost = cost,
                         LineStatus = "PENDING",
                         LossQty = 0,
@@ -481,7 +484,7 @@ namespace KayanERP.Api.Services
                 CreatedAt = t.CreatedAt ?? DateTime.UtcNow,
                 DispatchedAt = t.DispatchedAt,
                 CompletedAt = t.CompletedAt,
-                Lines = t.StockTransferLines.Select(l => new StockTransferLineDetailDto
+                Lines = t.StockTransferLines.Select(l => new StockTransferLineDto
                 {
                     Id = l.Id,
                     ItemId = l.ItemId,
@@ -493,10 +496,7 @@ namespace KayanERP.Api.Services
                     BatchNumber = l.BatchNumber,
                     ExpiryDate = l.ExpiryDate,
                     UnitCost = l.UnitCost,
-                    LineStatus = l.LineStatus,
-                    DiscrepancyReason = l.DiscrepancyReason,
-                    ResolutionNotes = l.ResolutionNotes,
-                    LossQty = l.LossQty
+                    LineStatus = l.LineStatus
                 }).ToList()
             };
         }

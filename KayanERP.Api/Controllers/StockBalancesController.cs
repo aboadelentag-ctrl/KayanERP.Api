@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +29,7 @@ namespace KayanERP.Api.Controllers
                 .AsNoTracking()
                 .Where(b => b.Active)
                 .OrderBy(b => b.BranchName)
-                .Select(b => new BranchForBalanceDto
+                .Select(b => new BranchLookupDto
                 {
                     Id = b.Id,
                     BranchCode = b.BranchCode,
@@ -37,17 +38,17 @@ namespace KayanERP.Api.Controllers
                 .ToListAsync();
 
             var warehouses = await _context.Warehouses
-                .AsNoTracking()
-                .Where(w => w.Active)
-                .OrderBy(w => w.WarehouseName)
-                .Select(w => new WarehouseForBalanceDto
-                {
-                    Id = w.Id,
-                    BranchId = w.BranchId,
-                    WarehouseCode = w.WarehouseCode,
-                    WarehouseName = w.WarehouseName
-                })
-                .ToListAsync();
+     .AsNoTracking()
+     .Where(w => w.Active)
+     .OrderBy(w => w.WarehouseName)
+     .Select(w => new WarehouseLookupDto
+     {
+         Id = w.Id,
+         BranchId = w.BranchId ?? 1L,
+         WarehouseCode = w.WarehouseCode,
+         WarehouseName = w.WarehouseName
+     })
+     .ToListAsync();
 
             return Ok(new StockLookupsDto
             {
@@ -105,7 +106,7 @@ namespace KayanERP.Api.Controllers
                     WarehouseId = s.WarehouseId,
                     WarehouseCode = s.Warehouse.WarehouseCode,
                     WarehouseName = s.Warehouse.WarehouseName,
-                    BranchId = s.Warehouse.BranchId,
+                    BranchId = s.Warehouse.BranchId ?? 1L,
                     BranchName = s.Warehouse.Branch != null ? s.Warehouse.Branch.BranchName : "الفرع الرئيسي",
                     ItemId = s.ItemId,
                     ItemCode = s.Item.ItemCode,
