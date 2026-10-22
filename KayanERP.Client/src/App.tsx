@@ -1,107 +1,316 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Package, Warehouse, Users, LayoutDashboard } from 'lucide-react';
+﻿import React, { useState } from 'react';
+import {
+  Package,
+  Users,
+  LayoutDashboard,
+  Boxes,
+  Warehouse,
+  Receipt,
+  Truck,
+  ShieldCheck,
+  Building2,
+  UserCheck,
+  ChefHat,
+  Factory,
+  ShoppingBag,
+  BookOpen,
+  Scale,
+  ShoppingCart,
+  PieChart,
+  FolderTree,
+  Wrench,
+  Award
+} from 'lucide-react';
+import { AuthProvider, useAuth } from './core/auth/AuthContext';
+import { BranchProvider, useBranchContext } from './core/context/BranchContext';
 import { CustomersPage } from './modules/customers/CustomersPage';
+import { CratesPage } from './modules/crates/CratesPage';
+import { ProductsPage } from './modules/products/ProductsPage';
+import { BranchesPage } from './modules/branches/BranchesPage';
+import { SalesPage } from './modules/sales/SalesPage';
+import { TransfersPage } from './modules/transfers/TransfersPage';
+import { RecipesPage } from './modules/recipes/RecipesPage';
+import { ProductionHubPage } from './modules/production/ProductionHubPage';
+import { MaterialRequisitionsPage } from './modules/materials/MaterialRequisitionsPage';
+import { ChartOfAccountsPage } from './modules/accounts/ChartOfAccountsPage';
+import { JournalEntriesPage } from './modules/journal/JournalEntriesPage';
+import { PurchasingPage } from './modules/purchasing/PurchasingPage';
+import { FinancialStatementsPage } from './modules/finance/FinancialStatementsPage';
+import { ItemHierarchyPage } from './modules/item-hierarchy/ItemHierarchyPage';
+import { AssetsPage } from './modules/assets/AssetsPage';
+import { ProductivityPage } from './modules/productivity/ProductivityPage';
 
-function App() {
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'customers'>('customers');
-  const [data, setData] = useState<any>({
-    items: [],
-    warehouses: [],
-    customers: [
-      { id: 1, customerName: 'سوبر ماركت الفهد (فرع المعادي)', creditLimit: 50000 },
-      { id: 2, customerName: 'شركة حلواني الشام (فرع النزهة)', creditLimit: 100000 }
-    ]
-  });
+const AppContent: React.FC = () => {
+  const [currentTab, setCurrentTab] = useState<'productivity' | 'assets' | 'hierarchy' | 'finance' | 'purchasing' | 'journal' | 'accounts' | 'production' | 'materials' | 'recipes' | 'transfers' | 'sales' | 'branches' | 'products' | 'crates' | 'customers' | 'dashboard'>('productivity');
+  const { user, switchRole } = useAuth();
+  const { activeBranchName } = useBranchContext();
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', direction: 'rtl', fontFamily: 'sans-serif' }}>
-      {/* شريط التنقل العلوي الموحد */}
-      <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
-            K
+    <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
+      {/* الشريط الإداري وسياق الجلسة والفرع */}
+      <div className="bg-slate-900 text-slate-200 px-6 py-2 text-xs flex flex-wrap items-center justify-between border-b border-slate-800 gap-2">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-indigo-400 font-semibold">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>نطاق الفرع النشط:</span>
+            <span className="text-white font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+              {activeBranchName}
+            </span>
           </div>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>KayanERP</h2>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>منظومة إدارة الموارد الذكية</span>
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>المستخدم الحالي:</span>
+            <span className="text-emerald-300 font-semibold">{user?.fullName}</span>
+            <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-mono">
+              {user?.role}
+            </span>
           </div>
         </div>
 
-        {/* أزرار التبديل بين الشاشات */}
-        <nav style={{ display: 'flex', gap: '8px' }}>
+        {/* محاكي الأدوار */}
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span>محاكاة الدور:</span>
+          </span>
+          <select
+            value={user?.role}
+            onChange={(e) => switchRole(e.target.value as any)}
+            className="bg-slate-800 text-white border border-slate-700 text-xs rounded px-2 py-1 outline-none font-medium"
+          >
+            <option value="Admin">مدير عام (صلاحيات كاملة)</option>
+            <option value="ProductionManager">مدير إنتاج ومعمل</option>
+            <option value="Accountant">محاسب عام</option>
+            <option value="BranchManager">مشرف فرع دكرنس</option>
+            <option value="Cashier">كاشير فرع شربين</option>
+          </select>
+        </div>
+      </div>
+
+      {/* شريط الموديولات */}
+      <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            K
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-900 leading-tight">KayanERP Enterprise</h2>
+            <span className="text-xs text-gray-500">منظومة تصنيع الحلويات وإدارة الفروع المتكاملة</span>
+          </div>
+        </div>
+
+        <nav className="flex gap-1 overflow-x-auto pb-1">
+          <button
+            onClick={() => setCurrentTab('productivity')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'productivity' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Award size={16} />
+            <span>إنتاجية المعمل</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('assets')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'assets' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Wrench size={16} />
+            <span>الأصول والصيانة</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('hierarchy')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'hierarchy' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FolderTree size={16} />
+            <span>شجرة الأصناف (UOM)</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('finance')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'finance' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <PieChart size={16} />
+            <span>القوائم المالية</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('purchasing')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'purchasing' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ShoppingCart size={16} />
+            <span>المشتريات</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('journal')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'journal' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Scale size={16} />
+            <span>قيود اليومية</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('accounts')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'accounts' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <BookOpen size={16} />
+            <span>شجرة الحسابات</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('production')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'production' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Factory size={16} />
+            <span>أوامر الإنتاج</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('materials')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'materials' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ShoppingBag size={16} />
+            <span>أذون الخامات</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('recipes')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'recipes' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ChefHat size={16} />
+            <span>معادلات التصنيع (BOM)</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('sales')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'sales' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Receipt size={16} />
+            <span>المبيعات</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('transfers')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'transfers' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Truck size={16} />
+            <span>شحن الفروع</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('branches')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'branches' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Warehouse size={16} />
+            <span>المستودعات</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('products')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'products' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Package size={16} />
+            <span>الأصناف</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('crates')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'crates' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Boxes size={16} />
+            <span>المجنسات</span>
+          </button>
+
           <button
             onClick={() => setCurrentTab('customers')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              backgroundColor: currentTab === 'customers' ? '#eef2ff' : 'transparent',
-              color: currentTab === 'customers' ? '#4f46e5' : '#64748b',
-              transition: 'all 0.2s'
-            }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'customers' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
           >
-            <Users size={18} />
-            <span>إدارة العملاء والائتمان</span>
+            <Users size={16} />
+            <span>العملاء</span>
           </button>
 
           <button
             onClick={() => setCurrentTab('dashboard')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              backgroundColor: currentTab === 'dashboard' ? '#eef2ff' : 'transparent',
-              color: currentTab === 'dashboard' ? '#4f46e5' : '#64748b',
-              transition: 'all 0.2s'
-            }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
           >
-            <LayoutDashboard size={18} />
-            <span>لوحة التحكم الرئيسية</span>
+            <LayoutDashboard size={16} />
+            <span>المؤشرات</span>
           </button>
         </nav>
       </header>
 
-      {/* عرض الشاشة المحددة */}
+      {/* محتوى الشاشة النشطة */}
       <main>
-        {currentTab === 'customers' ? (
-          <CustomersPage />
-        ) : (
-          <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '20px' }}>لوحة المؤشرات السريعة</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ background: '#ecfdf5', padding: '12px', borderRadius: '10px', color: '#059669' }}><Package size={28} /></div>
-                <div>
-                  <span style={{ color: '#64748b', fontSize: '13px' }}>الأصناف المسجلة</span>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '24px', color: '#0f172a' }}>{data.items?.length || 0}</h3>
-                </div>
-              </div>
-
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ background: '#fffbeb', padding: '12px', borderRadius: '10px', color: '#d97706' }}><Warehouse size={28} /></div>
-                <div>
-                  <span style={{ color: '#64748b', fontSize: '13px' }}>المستودعات والفروع</span>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '24px', color: '#0f172a' }}>{data.warehouses?.length || 0}</h3>
-                </div>
-              </div>
+        {currentTab === 'productivity' && <ProductivityPage />}
+        {currentTab === 'assets' && <AssetsPage />}
+        {currentTab === 'hierarchy' && <ItemHierarchyPage />}
+        {currentTab === 'finance' && <FinancialStatementsPage />}
+        {currentTab === 'purchasing' && <PurchasingPage />}
+        {currentTab === 'journal' && <JournalEntriesPage />}
+        {currentTab === 'accounts' && <ChartOfAccountsPage />}
+        {currentTab === 'materials' && <MaterialRequisitionsPage />}
+        {currentTab === 'production' && <ProductionHubPage />}
+        {currentTab === 'recipes' && <RecipesPage />}
+        {currentTab === 'sales' && <SalesPage />}
+        {currentTab === 'transfers' && <TransfersPage />}
+        {currentTab === 'branches' && <BranchesPage />}
+        {currentTab === 'products' && <ProductsPage />}
+        {currentTab === 'crates' && <CratesPage />}
+        {currentTab === 'customers' && <CustomersPage />}
+        {currentTab === 'dashboard' && (
+          <div className="p-6 max-w-6xl mx-auto">
+            <h1 className="text-xl font-bold text-gray-900 mb-6">لوحة الرقابة المركزية لسياق العمل</h1>
+            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                سياق العمل وعزل الفروع يعمل بنجاح.
+              </p>
             </div>
           </div>
         )}
       </main>
     </div>
   );
-}
+};
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BranchProvider>
+        <AppContent />
+      </BranchProvider>
+    </AuthProvider>
+  );
+}
