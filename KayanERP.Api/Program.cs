@@ -1,5 +1,4 @@
 global using KayanERP.Shared.DTOs;
-
 using KayanERP.Api.Middleware;
 using KayanERP.Api.Models;
 using KayanERP.Api.Services;
@@ -15,14 +14,9 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==============================================================
-// 1. قاعدة البيانات (PostgreSQL - Neon)
+// 1. قاعدة البيانات (PostgreSQL - Neon Direct Connection)
 // ==============================================================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is missing. " +
-        "Set it via User Secrets (Development) or Environment Variables (Production).");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
+var connectionString = "Host=ep-rapid-sound-ae7h0etg-pooler.c-2.us-east-2.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_le9YnIg4osXV;SslMode=Require;Trust Server Certificate=true;"; builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
@@ -112,7 +106,7 @@ builder.Services.AddControllers(options =>
 });
 
 // ==============================================================
-// 6. Swagger + JWT Support (متوافق مع Microsoft.OpenApi الحديث)
+// 6. Swagger + JWT Support
 // ==============================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -163,11 +157,13 @@ builder.Services.AddCors(options =>
 // 8. بناء التطبيق
 // ==============================================================
 var app = builder.Build();
+Console.WriteLine($"\n=======================================================");
+Console.WriteLine($"ACTUAL RUNTIME PASSWORD: {connectionString.Split(';').FirstOrDefault(x => x.StartsWith("Password="))}");
+Console.WriteLine($"=======================================================\n");
 
 // ==============================================================
-// 9. Pipeline (الترتيب مهم جدًا!)
+// 9. Pipeline
 // ==============================================================
-
 app.UseExceptionHandling();
 
 if (app.Environment.IsDevelopment())
@@ -178,10 +174,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("KayanPolicy");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
