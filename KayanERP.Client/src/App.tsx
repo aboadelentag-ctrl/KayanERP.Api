@@ -19,7 +19,13 @@ import {
   PieChart,
   FolderTree,
   Wrench,
-  Award
+  Award,
+  AlertOctagon,
+  HandCoins,
+  Wallet2,
+  CheckSquare,
+  Grid2X2,
+  Cake
 } from 'lucide-react';
 import { AuthProvider, useAuth } from './core/auth/AuthContext';
 import { BranchProvider, useBranchContext } from './core/context/BranchContext';
@@ -39,15 +45,21 @@ import { FinancialStatementsPage } from './modules/finance/FinancialStatementsPa
 import { ItemHierarchyPage } from './modules/item-hierarchy/ItemHierarchyPage';
 import { AssetsPage } from './modules/assets/AssetsPage';
 import { ProductivityPage } from './modules/productivity/ProductivityPage';
+import { EmergencyTasksPage } from './modules/emergency-tasks/EmergencyTasksPage';
+import { DashboardPage } from './modules/dashboard/DashboardPage';
+import { TreasuryVouchersPage } from './modules/treasury/TreasuryVouchersPage';
+import { ExpensesPayablesPage } from './modules/expenses/ExpensesPayablesPage';
+import { MaterialReceiptPage } from './modules/receiving/MaterialReceiptPage';
+import { InventoryDashboardPage } from './modules/inventory-dashboard/InventoryDashboardPage';
+import { FinishedGoodsPage } from './modules/finished-goods/FinishedGoodsPage';
 
 const AppContent: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<'productivity' | 'assets' | 'hierarchy' | 'finance' | 'purchasing' | 'journal' | 'accounts' | 'production' | 'materials' | 'recipes' | 'transfers' | 'sales' | 'branches' | 'products' | 'crates' | 'customers' | 'dashboard'>('productivity');
+  const [currentTab, setCurrentTab] = useState<'finished-goods' | 'inventory' | 'receiving' | 'expenses' | 'treasury' | 'dashboard' | 'emergency' | 'productivity' | 'assets' | 'hierarchy' | 'finance' | 'purchasing' | 'journal' | 'accounts' | 'production' | 'materials' | 'recipes' | 'transfers' | 'sales' | 'branches' | 'products' | 'crates' | 'customers'>('finished-goods');
   const { user, switchRole } = useAuth();
   const { activeBranchName } = useBranchContext();
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
-      {/* الشريط الإداري وسياق الجلسة والفرع */}
       <div className="bg-slate-900 text-slate-200 px-6 py-2 text-xs flex flex-wrap items-center justify-between border-b border-slate-800 gap-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-indigo-400 font-semibold">
@@ -67,7 +79,6 @@ const AppContent: React.FC = () => {
           </div>
         </div>
 
-        {/* محاكي الأدوار */}
         <div className="flex items-center gap-2">
           <span className="text-slate-400 flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
@@ -87,7 +98,6 @@ const AppContent: React.FC = () => {
         </div>
       </div>
 
-      {/* شريط الموديولات */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
@@ -100,6 +110,76 @@ const AppContent: React.FC = () => {
         </div>
 
         <nav className="flex gap-1 overflow-x-auto pb-1">
+          <button
+            onClick={() => setCurrentTab('finished-goods')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'finished-goods' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Cake size={16} />
+            <span>تسليم التام والكتالوج</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('inventory')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'inventory' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Grid2X2 size={16} />
+            <span>مؤشرات المخزون</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('receiving')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'receiving' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <CheckSquare size={16} />
+            <span>فحص الخامات (GMP)</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('expenses')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'expenses' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Wallet2 size={16} />
+            <span>المصروفات والغاز</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('treasury')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'treasury' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <HandCoins size={16} />
+            <span>سندات الخزينة</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('dashboard')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <LayoutDashboard size={16} />
+            <span>لوحة القيادة العامة</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('emergency')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+              currentTab === 'emergency' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <AlertOctagon size={16} />
+            <span>المهام الطارئة</span>
+          </button>
+
           <button
             onClick={() => setCurrentTab('productivity')}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
@@ -259,21 +339,17 @@ const AppContent: React.FC = () => {
             <Users size={16} />
             <span>العملاء</span>
           </button>
-
-          <button
-            onClick={() => setCurrentTab('dashboard')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 ${
-              currentTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <LayoutDashboard size={16} />
-            <span>المؤشرات</span>
-          </button>
         </nav>
       </header>
 
-      {/* محتوى الشاشة النشطة */}
       <main>
+        {currentTab === 'finished-goods' && <FinishedGoodsPage />}
+        {currentTab === 'inventory' && <InventoryDashboardPage />}
+        {currentTab === 'receiving' && <MaterialReceiptPage />}
+        {currentTab === 'expenses' && <ExpensesPayablesPage />}
+        {currentTab === 'treasury' && <TreasuryVouchersPage />}
+        {currentTab === 'dashboard' && <DashboardPage />}
+        {currentTab === 'emergency' && <EmergencyTasksPage />}
         {currentTab === 'productivity' && <ProductivityPage />}
         {currentTab === 'assets' && <AssetsPage />}
         {currentTab === 'hierarchy' && <ItemHierarchyPage />}
@@ -290,16 +366,6 @@ const AppContent: React.FC = () => {
         {currentTab === 'products' && <ProductsPage />}
         {currentTab === 'crates' && <CratesPage />}
         {currentTab === 'customers' && <CustomersPage />}
-        {currentTab === 'dashboard' && (
-          <div className="p-6 max-w-6xl mx-auto">
-            <h1 className="text-xl font-bold text-gray-900 mb-6">لوحة الرقابة المركزية لسياق العمل</h1>
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-              <p className="text-sm text-gray-600 leading-relaxed">
-                سياق العمل وعزل الفروع يعمل بنجاح.
-              </p>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
