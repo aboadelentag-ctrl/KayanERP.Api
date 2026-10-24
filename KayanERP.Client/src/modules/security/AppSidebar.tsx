@@ -30,7 +30,15 @@ import {
   ShieldCheck,
   Search,
   X,
-  Printer
+  Printer,
+  Warehouse,
+  Award,
+  Compass,
+  FileBarChart,
+  BookUser,
+  FlaskConical,
+  Tags,
+  CreditCard
 } from 'lucide-react';
 
 interface NavSidebarProps {
@@ -46,13 +54,12 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
     return keywords.toLowerCase().includes(menuSearch.trim().toLowerCase());
   };
 
-  const navItemClass = (tabKey: string, extra = '') => {
+  const navItemClass = (tabKey: string) => {
     const isActive = currentTab === tabKey;
-    return `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-      isActive
-        ? 'bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30 shadow-xs'
-        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-    } ${extra}`;
+    if (isActive) {
+      return 'flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-xs';
+    }
+    return 'flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-slate-300 hover:bg-slate-800/80 hover:text-white';
   };
 
   return (
@@ -88,30 +95,40 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2.5 space-y-4 text-xs">
-        {matchesSearch('الرئيسية لوحة المؤشرات مركز المطبوعات مؤشرات أداء الأقسام تقارير أرشيف') && (
+        {matchesSearch('الرئيسية لوحة المؤشرات منصة كيان المركزية مركز القيادة مركز المطبوعات مؤشرات أداء الأقسام تقارير أرشيف كفاءة الأقسام') && (
           <div className="space-y-1">
+            <button onClick={() => onSelectTab('workspace')} className={`w-full ${navItemClass('workspace')}`}>
+              <Compass className="w-4 h-4 text-indigo-400" />
+              <span>منصة كيان المركزية (Workspace) 🌐</span>
+            </button>
             <button onClick={() => onSelectTab('dashboard')} className={`w-full ${navItemClass('dashboard')}`}>
               <LayoutDashboard className="w-4 h-4 text-cyan-400" />
               <span>الرئيسية (لوحة المؤشرات)</span>
             </button>
-
             <button onClick={() => onSelectTab('print-center')} className={`w-full ${navItemClass('print-center')}`}>
               <Printer className="w-4 h-4 text-amber-400" />
               <span>مركز المطبوعات والفواتير 🖨️</span>
             </button>
-
-            <button onClick={() => onSelectTab('departments')} className={`w-full ${navItemClass('departments')}`}>
-              <TrendingUp className="w-4 h-4 text-cyan-400" />
-              <span>مؤشرات أداء الأقسام (KPIs) 📈</span>
+            <button onClick={() => onSelectTab('reports-archive')} className={`w-full ${navItemClass('reports-archive')}`}>
+              <FileBarChart className="w-4 h-4 text-emerald-400" />
+              <span>أرشيف التقارير وكفاءة الأقسام 📊</span>
             </button>
-
+            <button onClick={() => onSelectTab('form-reports')} className={`w-full ${navItemClass('form-reports')}`}>
+              <FileText className="w-4 h-4 text-cyan-400" />
+              <span>التقارير الرقابية الشاملة (BI) 📈</span>
+            </button>
+            <button onClick={() => onSelectTab('departments')} className={`w-full ${navItemClass('departments')}`}>
+              <TrendingUp className="w-4 h-4 text-amber-400" />
+              <span>مؤشرات أداء الأقسام (KPIs) 🎯</span>
+            </button>
             <button onClick={() => onSelectTab('forms')} className={`w-full ${navItemClass('forms')}`}>
-              <Archive className="w-4 h-4 text-amber-400" />
+              <Archive className="w-4 h-4 text-slate-400" />
               <span>أرشيف التقارير والسجلات 🗄️</span>
             </button>
           </div>
         )}
 
+        {/* 2. الإنتاج والعمليات الصناعية (MES) */}
         {matchesSearch('الإنتاج العمليات الصناعية غرفة عمليات التكاليف وصفات BOM طلب وصرف خامات كتالوج تسليم') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-amber-400/80 px-2 py-1">─── الإنتاج والعمليات الصناعية ───</div>
@@ -138,6 +155,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 3. المبيعات والتوزيع والشجرة */}
         {matchesSearch('المبيعات التوزيع فواتير سجل العملاء والمنافذ التجار الفروع') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-emerald-400/80 px-2 py-1">─── المبيعات والتوزيع والشجرة ───</div>
@@ -156,23 +174,36 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
-        {matchesSearch('المخازن المستودعات فحص استلام أرصدة كارت الصنف تحويلات الأسبات حوكمة الأصول') && (
+        {/* 4. المخازن واللوجستيات والأصول */}
+        {matchesSearch('المخازن المستودعات أرصدة المخازن كارت الصنف فحص استلام تحويلات الأسبات حوكمة الأصول') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── المخازن واللوجستيات والأصول ───</div>
+            <button onClick={() => onSelectTab('stock-balances')} className={`w-full ${navItemClass('stock-balances')}`}>
+              <Boxes className="w-4 h-4 text-emerald-400" />
+              <span>أرصدة المخازن والرقابة 📦</span>
+            </button>
+            <button onClick={() => onSelectTab('stock-card')} className={`w-full ${navItemClass('stock-card')}`}>
+              <CreditCard className="w-4 h-4 text-indigo-400" />
+              <span>كارت الصنف والمسار اللحظي 📋</span>
+            </button>
+            <button onClick={() => onSelectTab('warehouses')} className={`w-full ${navItemClass('warehouses')}`}>
+              <Warehouse className="w-4 h-4 text-cyan-400" />
+              <span>المستودعات ومراكز التخزين 🏬</span>
+            </button>
             <button onClick={() => onSelectTab('inventory')} className={`w-full ${navItemClass('inventory')}`}>
-              <Grid2X2 className="w-4 h-4 text-cyan-400" />
-              <span>لوحة مؤشرات المخزون 🏬</span>
+              <Grid2X2 className="w-4 h-4 text-emerald-400" />
+              <span>لوحة مؤشرات المخزون</span>
             </button>
             <button onClick={() => onSelectTab('receiving')} className={`w-full ${navItemClass('receiving')}`}>
-              <CheckSquare className="w-4 h-4 text-emerald-400" />
+              <CheckSquare className="w-4 h-4 text-slate-400" />
               <span>فحص واستلام الخامات (GMP)</span>
             </button>
             <button onClick={() => onSelectTab('transfers')} className={`w-full ${navItemClass('transfers')}`}>
-              <ArrowLeftRight className="w-4 h-4 text-slate-400" />
+              <ArrowLeftRight className="w-4 h-4 text-amber-400" />
               <span>التحويلات وفض المنازعات ⚖️</span>
             </button>
             <button onClick={() => onSelectTab('assets')} className={`w-full ${navItemClass('assets')}`}>
-              <Wrench className="w-4 h-4 text-amber-400" />
+              <Wrench className="w-4 h-4 text-slate-400" />
               <span>الأصول والماكينات والصيانة 🏭</span>
             </button>
             <button onClick={() => onSelectTab('crates')} className={`w-full ${navItemClass('crates')}`}>
@@ -182,6 +213,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 5. دليل الأصناف والمواد */}
         {matchesSearch('الأصناف دليل المواد الهيكل الشجري تصنيفات') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── دليل الأصناف والمواد ───</div>
@@ -196,9 +228,26 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
-        {matchesSearch('المشتريات الموردين أسعار التوريد أوامر الشراء PO فواتير تقييم جودة COA') && (
+        {/* 6. المشتريات والموردين */}
+        {matchesSearch('المشتريات الموردين سجل الموردين أسعار التوريد عروض الأسعار أوامر الشراء PO فواتير تقييم جودة COA Vendor QC فحص معملي') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── المشتريات والموردين ───</div>
+            <button onClick={() => onSelectTab('suppliers')} className={`w-full ${navItemClass('suppliers')}`}>
+              <BookUser className="w-4 h-4 text-indigo-400" />
+              <span>دليل الموردين وسلاسل الإمداد 🚚</span>
+            </button>
+            <button onClick={() => onSelectTab('supplier-prices')} className={`w-full ${navItemClass('supplier-prices')}`}>
+              <Tags className="w-4 h-4 text-amber-400" />
+              <span>قوائم أسعار التوريد والعروض 🏷️</span>
+            </button>
+            <button onClick={() => onSelectTab('supplier-quality')} className={`w-full ${navItemClass('supplier-quality')}`}>
+              <FlaskConical className="w-4 h-4 text-emerald-400" />
+              <span>فحص جودة الخامات (COA/QA) 🔬</span>
+            </button>
+            <button onClick={() => onSelectTab('vendor-qc')} className={`w-full ${navItemClass('vendor-qc')}`}>
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>مؤشرات جودة الموردين (QC Rating) 📊</span>
+            </button>
             <button onClick={() => onSelectTab('procurement')} className={`w-full ${navItemClass('procurement')}`}>
               <BadgeCheck className="w-4 h-4 text-emerald-400" />
               <span>أوامر الشراء وجودة الموردين (COA) 🛡</span>
@@ -210,6 +259,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 6.5. الإدارة المالية والحسابات العامة */}
         {matchesSearch('المالية الحسابات الخزينة الخزائن قيود يومية مصروفات القوائم الأرباح') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-amber-400/80 px-2 py-1">─── الإدارة المالية والحسابات العامة ───</div>
@@ -236,6 +286,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 7. منظومة النماذج ومحاضر الفحص الرقمية (HACCP) */}
         {matchesSearch('النماذج محاضر الفحص مصمم النماذج تعبئة تقارير استجابات HACCP') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── النماذج ومحاضر الفحص الرقمية ───</div>
@@ -246,6 +297,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 8. منظومة الطوارئ والتدخل السريع (SOS) */}
         {matchesSearch('الطوارئ المهام الطارئة الأعطال SOS مؤشرات SLA') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-rose-400/80 px-2 py-1">─── الطوارئ والتدخل السريع (SOS) ───</div>
@@ -256,6 +308,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 9. الهيكل الإداري (HR) */}
         {matchesSearch('الهيكل الإداري الشركات الكيانات الفروع الأقسام الصالات العاملين الورديات') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── الهيكل الإداري (HR) ───</div>
@@ -270,6 +323,7 @@ export const AppSidebar: React.FC<NavSidebarProps> = ({ currentTab, onSelectTab 
           </div>
         )}
 
+        {/* 10. أمن النظام والصلاحيات (RBAC) */}
         {matchesSearch('أمن النظام الصلاحيات المستخدمين RBAC الأدوار') && (
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-slate-400 px-2 py-1">─── أمن النظام والصلاحيات ───</div>
