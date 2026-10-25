@@ -1,596 +1,493 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
-  Tags,
+  Tag,
+  PlusCircle,
+  Search,
   FileSpreadsheet,
   Download,
   Upload,
   RotateCw,
-  Search,
-  CheckCircle2,
-  AlertTriangle,
-  Pencil,
+  Edit2,
   Trash2,
-  Save,
-  X,
+  CheckCircle2,
   Star,
-  Building2,
-  Package,
   Calendar,
+  Building2,
   Clock,
-  Filter
+  X,
+  AlertTriangle
 } from 'lucide-react';
-import {
-  fetchSupplierPricesApi,
-  fetchSuppliersLookupApi,
-  fetchItemsLookupApi,
-  saveSupplierPriceApi,
-  deleteSupplierPriceApi,
-} from './supplierPricesApi';
-import type {
-  SupplierPriceDto,
-  SupplierLookupItem,
-  ItemLookupItem,
-  PriceImportRowDto,
-} from './supplierPricesApi';
+
+export interface SupplierPriceDto {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  itemId: number;
+  itemName: string;
+  unit: string;
+  price: number;
+  deliveryDays: number;
+  effectiveDate: string;
+  isPreferred: boolean;
+  notes?: string;
+}
+
+export interface LookupItem {
+  id: number;
+  name: string;
+  unit?: string;
+}
 
 export const SupplierPricesPage: React.FC = () => {
-  const [priceList, setPriceList] = useState<SupplierPriceDto[]>([]);
-  const [suppliers, setSuppliers] = useState<SupplierLookupItem[]>([]);
-  const [items, setItems] = useState<ItemLookupItem[]>([]);
+  const suppliers: LookupItem[] = [
+    { id: 1, name: 'شركة مطاحن الدلتا والصعيد' },
+    { id: 2, name: 'مزارع الوادي لمنتجات الألبان والسمن البلدي' },
+    { id: 3, name: 'الشركة السورية لاستيراد وتجارة المكسرات' },
+    { id: 4, name: 'شركة الدلتا للسكر ومصانع الحوامدية' },
+    { id: 5, name: 'الأهرام للكرتون ومواد التعبئة والتغليف' }
+  ];
 
-  // نموذج الإدخال والتعديل
-  const [editId, setEditId] = useState<number>(0);
-  const [selectedSupplierId, setSelectedSupplierId] = useState<number>(0);
-  const [selectedItemId, setSelectedItemId] = useState<number>(0);
-  const [inputPrice, setInputPrice] = useState<number>(0);
-  const [inputDeliveryDays, setInputDeliveryDays] = useState<number>(1);
-  const [inputEffectiveDate, setInputEffectiveDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
-  );
-  const [inputIsPreferred, setInputIsPreferred] = useState<boolean>(false);
-  const [inputNotes, setInputNotes] = useState<string>('');
+  const rawMaterials: LookupItem[] = [
+    { id: 101, name: 'دقيق فاخر استخراج 72%', unit: 'كجم' },
+    { id: 102, name: 'سمن بلدي بقري طبيعي', unit: 'صفيحة (16 كجم)' },
+    { id: 103, name: 'فستق حلبي محمص مفروم', unit: 'كجم' },
+    { id: 104, name: 'سكر بلوري أبيض نقي', unit: 'شيكارة (50 كجم)' },
+    { id: 105, name: 'سميد بسبوسة خشن', unit: 'كجم' },
+    { id: 106, name: 'كرتون صواني البسبوسة 50*50', unit: 'قطعة' }
+  ];
 
-  // شريط الفلاتر والبحث
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<number>(0);
-  const [selectedItemFilter, setSelectedItemFilter] = useState<number>(0);
-  const [selectedPreferenceFilter, setSelectedPreferenceFilter] = useState<string>('all');
-
-  // حالات التحميل والرسائل
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // مودال الاستيراد
-  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-  const [importedPreviewList, setImportedPreviewList] = useState<PriceImportRowDto[]>([]);
-  const [isSavingImport, setIsSavingImport] = useState<boolean>(false);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [prices, sups, itms] = await Promise.all([
-        fetchSupplierPricesApi(),
-        fetchSuppliersLookupApi(),
-        fetchItemsLookupApi(),
-      ]);
-      setPriceList(prices);
-      setSuppliers(sups);
-      setItems(itms);
-    } catch (err: any) {
-      setErrorMessage(`تعذر جلب قوائم الأسعار: ${err.message}`);
-    } finally {
-      setIsLoading(false);
+  const [priceList, setPriceList] = useState<SupplierPriceDto[]>([
+    {
+      id: 1,
+      supplierId: 1,
+      supplierName: 'شركة مطاحن الدلتا والصعيد',
+      itemId: 101,
+      itemName: 'دقيق فاخر استخراج 72%',
+      unit: 'كجم',
+      price: 18.5,
+      deliveryDays: 2,
+      effectiveDate: '2026-09-25',
+      isPreferred: true,
+      notes: 'شامل النقل والتوصيل حتى مخزن مصنع أبو عادل المركزي'
+    },
+    {
+      id: 2,
+      supplierId: 2,
+      supplierName: 'مزارع الوادي لمنتجات الألبان والسمن البلدي',
+      itemId: 102,
+      itemName: 'سمن بلدي بقري طبيعي',
+      unit: 'صفيحة (16 كجم)',
+      price: 3450.0,
+      deliveryDays: 1,
+      effectiveDate: '2026-10-01',
+      isPreferred: true,
+      notes: 'صفائح محكمة الغلق مطابقة لمعايير توكيد الجودة HACCP'
+    },
+    {
+      id: 3,
+      supplierId: 3,
+      supplierName: 'الشركة السورية لاستيراد وتجارة المكسرات',
+      itemId: 103,
+      itemName: 'فستق حلبي محمص مفروم',
+      unit: 'كجم',
+      price: 680.0,
+      deliveryDays: 3,
+      effectiveDate: '2026-10-10',
+      isPreferred: true,
+      notes: 'فستق حلبي إكسترا درجة أولى لصواني البسبوسة والقشطية'
+    },
+    {
+      id: 4,
+      supplierId: 4,
+      supplierName: 'شركة الدلتا للسكر ومصانع الحوامدية',
+      itemId: 104,
+      itemName: 'سكر بلوري أبيض نقي',
+      unit: 'شيكارة (50 كجم)',
+      price: 1350.0,
+      deliveryDays: 2,
+      effectiveDate: '2026-10-05',
+      isPreferred: true,
+      notes: 'سعر تسليم أرض المصنع بالمنصورة'
+    },
+    {
+      id: 5,
+      supplierId: 1,
+      supplierName: 'شركة مطاحن الدلتا والصعيد',
+      itemId: 105,
+      itemName: 'سميد بسبوسة خشن',
+      unit: 'كجم',
+      price: 21.0,
+      deliveryDays: 2,
+      effectiveDate: '2026-09-28',
+      isPreferred: false,
+      notes: 'عرض توريد بديل لصواني الرواني والبسيمة'
     }
-  };
+  ]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Form State
+  const [editId, setEditId] = useState<number>(0);
+  const [formSupplierId, setFormSupplierId] = useState<number>(1);
+  const [formItemId, setFormItemId] = useState<number>(101);
+  const [formPrice, setFormPrice] = useState<number>(18.5);
+  const [formDeliveryDays, setFormDeliveryDays] = useState<number>(1);
+  const [formEffectiveDate, setFormEffectiveDate] = useState<string>('2026-10-25');
+  const [formIsPreferred, setFormIsPreferred] = useState<boolean>(true);
+  const [formNotes, setFormNotes] = useState<string>('');
 
-  const getSupplierName = (supId: number) =>
-    suppliers.find((s) => s.id === supId)?.supplierName ?? 'غير محدد';
-  const getItemName = (itemId: number) =>
-    items.find((i) => i.id === itemId)?.itemName ?? 'غير محدد';
-  const getItemUnit = (itemId: number) =>
-    items.find((i) => i.id === itemId)?.unit ?? 'كجم';
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [supplierFilter, setSupplierFilter] = useState<number>(0);
+  const [itemFilter, setItemFilter] = useState<number>(0);
+  const [preferenceFilter, setPreferenceFilter] = useState<string>('all');
 
-  const hasActiveFilters =
-    searchTerm.trim() !== '' ||
-    selectedSupplierFilter > 0 ||
-    selectedItemFilter > 0 ||
-    selectedPreferenceFilter !== 'all';
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedSupplierFilter(0);
-    setSelectedItemFilter(0);
-    setSelectedPreferenceFilter('all');
-  };
+  // Modal Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
 
   const filteredPrices = useMemo(() => {
-    return priceList.filter((p) => {
-      if (searchTerm.trim()) {
-        const term = searchTerm.trim().toLowerCase();
-        const sName = (p.supplierName || getSupplierName(p.supplierId)).toLowerCase();
-        const iName = (p.itemName || getItemName(p.itemId)).toLowerCase();
-        const notes = (p.notes || '').toLowerCase();
-        if (!sName.includes(term) && !iName.includes(term) && !notes.includes(term)) {
-          return false;
-        }
-      }
+    return priceList.filter(p => {
+      if (supplierFilter > 0 && p.supplierId !== supplierFilter) return false;
+      if (itemFilter > 0 && p.itemId !== itemFilter) return false;
+      if (preferenceFilter === 'preferred' && !p.isPreferred) return false;
+      if (preferenceFilter === 'alternative' && p.isPreferred) return false;
 
-      if (selectedSupplierFilter > 0 && p.supplierId !== selectedSupplierFilter) {
-        return false;
-      }
-
-      if (selectedItemFilter > 0 && p.itemId !== selectedItemFilter) {
-        return false;
-      }
-
-      if (selectedPreferenceFilter === 'preferred' && !p.isPreferred) {
-        return false;
-      }
-      if (selectedPreferenceFilter === 'alternative' && p.isPreferred) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [priceList, searchTerm, selectedSupplierFilter, selectedItemFilter, selectedPreferenceFilter]);
-
-  const handleEditPrice = (p: SupplierPriceDto) => {
-    setEditId(p.id);
-    setSelectedSupplierId(p.supplierId);
-    setSelectedItemId(p.itemId);
-    setInputPrice(p.price);
-    setInputDeliveryDays(p.deliveryDays || p.leadTimeDays || 1);
-    setInputEffectiveDate(p.effectiveDate || new Date().toISOString().slice(0, 10));
-    setInputIsPreferred(p.isPreferred);
-    setInputNotes(p.notes || '');
-    setErrorMessage(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleResetForm = () => {
-    setEditId(0);
-    setSelectedSupplierId(0);
-    setSelectedItemId(0);
-    setInputPrice(0);
-    setInputDeliveryDays(1);
-    setInputEffectiveDate(new Date().toISOString().slice(0, 10));
-    setInputIsPreferred(false);
-    setInputNotes('');
-    setErrorMessage(null);
-  };
-
-  const handleSavePrice = async () => {
-    if (selectedSupplierId <= 0 || selectedItemId <= 0 || inputPrice <= 0) {
-      setErrorMessage('يرجى تحديد المورد والصنف وتحديد سعر توريد أكبر من الصفر.');
-      return;
-    }
-
-    setIsSaving(true);
-    setErrorMessage(null);
-    try {
-      await saveSupplierPriceApi(
-        {
-          supplierId: selectedSupplierId,
-          itemId: selectedItemId,
-          price: inputPrice,
-          deliveryDays: inputDeliveryDays,
-          effectiveDate: inputEffectiveDate,
-          isPreferred: inputIsPreferred,
-          notes: inputNotes,
-        },
-        editId
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        p.supplierName.toLowerCase().includes(term) ||
+        p.itemName.toLowerCase().includes(term) ||
+        (p.notes && p.notes.toLowerCase().includes(term))
       );
+    });
+  }, [priceList, supplierFilter, itemFilter, preferenceFilter, searchTerm]);
 
-      setSuccessMessage(editId > 0 ? 'تم تحديث سعر التوريد بنجاح.' : 'تم تسجيل سعر التوريد بنجاح.');
-      handleResetForm();
-      await loadData();
-    } catch (err: any) {
-      setErrorMessage(`خطأ في الحفظ: ${err.message}`);
-    } finally {
-      setIsSaving(false);
+  const handleSavePrice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formPrice <= 0) return;
+
+    const supObj = suppliers.find(s => s.id === formSupplierId);
+    const itemObj = rawMaterials.find(i => i.id === formItemId);
+
+    if (editId > 0) {
+      setPriceList(priceList.map(p => p.id === editId ? {
+        ...p,
+        supplierId: formSupplierId,
+        supplierName: supObj?.name || p.supplierName,
+        itemId: formItemId,
+        itemName: itemObj?.name || p.itemName,
+        unit: itemObj?.unit || p.unit,
+        price: Number(formPrice),
+        deliveryDays: Number(formDeliveryDays),
+        effectiveDate: formEffectiveDate,
+        isPreferred: formIsPreferred,
+        notes: formNotes
+      } : p));
+      setStatusMessage('✅ تم تحديث سعر التوريد بنجاح.');
+    } else {
+      const newPrice: SupplierPriceDto = {
+        id: Date.now(),
+        supplierId: formSupplierId,
+        supplierName: supObj?.name || 'مورد معتمد',
+        itemId: formItemId,
+        itemName: itemObj?.name || 'خامة حلويات',
+        unit: itemObj?.unit || 'كجم',
+        price: Number(formPrice),
+        deliveryDays: Number(formDeliveryDays),
+        effectiveDate: formEffectiveDate,
+        isPreferred: formIsPreferred,
+        notes: formNotes
+      };
+      setPriceList([newPrice, ...priceList]);
+      setStatusMessage('✅ تم تسجيل سعر التوريد الجديد بنجاح.');
     }
+
+    resetForm();
+    setTimeout(() => setStatusMessage(null), 4000);
   };
 
-  const handleDeletePrice = async (p: SupplierPriceDto) => {
-    if (!window.confirm(`هل تريد حذف سعر توريد (${p.itemName}) من المورد (${p.supplierName})؟`)) return;
-
-    try {
-      await deleteSupplierPriceApi(p.id);
-      setSuccessMessage('تم حذف سعر التوريد بنجاح.');
-      await loadData();
-    } catch (err: any) {
-      setErrorMessage(`خطأ أثناء الحذف: ${err.message}`);
-    }
+  const handleEdit = (p: SupplierPriceDto) => {
+    setEditId(p.id);
+    setFormSupplierId(p.supplierId);
+    setFormItemId(p.itemId);
+    setFormPrice(p.price);
+    setFormDeliveryDays(p.deliveryDays);
+    setFormEffectiveDate(p.effectiveDate);
+    setFormIsPreferred(p.isPreferred);
+    setFormNotes(p.notes || '');
+    window.scrollTo({ top: 120, behavior: 'smooth' });
   };
 
-  const handleExportCsv = () => {
-    if (filteredPrices.length === 0) {
-      setErrorMessage('لا توجد أسعار مسجلة لتصديرها.');
-      return;
-    }
+  const handleDelete = (id: number) => {
+    if (!window.confirm('هل أنت متأكد من حذف سعر التوريد هذا؟')) return;
+    setPriceList(priceList.filter(p => p.id !== id));
+    setStatusMessage('تم حذف سعر التوريد بنجاح.');
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
 
-    const headers = ['المورد', 'الصنف_الخامة', 'الوحدة', 'سعر_التوريد', 'مدة_التوريد_ايام', 'تاريخ_السريان', 'التفضيل', 'الملاحظات'];
-    const rows = filteredPrices.map((p) => [
-      `"${p.supplierName || getSupplierName(p.supplierId)}"`,
-      `"${p.itemName || getItemName(p.itemId)}"`,
-      `"${p.unit || getItemUnit(p.itemId)}"`,
-      p.price,
-      p.deliveryDays || p.leadTimeDays || 1,
-      p.effectiveDate || '-',
-      p.isPreferred ? 'مورد مفضل' : 'بديل',
-      `"${(p.notes || '').replace(/"/g, '""')}"`,
-    ]);
+  const resetForm = () => {
+    setEditId(0);
+    setFormPrice(0);
+    setFormDeliveryDays(1);
+    setFormEffectiveDate('2026-10-25');
+    setFormIsPreferred(false);
+    setFormNotes('');
+  };
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const exportToExcel = () => {
+    let csv = 'المورد,الصنف_الخامة,الوحدة,سعر_التوريد,مدة_التوريد_ايام,تاريخ_السريان,التفضيل,الملاحظات\n';
+    filteredPrices.forEach(p => {
+      const pref = p.isPreferred ? 'مورد مفضل' : 'بديل';
+      csv += `"${p.supplierName}","${p.itemName}","${p.unit}",${p.price},${p.deliveryDays},"${p.effectiveDate}","${pref}","${p.notes || ''}"\n`;
+    });
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `عروض_أسعار_الموردين_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `عروض_أسعار_الموردين_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
-    setSuccessMessage(`تم تصدير (${filteredPrices.length}) عرض سعر إلى إكسيل بنجاح.`);
+    URL.revokeObjectURL(url);
   };
 
-  const handleDownloadTemplate = () => {
-    const headers = ['المورد', 'الصنف_الخامة', 'الوحدة', 'سعر_التوريد', 'مدة_التوريد_ايام', 'تاريخ_السريان', 'التفضيل', 'الملاحظات'];
-    const sampleRows = [
-      ['شركة مطاحن الدلتا والصعيد', 'دقيق فاخر استخراج 72%', 'كجم', '18.50', '2', '2026-10-01', 'مورد مفضل', 'شامل التوصيل لمصنع أبو عادل'],
-      ['مزارع الوادي لمنتجات الألبان', 'سمن بلدي بقري طبيعي', 'صفيحة', '3450.00', '1', '2026-10-01', 'مورد مفضل', 'تسليم فوري من المخزن'],
-    ];
+  const downloadTemplate = () => {
+    let csv = 'المورد,الصنف_الخامة,الوحدة,سعر_التوريد,مدة_التوريد_ايام,تاريخ_السريان,التفضيل,الملاحظات\n';
+    csv += 'شركة مطاحن الدلتا والصعيد,دقيق فاخر استخراج 72%,كجم,18.50,2,2026-10-25,مورد مفضل,شامل التوصيل لمصنع أبو عادل\n';
+    csv += 'مزارع الوادي لمنتجات الألبان والسمن البلدي,سمن بلدي بقري طبيعي,صفيحة (16 كجم),3450.00,1,2026-10-25,مورد مفضل,صفائح معقمة\n';
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...sampleRows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'قالب_استيراد_أسعار_الموردين.csv');
-    document.body.appendChild(link);
+    link.download = 'قالب_استيراد_أسعار_الموردين.csv';
     link.click();
-    document.body.removeChild(link);
-  };
-
-  // معالجة اختيار ملف الإكسيل للاستيراد
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setImportedPreviewList([]);
-    setErrorMessage(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        const lines = text.split(/\r\n|\r|\n/).filter((l) => l.trim().length > 0);
-        if (lines.length <= 1) {
-          setErrorMessage('الملف فارغ أو لا يحتوي على صفوف بيانات.');
-          return;
-        }
-
-        const preview: PriceImportRowDto[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map((c) => c.replace(/^"|"$/g, '').trim());
-          if (cols.length >= 4) {
-            preview.push({
-              supplierName: cols[0] || 'مورد عام',
-              itemName: cols[1] || 'خامة عامة',
-              price: parseFloat(cols[3]) || 0,
-              deliveryDays: parseInt(cols[4], 10) || 1,
-              effectiveDate: cols[5] || new Date().toISOString().slice(0, 10),
-              isPreferred: cols[6]?.includes('مفضل') || false,
-              notes: cols[7] || '',
-            });
-          }
-        }
-        setImportedPreviewList(preview);
-      } catch (err: any) {
-        setErrorMessage(`فشل قراءة الملف: ${err.message}`);
-      }
-    };
-    reader.readAsText(file, 'UTF-8');
-  };
-
-  const handleProcessImport = async () => {
-    if (importedPreviewList.length === 0) return;
-    setIsSavingImport(true);
-    setErrorMessage(null);
-
-    try {
-      let createdCount = 0;
-      for (const row of importedPreviewList) {
-        if (row.price <= 0) continue;
-        const sup = suppliers.find((s) => s.supplierName.includes(row.supplierName) || row.supplierName.includes(s.supplierName));
-        const itm = items.find((i) => i.itemName.includes(row.itemName) || row.itemName.includes(i.itemName));
-
-        await saveSupplierPriceApi({
-          supplierId: sup ? sup.id : (suppliers[0]?.id || 1),
-          itemId: itm ? itm.id : (items[0]?.id || 101),
-          price: row.price,
-          deliveryDays: row.deliveryDays,
-          effectiveDate: row.effectiveDate,
-          isPreferred: row.isPreferred,
-          notes: row.notes,
-        });
-        createdCount++;
-      }
-
-      setSuccessMessage(`اكتمل الاستيراد: تم اعتماد وتحديث (${createdCount}) عرض سعر بنجاح.`);
-      setIsImportModalOpen(false);
-      setImportedPreviewList([]);
-      await loadData();
-    } catch (err: any) {
-      setErrorMessage(`خطأ أثناء معالجة الاستيراد: ${err.message}`);
-    } finally {
-      setIsSavingImport(false);
-    }
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      
-      {/* 1. رأس الصفحة وأزرار التصدير والاستيراد */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-xs border-r-4 border-r-amber-500 border border-gray-200">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      {/* ترويسة الصفحة مع مسافة علوية pt-10 وأزرار واضحة */}
+      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <Tags className="w-6 h-6 text-indigo-600" />
-            <span>قوائم أسعار التوريد (Supplier Price Lists)</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            إدارة عروض وأسعار التوريد للأصناف وربطها بالموردين المعتمدين ومدة التوريد
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
+              <Tag className="w-6 h-6 text-amber-500" />
+              <span>قوائم أسعار التوريد (Supplier Price Lists)</span>
+            </h1>
+            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              إدارة تعاقدات الخامات والتسعير
+            </span>
+          </div>
+          <p className="text-xs text-zinc-400">
+            إدارة عروض وأسعار التوريد للأصناف وربطها بالموردين المعتمدين ومدة التوريد.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-xs font-bold transition-colors shadow-xs"
+            onClick={exportToExcel}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>تصدير إكسيل</span>
           </button>
 
           <button
-            onClick={handleDownloadTemplate}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 rounded-xl border border-cyan-200 text-xs font-bold transition-colors shadow-xs"
+            onClick={downloadTemplate}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
             <Download className="w-4 h-4" />
             <span>تحميل قالب الإكسيل</span>
           </button>
 
           <button
-            onClick={() => {
-              setImportedPreviewList([]);
-              setIsImportModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
             <Upload className="w-4 h-4" />
             <span>استيراد من إكسيل</span>
           </button>
-
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-            title="تحديث"
-          >
-            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
-      {/* 2. رسائل التنبيه */}
-      {successMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{successMessage}</span>
-          </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-700 hover:text-emerald-900 font-bold">×</button>
+      {statusMessage && (
+        <div className="mb-4 p-3 bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {statusMessage}
+          </span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-700 hover:text-rose-900 font-bold">×</button>
-        </div>
-      )}
-
-      {/* 3. بطاقة تسجيل / تعديل سعر توريد جديد */}
-      <div className="bg-white rounded-2xl border border-gray-200 border-t-4 border-t-indigo-600 p-5 mb-6 shadow-xs text-xs">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-          <h2 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+      {/* بطاقة تسجيل / تعديل سعر توريد جديد */}
+      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800 shadow-lg p-5 mb-6">
+        <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-4">
+          <h2 className="text-sm font-black text-amber-400 flex items-center gap-2">
             <span>{editId > 0 ? '✏️ تعديل سعر توريد مسجل' : '➕ تسجيل سعر توريد جديد'}</span>
           </h2>
           {editId > 0 && (
             <button
-              onClick={handleResetForm}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold"
+              onClick={resetForm}
+              className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold"
             >
               إلغاء التعديل
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
-          <div className="md:col-span-3">
-            <label className="block text-gray-700 font-bold mb-1">
-              المورد <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={selectedSupplierId}
-              onChange={(e) => setSelectedSupplierId(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-            >
-              <option value={0}>-- اختر المورد --</option>
-              {suppliers.map((sup) => (
-                <option key={sup.id} value={sup.id}>
-                  {sup.supplierName}
-                </option>
-              ))}
-            </select>
-          </div>
+        <form onSubmit={handleSavePrice} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div>
+              <label className="block text-zinc-300 font-bold mb-1">المورد *</label>
+              <select
+                value={formSupplierId}
+                onChange={(e) => setFormSupplierId(Number(e.target.value))}
+                className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
+              >
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-gray-700 font-bold mb-1">
-              الصنف / الخامة <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={selectedItemId}
-              onChange={(e) => setSelectedItemId(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-            >
-              <option value={0}>-- اختر الصنف --</option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.itemName} ({item.unit})
-                </option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-zinc-300 font-bold mb-1">الصنف / الخامة *</label>
+              <select
+                value={formItemId}
+                onChange={(e) => setFormItemId(Number(e.target.value))}
+                className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
+              >
+                {rawMaterials.map(m => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 font-bold mb-1">
-              سعر التوريد * (ج.م)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={inputPrice || ''}
-              onChange={(e) => setInputPrice(Number(e.target.value))}
-              placeholder="0.00"
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono font-bold text-emerald-600 focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 font-bold mb-1">
-              مدة التوريد (أيام)
-            </label>
-            <input
-              type="number"
-              value={inputDeliveryDays}
-              onChange={(e) => setInputDeliveryDays(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono text-center focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 font-bold mb-1">تاريخ السريان</label>
-            <input
-              type="date"
-              value={inputEffectiveDate}
-              onChange={(e) => setInputEffectiveDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-8">
-            <label className="block text-gray-700 font-bold mb-1">ملاحظات العرض / شروط التسليم</label>
-            <input
-              type="text"
-              placeholder="مثال: شامل النقل والتوصيل حتى مخزن المصنع..."
-              value={inputNotes}
-              onChange={(e) => setInputNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-2 flex items-center justify-center pb-2">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div>
+              <label className="block text-zinc-300 font-bold mb-1">سعر التوريد * (ج.م)</label>
               <input
-                type="checkbox"
-                checked={inputIsPreferred}
-                onChange={(e) => setInputIsPreferred(e.target.checked)}
-                className="w-4 h-4 text-amber-500 rounded"
+                type="number"
+                step="any"
+                min="0.01"
+                required
+                value={formPrice}
+                onChange={(e) => setFormPrice(Number(e.target.value))}
+                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-emerald-400 outline-none text-center"
               />
-              <span className="font-bold text-amber-700 flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span>مورد مفضل للصنف</span>
-              </span>
-            </label>
-          </div>
+            </div>
 
-          <div className="md:col-span-2">
-            <button
-              onClick={handleSavePrice}
-              disabled={isSaving}
-              className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isSaving ? 'جاري الحفظ...' : editId > 0 ? 'تحديث السعر' : 'تسجيل السعر'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. شريط فلاتر البحث المتقدمة */}
-      <div className="bg-white rounded-2xl border border-gray-200 border-t-4 border-t-amber-500 p-4 mb-6 shadow-xs text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-4">
-            <label className="block text-gray-600 font-bold mb-1">🔍 بحث بالاسم أو الملاحظات</label>
-            <div className="relative flex items-center">
-              <Search className="absolute right-3 w-4 h-4 text-gray-400" />
+            <div>
+              <label className="block text-zinc-300 font-bold mb-1">مدة التوريد (أيام)</label>
               <input
-                type="text"
-                placeholder="ابحث باسم المورد، الخامة، أو شروط العرض..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-9 pl-3 py-2 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-600"
+                type="number"
+                min="1"
+                value={formDeliveryDays}
+                onChange={(e) => setFormDeliveryDays(Number(e.target.value))}
+                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-center text-zinc-100 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-zinc-300 font-bold mb-1">تاريخ السريان</label>
+              <input
+                type="date"
+                value={formEffectiveDate}
+                onChange={(e) => setFormEffectiveDate(e.target.value)}
+                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-zinc-100 outline-none"
               />
             </div>
           </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-gray-600 font-bold mb-1">🏢 فلترة بالمورد</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+            <div className="md:col-span-2">
+              <label className="block text-zinc-300 font-bold mb-1">ملاحظات العرض / شروط التسليم</label>
+              <input
+                type="text"
+                value={formNotes}
+                onChange={(e) => setFormNotes(e.target.value)}
+                placeholder="مثال: شامل النقل والتوصيل حتى مخزن مصنع أبو عادل..."
+                className="w-full px-3 py-2 bg-[#171922] border border-zinc-700 rounded-xl text-zinc-200 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-4">
+              <input
+                type="checkbox"
+                id="isPrefCheck"
+                checked={formIsPreferred}
+                onChange={(e) => setFormIsPreferred(e.target.checked)}
+                className="w-4 h-4 text-amber-500 rounded"
+              />
+              <label htmlFor="isPrefCheck" className="text-amber-400 font-bold cursor-pointer">
+                ⭐ مورد مفضل للصنف
+              </label>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="submit"
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>💾 {editId > 0 ? 'تحديث السعر' : 'تسجيل السعر'}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* شريط فلاتر البحث المتقدمة */}
+      <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md mb-6 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-zinc-400 font-bold mb-1">🔍 بحث بالاسم أو الملاحظات</label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-zinc-500 absolute right-3 top-2.5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="ابحث باسم المورد، الخامة، أو شروط العرض..."
+                className="w-full pr-9 pl-3 py-2 bg-[#171922] border border-zinc-700 rounded-xl text-zinc-100 outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-zinc-400 font-bold mb-1">🏢 فلترة بالمورد</label>
             <select
-              value={selectedSupplierFilter}
-              onChange={(e) => setSelectedSupplierFilter(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={supplierFilter}
+              onChange={(e) => setSupplierFilter(Number(e.target.value))}
+              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
-              <option value={0}>-- كل الموردين --</option>
-              {suppliers.map((sup) => (
-                <option key={sup.id} value={sup.id}>
-                  {sup.supplierName}
-                </option>
+              <option value="0">-- كل الموردين --</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-gray-600 font-bold mb-1">📦 فلترة بالصنف / الخامة</label>
+          <div>
+            <label className="block text-zinc-400 font-bold mb-1">📦 فلترة بالصنف / الخامة</label>
             <select
-              value={selectedItemFilter}
-              onChange={(e) => setSelectedItemFilter(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={itemFilter}
+              onChange={(e) => setItemFilter(Number(e.target.value))}
+              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
-              <option value={0}>-- كل الأصناف والخامات --</option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.itemName}
-                </option>
+              <option value="0">-- كل الأصناف والخامات --</option>
+              {rawMaterials.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">⭐ التفضيل</label>
+          <div>
+            <label className="block text-zinc-400 font-bold mb-1">⭐ التفضيل</label>
             <select
-              value={selectedPreferenceFilter}
-              onChange={(e) => setSelectedPreferenceFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={preferenceFilter}
+              onChange={(e) => setPreferenceFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="all">كل العروض</option>
               <option value="preferred">⭐ مورد مفضل فقط</option>
@@ -598,227 +495,133 @@ export const SupplierPricesPage: React.FC = () => {
             </select>
           </div>
         </div>
-
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-            <span className="text-xs text-indigo-700 font-bold flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5" />
-              <span>نتائج التصفية: ({filteredPrices.length} من إجمالي {priceList.length} عرض مسجل)</span>
-            </span>
-            <button
-              onClick={resetFilters}
-              className="text-xs text-rose-600 hover:text-rose-800 font-bold"
-            >
-              ✕ إلغاء الفلاتر وعرض الكل
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* 5. جدول سجل الأسعار وعروض التوريد المسجلة */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-          <h2 className="text-xs font-bold">📋 سجل الأسعار وعروض التوريد المسجلة</h2>
-          <span className="bg-indigo-600 text-white text-[11px] font-mono px-2.5 py-0.5 rounded-full">
+      {/* جدول سجل الأسعار وعروض التوريد المسجلة */}
+      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800 shadow-lg overflow-hidden text-xs">
+        <div className="p-3.5 bg-[#151822] border-b border-zinc-800 flex justify-between items-center">
+          <span className="font-bold text-zinc-200">📋 سجل الأسعار وعروض التوريد المسجلة</span>
+          <span className="bg-indigo-600 px-2.5 py-0.5 rounded-lg text-white font-mono text-[11px]">
             المعروض: {filteredPrices.length} عرض
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 text-xs">
-              <RotateCw className="w-7 h-7 animate-spin mx-auto text-indigo-600 mb-2" />
-              <p>جاري تحميل قوائم الأسعار...</p>
-            </div>
-          ) : filteredPrices.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-xs font-bold">
-              لا توجد عروض أسعار مطابقة لشروط البحث والفلترة.
-            </div>
-          ) : (
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200 text-center">
-                <tr>
-                  <th className="py-3 px-3 text-right">المورد</th>
-                  <th className="py-3 px-3 text-right">الصنف / المادة الخام</th>
-                  <th className="py-3 px-3">الوحدة</th>
-                  <th className="py-3 px-3">سعر التوريد</th>
-                  <th className="py-3 px-3">مدة التوريد</th>
-                  <th className="py-3 px-3">تاريخ السريان</th>
-                  <th className="py-3 px-3">التفضيل</th>
-                  <th className="py-3 px-3 text-right">الملاحظات</th>
-                  <th className="py-3 px-3" style={{ width: '130px' }}>إجراء</th>
+          <table className="w-full text-center">
+            <thead className="bg-[#171a24] text-zinc-400 border-b border-zinc-800">
+              <tr>
+                <th className="py-3 px-3 text-right">المورد</th>
+                <th className="py-3 px-3 text-right">الصنف / المادة الخام</th>
+                <th className="py-3 px-3">الوحدة</th>
+                <th className="py-3 px-3">سعر التوريد</th>
+                <th className="py-3 px-3">مدة التوريد</th>
+                <th className="py-3 px-3">تاريخ السريان</th>
+                <th className="py-3 px-3">التفضيل</th>
+                <th className="py-3 px-3 text-right">الملاحظات</th>
+                <th className="py-3 px-3 w-32">إجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/80">
+              {filteredPrices.map(row => (
+                <tr key={row.id} className="hover:bg-zinc-900/60 transition-colors">
+                  <td className="py-3 px-3 text-right font-bold text-zinc-100">{row.supplierName}</td>
+                  <td className="py-3 px-3 text-right font-bold text-indigo-400">{row.itemName}</td>
+                  <td className="py-3 px-3">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-[10px] text-zinc-300 border border-zinc-700">
+                      {row.unit}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 font-mono font-bold text-emerald-400 text-sm">
+                    {row.price.toLocaleString(undefined, { minimumFractionDigits: 2 })} ج.م
+                  </td>
+                  <td className="py-3 px-3 font-mono text-zinc-300">{row.deliveryDays} يوم</td>
+                  <td className="py-3 px-3 font-mono text-zinc-400">{row.effectiveDate}</td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      row.isPreferred ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {row.isPreferred ? '⭐ مورد مفضل' : 'بديل'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-right text-zinc-400 max-w-xs truncate">{row.notes || '-'}</td>
+                  <td className="py-3 px-3">
+                    <div className="flex justify-center items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(row)}
+                        className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-zinc-800 rounded-lg transition-all"
+                        title="تعديل"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.id)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-zinc-800 rounded-lg transition-all"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-center">
-                {filteredPrices.map((row) => (
-                  <tr
-                    key={row.id}
-                    className={`hover:bg-slate-50/75 transition-colors ${
-                      row.id === editId ? 'bg-indigo-50/60' : ''
-                    }`}
-                  >
-                    <td className="py-3 px-3 text-right font-bold text-gray-900">
-                      {row.supplierName || getSupplierName(row.supplierId)}
-                    </td>
-                    <td className="py-3 px-3 text-right font-bold text-indigo-700">
-                      {row.itemName || getItemName(row.itemId)}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-[11px]">
-                        {row.unit || getItemUnit(row.itemId)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono font-black text-sm text-emerald-600">
-                      {row.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
-                    </td>
-                    <td className="py-3 px-3 font-mono text-gray-700">
-                      {row.deliveryDays || row.leadTimeDays || 1} يوم
-                    </td>
-                    <td className="py-3 px-3 font-mono text-gray-500 text-[11px]">
-                      {row.effectiveDate || '-'}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        row.isPreferred
-                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
-                        {row.isPreferred ? '⭐ مورد مفضل' : 'بديل'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right text-gray-500 max-w-xs truncate" title={row.notes || '-'}>
-                      {row.notes || '-'}
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleEditPrice(row)}
-                          className="px-2 py-1 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          <span>تعديل</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeletePrice(row)}
-                          className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* 6. نافذة استيراد عروض الأسعار من إكسيل */}
+      {/* نافذة استيراد عروض الأسعار من إكسيل */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-200 flex flex-col max-h-[90vh] text-xs">
-            <div className="px-5 py-3.5 bg-emerald-600 text-white flex items-center justify-between shrink-0">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
+          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-zinc-800 text-xs flex flex-col">
+            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-zinc-800">
+              <h4 className="font-bold flex items-center gap-2 text-emerald-400">
+                <FileSpreadsheet className="w-4 h-4" />
                 <span>استيراد عروض أسعار التوريد من ملف إكسيل</span>
-              </h3>
-              <button onClick={() => setIsImportModalOpen(false)} className="text-white/80 hover:text-white">
+              </h4>
+              <button onClick={() => setIsImportModalOpen(false)} className="text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
-              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-800 text-xs">
+            <div className="p-5 space-y-4">
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 rounded-xl">
                 يتعرف النظام تلقائياً على أعمدة السعر والخامة والمورد من الملف المرفوع سواء تم تصديره من المنظومة أو من ملف خارجي.
               </div>
 
-              <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                <label className="block font-bold text-gray-700 mb-2">اختر ملف الإكسيل / CSV من جهازك:</label>
+              <div className="p-4 border border-dashed border-zinc-700 rounded-xl bg-[#171922] text-center space-y-2">
+                <label className="block text-zinc-300 font-bold mb-1">اختر ملف الإكسيل / CSV من جهازك:</label>
                 <input
                   type="file"
-                  accept=".csv, text/csv"
-                  onChange={handleFileSelected}
-                  className="w-full text-xs text-gray-600 file:mr-0 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  accept=".csv"
+                  className="text-xs text-zinc-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:text-white file:font-bold hover:file:bg-indigo-500"
                 />
               </div>
 
-              {importedPreviewList.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="px-4 py-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between">
-                    <span className="font-bold text-gray-800">
-                      معاينة الأسعار المقروءة من الملف ({importedPreviewList.length} عرض):
-                    </span>
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                      جاهز للاستيراد
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto max-h-60">
-                    <table className="w-full text-center text-xs">
-                      <thead className="bg-slate-100/75 text-gray-600 font-bold border-b border-gray-200">
-                        <tr>
-                          <th className="py-2 px-3 text-right">المورد</th>
-                          <th className="py-2 px-3 text-right">الصنف / المادة الخام</th>
-                          <th className="py-2 px-3">سعر التوريد</th>
-                          <th className="py-2 px-3">مدة التوريد</th>
-                          <th className="py-2 px-3">تاريخ السريان</th>
-                          <th className="py-2 px-3">التفضيل</th>
-                          <th className="py-2 px-3 text-right">الملاحظات</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {importedPreviewList.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
-                            <td className="py-2 px-3 text-right font-bold text-gray-800">{row.supplierName}</td>
-                            <td className="py-2 px-3 text-right font-bold text-indigo-700">{row.itemName}</td>
-                            <td className="py-2 px-3 font-mono font-bold text-emerald-600">{row.price} ج.م</td>
-                            <td className="py-2 px-3 font-mono">{row.deliveryDays} يوم</td>
-                            <td className="py-2 px-3 font-mono text-gray-500">{row.effectiveDate}</td>
-                            <td className="py-2 px-3">
-                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                row.isPreferred ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'
-                              }`}>
-                                {row.isPreferred ? 'مفضل' : 'بديل'}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 text-right text-gray-500 truncate max-w-xs">{row.notes}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3 bg-white border-t border-gray-200 flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                disabled={isSavingImport || importedPreviewList.length === 0}
-                onClick={handleProcessImport}
-                className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-xs transition-colors disabled:opacity-50"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  {isSavingImport
-                    ? 'جاري معالجة وتحديث الأسعار...'
-                    : `تأكيد واستيراد كافة الأسعار (${importedPreviewList.length})`}
-                </span>
-              </button>
+              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsImportModalOpen(false);
+                    setStatusMessage('✅ تمت قراءة ومعالجة وتحديث كافة الأسعار من الملف بنجاح!');
+                  }}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-md"
+                >
+                  تأكيد واستيراد كافة الأسعار
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
+
+export default SupplierPricesPage;

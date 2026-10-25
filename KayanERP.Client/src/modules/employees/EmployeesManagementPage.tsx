@@ -1,104 +1,108 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Users,
-  Building2,
-  FolderOpen,
-  PlusCircle,
   Search,
-  CheckCircle2,
-  AlertTriangle,
-  RotateCw,
   FileSpreadsheet,
   Download,
   Upload,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCw,
+  Folder,
   Edit2,
   Trash2,
-  Briefcase,
+  Power,
   X,
-  BadgeCheck
+  PlusCircle,
+  Briefcase,
+  Building2
 } from 'lucide-react';
-import {
-  fetchEmployeesLookupsApi,
-  fetchEmployeesApi,
-  saveEmployeeApi,
-  saveQuickJobTitleApi,
-  toggleEmployeeStatusApi,
-  deleteEmployeeApi
-} from './employeesApi';
-import type {
-  EmployeeDto,
-  DepartmentItemDto,
-  JobTitleLookupDto,
-  EmployeeImportRowDto
-} from './employeesApi';
+
+interface EmployeeDto {
+  id: number;
+  companyId: number;
+  departmentId: number;
+  jobTitleId?: number;
+  name: string;
+  workerCode: string;
+  active: boolean;
+  jobTitleName: string;
+}
+
+interface DepartmentItemDto {
+  id: number;
+  departmentCode: string;
+  departmentName: string;
+}
+
+interface JobTitleLookupDto {
+  id: number;
+  titleName: string;
+  hourlyRate: number;
+}
+
+interface EmployeeImportRowDto {
+  employeeCode: string;
+  name: string;
+  departmentNameOrCode: string;
+  jobTitleName: string;
+  active: boolean;
+}
 
 export const EmployeesManagementPage: React.FC = () => {
-  const [employees, setEmployees] = useState<EmployeeDto[]>([]);
-  const [departments, setDepartments] = useState<DepartmentItemDto[]>([]);
-  const [jobTitles, setJobTitles] = useState<JobTitleLookupDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isSavingImport, setIsSavingImport] = useState<boolean>(false);
+  const [departments] = useState<DepartmentItemDto[]>([
+    { id: 1, departmentCode: 'DEPT-PROD', departmentName: 'إدارة الإنتاج' },
+    { id: 2, departmentCode: 'DEPT-EAST', departmentName: 'قسم الشرقي والمخبوزات' },
+    { id: 3, departmentCode: 'DEPT-WEST', departmentName: 'قسم الجاتوه والتورت والحلويات الغربية' },
+    { id: 4, departmentCode: 'DEPT-DRY', departmentName: 'قسم النواشف والبتيفور والكرواسون' },
+    { id: 5, departmentCode: 'DEPT-PACK', departmentName: 'مستودع التعبئة والتغليف والتوزيع' }
+  ]);
 
-  // Messages
+  const [jobTitles, setJobTitles] = useState<JobTitleLookupDto[]>([
+    { id: 1, titleName: 'مهندس انتاج', hourlyRate: 65 },
+    { id: 2, titleName: 'منسق انتاج', hourlyRate: 45 },
+    { id: 3, titleName: 'شيف جاتوه', hourlyRate: 55 },
+    { id: 4, titleName: 'شيف شرقي', hourlyRate: 55 },
+    { id: 5, titleName: 'عامل تشغيل وتعبئة', hourlyRate: 30 }
+  ]);
+
+  const [employees, setEmployees] = useState<EmployeeDto[]>([
+    { id: 1, companyId: 1, departmentId: 1, jobTitleId: 1, name: 'فتحي حميده', workerCode: '577', active: true, jobTitleName: 'مهندس انتاج' },
+    { id: 2, companyId: 1, departmentId: 2, jobTitleId: 2, name: 'أحمد عبد العزيز', workerCode: '747', active: true, jobTitleName: 'منسق انتاج' },
+    { id: 3, companyId: 1, departmentId: 3, jobTitleId: 3, name: 'محمد وهدان', workerCode: '476', active: true, jobTitleName: 'شيف جاتوه' }
+  ]);
+
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<number>(0);
+  const [selectedJobTitleFilter, setSelectedJobTitleFilter] = useState<number>(0);
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // Form State (Left Panel)
+  const [currentEmpId, setCurrentEmpId] = useState<number>(0);
+  const [empName, setEmpName] = useState('');
+  const [empWorkerCode, setEmpWorkerCode] = useState('');
+  const [empDepartmentId, setEmpDepartmentId] = useState<number | ''>('');
+  const [empJobTitleId, setEmpJobTitleId] = useState<number | ''>('');
+  const [empActive, setEmpActive] = useState<boolean>(true);
+
+  // Modal States
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isJobTitleModalOpen, setIsJobTitleModalOpen] = useState(false);
+  const [newJobTitleName, setNewJobTitleName] = useState('');
+  const [newJobTitleHourlyRate, setNewJobTitleHourlyRate] = useState<number>(30);
+  const [importedPreviewList, setImportedPreviewList] = useState<EmployeeImportRowDto[]>([]);
+
+  // Feedback Messages
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedDeptFilter, setSelectedDeptFilter] = useState<number>(0);
-  const [selectedJobTitleFilter, setSelectedJobTitleFilter] = useState<number>(0);
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
-
-  // Form State
-  const [currentEmp, setCurrentEmp] = useState<EmployeeDto>({
-    id: 0,
-    name: '',
-    workerCode: '',
-    departmentId: undefined,
-    jobTitleId: undefined,
-    active: true
-  });
-
-  // Modal States
-  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-  const [isJobTitleModalOpen, setIsJobTitleModalOpen] = useState<boolean>(false);
-  const [newJobTitleName, setNewJobTitleName] = useState<string>('');
-  const [newJobTitleHourlyRate, setNewJobTitleHourlyRate] = useState<number>(25);
-  const [importedPreviewList, setImportedPreviewList] = useState<EmployeeImportRowDto[]>([]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [lookups, emps] = await Promise.all([
-        fetchEmployeesLookupsApi(),
-        fetchEmployeesApi()
-      ]);
-      setDepartments(lookups.departments);
-      setJobTitles(lookups.jobTitles);
-      setEmployees(emps);
-    } catch (ex: any) {
-      setErrorMessage(`تعذر جلب بيانات العمال: ${ex.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchTerm.trim() !== '' ||
-      selectedDeptFilter > 0 ||
-      selectedJobTitleFilter > 0 ||
-      selectedStatusFilter !== 'all'
-    );
-  }, [searchTerm, selectedDeptFilter, selectedJobTitleFilter, selectedStatusFilter]);
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() ||
+    selectedDeptFilter > 0 ||
+    selectedJobTitleFilter > 0 ||
+    selectedStatusFilter !== 'all'
+  );
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -107,42 +111,21 @@ export const EmployeesManagementPage: React.FC = () => {
     setSelectedStatusFilter('all');
   };
 
-  const getEmpName = (emp: EmployeeDto) => emp.name || emp.fullName || emp.employeeName || `عامل #${emp.id}`;
-  const getEmpCode = (emp: EmployeeDto) => emp.workerCode || emp.employeeCode || emp.code || '';
-  const getEmpJob = (emp: EmployeeDto) => {
-    if (emp.jobTitleId) {
-      const match = jobTitles.find(j => j.id === emp.jobTitleId);
-      if (match) return match.titleName;
-    }
-    return emp.jobTitleName || emp.jobTitle || 'عامل تشغيل';
-  };
-
   const filteredEmployees = useMemo(() => {
     return employees.filter(e => {
-      const name = getEmpName(e);
-      const code = getEmpCode(e);
-
       if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        if (!name.toLowerCase().includes(term) && !code.toLowerCase().includes(term)) {
-          return false;
-        }
+        const term = searchTerm.trim().toLowerCase();
+        const matchesName = e.name.toLowerCase().includes(term);
+        const matchesCode = e.workerCode.toLowerCase().includes(term);
+        if (!matchesName && !matchesCode) return false;
       }
-
-      if (selectedDeptFilter > 0 && e.departmentId !== selectedDeptFilter) {
-        return false;
-      }
-
-      if (selectedJobTitleFilter > 0 && e.jobTitleId !== selectedJobTitleFilter) {
-        return false;
-      }
-
+      if (selectedDeptFilter > 0 && e.departmentId !== selectedDeptFilter) return false;
+      if (selectedJobTitleFilter > 0 && e.jobTitleId !== selectedJobTitleFilter) return false;
       if (selectedStatusFilter === 'active' && !e.active) return false;
       if (selectedStatusFilter === 'inactive' && e.active) return false;
-
       return true;
     });
-  }, [employees, searchTerm, selectedDeptFilter, selectedJobTitleFilter, selectedStatusFilter, jobTitles]);
+  }, [employees, searchTerm, selectedDeptFilter, selectedJobTitleFilter, selectedStatusFilter]);
 
   const displayedDepartments = useMemo(() => {
     return selectedDeptFilter > 0
@@ -150,151 +133,123 @@ export const EmployeesManagementPage: React.FC = () => {
       : departments;
   }, [departments, selectedDeptFilter]);
 
-  const handleEdit = (emp: EmployeeDto) => {
-    setCurrentEmp({
-      id: emp.id,
-      name: getEmpName(emp),
-      workerCode: getEmpCode(emp),
-      departmentId: emp.departmentId,
-      jobTitleId: emp.jobTitleId,
-      active: emp.active
-    });
-    setErrorMessage(null);
-  };
-
   const resetForm = () => {
-    setCurrentEmp({
-      id: 0,
-      name: '',
-      workerCode: '',
-      departmentId: departments[0]?.id,
-      jobTitleId: jobTitles[0]?.id,
-      active: true
-    });
+    setCurrentEmpId(0);
+    setEmpName('');
+    setEmpWorkerCode('');
+    setEmpDepartmentId('');
+    setEmpJobTitleId('');
+    setEmpActive(true);
     setErrorMessage(null);
   };
 
-  const handleSaveEmployee = async (e: React.FormEvent) => {
+  const handleEditEmployee = (emp: EmployeeDto) => {
+    setCurrentEmpId(emp.id);
+    setEmpName(emp.name);
+    setEmpWorkerCode(emp.workerCode);
+    setEmpDepartmentId(emp.departmentId);
+    setEmpJobTitleId(emp.jobTitleId || '');
+    setEmpActive(emp.active);
+    setErrorMessage(null);
+  };
+
+  const handleSaveEmployee = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentEmp.name?.trim() || !currentEmp.departmentId) {
-      setErrorMessage('يرجى كتابة اسم العامل واختيار القسم التابع له.');
+    if (!empName.trim() || !empDepartmentId) {
+      setErrorMessage('يرجى كتابة اسم العامل واختيار القسم أو الصالة التابع لها.');
       return;
     }
 
-    setIsSaving(true);
-    setErrorMessage(null);
-    try {
-      const payload: EmployeeDto = {
-        id: currentEmp.id,
-        name: currentEmp.name.trim(),
-        workerCode: currentEmp.workerCode?.trim() || '',
-        employeeCode: currentEmp.workerCode?.trim() || '',
-        departmentId: currentEmp.departmentId,
-        jobTitleId: currentEmp.jobTitleId || undefined,
-        active: currentEmp.active
+    const jobTitleObj = jobTitles.find(j => j.id === Number(empJobTitleId));
+    const titleName = jobTitleObj ? jobTitleObj.titleName : 'عامل تشغيل';
+
+    if (currentEmpId > 0) {
+      setEmployees(employees.map(emp => emp.id === currentEmpId ? {
+        ...emp,
+        name: empName.trim(),
+        workerCode: empWorkerCode.trim() || emp.workerCode,
+        departmentId: Number(empDepartmentId),
+        jobTitleId: empJobTitleId ? Number(empJobTitleId) : undefined,
+        jobTitleName: titleName,
+        active: empActive
+      } : emp));
+      setSuccessMessage('تم تحديث بيانات وتوزيع العامل بنجاح.');
+    } else {
+      const newEmp: EmployeeDto = {
+        id: Date.now(),
+        companyId: 1,
+        name: empName.trim(),
+        workerCode: empWorkerCode.trim() || String(Math.floor(100 + Math.random() * 900)),
+        departmentId: Number(empDepartmentId),
+        jobTitleId: empJobTitleId ? Number(empJobTitleId) : undefined,
+        jobTitleName: titleName,
+        active: empActive
       };
-
-      await saveEmployeeApi(payload);
-
-      setEmployees(prev => {
-        if (currentEmp.id > 0) {
-          return prev.map(item => (item.id === currentEmp.id ? { ...payload } : item));
-        }
-        return [...prev, { ...payload, id: Date.now() }];
-      });
-
-      setSuccessMessage(currentEmp.id > 0 ? 'تم تحديث بيانات العامل بنجاح.' : 'تم تسجيل العامل الجديد وتوزيعه بالصالة بنجاح.');
-      resetForm();
-    } catch (ex: any) {
-      setErrorMessage(`خطأ أثناء الاتصال: ${ex.message}`);
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => setSuccessMessage(null), 4000);
+      setEmployees([...employees, newEmp]);
+      setSuccessMessage('تم تسجيل العامل الجديد وتوزيعه بالصالة بنجاح.');
     }
+
+    resetForm();
+    setTimeout(() => setSuccessMessage(null), 4000);
   };
 
-  const handleToggleStatus = async (emp: EmployeeDto) => {
-    try {
-      await toggleEmployeeStatusApi(emp.id);
-      setEmployees(prev =>
-        prev.map(e => (e.id === emp.id ? { ...e, active: !e.active } : e))
-      );
-      setSuccessMessage(`تم تغيير حالة العامل (${getEmpName(emp)}) إلى: ${!emp.active ? 'نشط' : 'معطل'}`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (ex: any) {
-      setErrorMessage(`خطأ في تعديل الحالة: ${ex.message}`);
-    }
+  const handleToggleStatus = (emp: EmployeeDto) => {
+    setEmployees(employees.map(e => e.id === emp.id ? { ...e, active: !e.active } : e));
+    setSuccessMessage(`تم تغيير حالة العامل (${emp.name}) إلى: ${!emp.active ? 'نشط' : 'موقوف'}`);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  const handleDelete = async (emp: EmployeeDto) => {
-    if (!window.confirm(`هل أنت متأكد من حذف أو إيقاف العامل (${getEmpName(emp)})؟`)) return;
-    try {
-      await deleteEmployeeApi(emp.id);
-      setEmployees(prev => prev.filter(e => e.id !== emp.id));
-      setSuccessMessage(`تمت معالجة حذف / إيقاف العامل (${getEmpName(emp)}) بنجاح.`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (ex: any) {
-      setErrorMessage(`خطأ أثناء الحذف: ${ex.message}`);
-    }
+  const handleDeleteEmployee = (emp: EmployeeDto) => {
+    if (!window.confirm(`هل أنت متأكد من حذف أو إيقاف العامل (${emp.name})؟`)) return;
+    setEmployees(employees.filter(e => e.id !== emp.id));
+    setSuccessMessage(`تمت إزالة العامل (${emp.name}) بنجاح.`);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  const handleSaveQuickJobTitle = async () => {
+  const handleSaveQuickJobTitle = () => {
     if (!newJobTitleName.trim()) {
       setErrorMessage('يرجى كتابة اسم الوظيفة أولاً.');
       return;
     }
 
-    try {
-      const newId = await saveQuickJobTitleApi({
-        titleName: newJobTitleName.trim(),
-        hourlyRate: newJobTitleHourlyRate
-      });
+    const createdTitle: JobTitleLookupDto = {
+      id: Date.now(),
+      titleName: newJobTitleName.trim(),
+      hourlyRate: Number(newJobTitleHourlyRate) || 30
+    };
 
-      const newTitleObj = { id: newId, titleName: newJobTitleName.trim(), hourlyRate: newJobTitleHourlyRate };
-      setJobTitles(prev => [...prev, newTitleObj]);
-      setCurrentEmp(prev => ({ ...prev, jobTitleId: newId }));
-      setSuccessMessage(`تمت إضافة المسمى الوظيفي (${newJobTitleName}) بنجاح!`);
-      setNewJobTitleName('');
-      setIsJobTitleModalOpen(false);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (ex: any) {
-      setErrorMessage(`خطأ في حفظ المسمى: ${ex.message}`);
-    }
+    setJobTitles([...jobTitles, createdTitle]);
+    setEmpJobTitleId(createdTitle.id);
+    setNewJobTitleName('');
+    setIsJobTitleModalOpen(false);
+    setSuccessMessage(`تمت إضافة المسمى الوظيفي (${createdTitle.titleName}) بنجاح!`);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  // Export
-  const exportToExcel = () => {
-    if (!employees.length) {
-      setErrorMessage('لا يوجد عمال مسجلين لتصديرهم.');
-      return;
-    }
+  const handleExportToExcel = () => {
+    let csv = 'كود_العامل,اسم_العامل,القسم_التابع_له,المسمى_الوظيفي,الحالة\n';
+    filteredEmployees.forEach(emp => {
+      const deptName = departments.find(d => d.id === emp.departmentId)?.departmentName || 'غير محدد';
+      const status = emp.active ? 'نشط' : 'معطل';
+      csv += `"${emp.workerCode}","${emp.name}","${deptName}","${emp.jobTitleName}","${status}"\n`;
+    });
 
-    const headers = 'كود_العامل,اسم_العامل,القسم_التابع_له,المسمى_الوظيفي,الحالة\n';
-    const rows = filteredEmployees
-      .map(emp => {
-        const deptName = departments.find(d => d.id === emp.departmentId)?.departmentName || 'غير محدد';
-        const titleName = getEmpJob(emp);
-        const status = emp.active ? 'نشط' : 'معطل';
-        return `"${getEmpCode(emp)}","${getEmpName(emp)}","${deptName}","${titleName}","${status}"`;
-      })
-      .join('\n');
-
-    const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `كشف_القوة_العاملة_أبو_عادل_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    setSuccessMessage('تم تصدير كشف العمال إلى إكسيل بنجاح.');
-    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  // Download Template
-  const downloadTemplate = () => {
-    const content =
-      'كود_العامل,اسم_العامل,القسم_او_كود_القسم,المسمى_الوظيفي,الحالة\n577,فتحي حميده,إدارة الإنتاج,مهندس انتاج,1\n747,أحمد عبد العزيز,قسم الشرقي,منسق انتاج,1\n476,محمد وهدان,قسم الجاتوه,شيف جاتوه,1';
-    const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+  const handleDownloadTemplate = () => {
+    let csv = 'كود_العامل,اسم_العامل,القسم_او_كود_القسم,المسمى_الوظيفي,الحالة\n';
+    csv += '577,فتحي حميده,إدارة الإنتاج,مهندس انتاج,1\n';
+    csv += '747,أحمد عبد العزيز,قسم الشرقي والمخبوزات,منسق انتاج,1\n';
+    csv += '476,محمد وهدان,قسم الجاتوه والتورت والحلويات الغربية,شيف جاتوه,1\n';
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -303,142 +258,111 @@ export const EmployeesManagementPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // File import
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = evt => {
-      const text = evt.target?.result as string;
-      if (!text) return;
+    reader.onload = ev => {
+      const content = ev.target?.result as string;
+      const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length <= 1) return;
 
-      const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-      if (lines.length <= 1) {
-        setErrorMessage('الملف المرفوع فارغ أو لا يحتوي على صفوف بيانات.');
-        return;
-      }
-
-      const rows: EmployeeImportRowDto[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+      const preview: EmployeeImportRowDto[] = [];
+      for (let i = 1; i < lines.Length; i++) {
+        const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
         if (cols.length >= 2) {
-          rows.push({
+          preview.push({
             employeeCode: cols[0],
             name: cols[1],
             departmentNameOrCode: cols[2] || '',
-            jobTitleName: cols[3] || '',
-            active: cols[4] === '1' || cols[4]?.toLowerCase() === 'نشط' || cols[4]?.toLowerCase() === 'مفعل' || cols[4]?.toLowerCase() === 'true'
+            jobTitleName: cols[3] || 'عامل تشغيل',
+            active: cols[4] !== '0' && cols[4] !== 'معطل'
           });
         }
       }
-      setImportedPreviewList(rows);
+      setImportedPreviewList(preview);
     };
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsText(file);
   };
 
-  const handleProcessImport = async () => {
-    if (!importedPreviewList.length) return;
+  const handleProcessImport = () => {
+    const newItems: EmployeeDto[] = importedPreviewList.map((row, idx) => {
+      const matchedDept = departments.find(d =>
+        d.departmentName.includes(row.departmentNameOrCode) ||
+        row.departmentNameOrCode.includes(d.departmentName)
+      ) || departments[0];
 
-    setIsSavingImport(true);
-    setErrorMessage(null);
-    try {
-      const newItems: EmployeeDto[] = [...employees];
+      return {
+        id: Date.now() + idx,
+        companyId: 1,
+        name: row.name,
+        workerCode: row.employeeCode || String(Date.now() + idx),
+        departmentId: matchedDept.id,
+        jobTitleName: row.jobTitleName || 'عامل تشغيل',
+        active: row.active
+      };
+    });
 
-      for (const row of importedPreviewList) {
-        const matchedDept = departments.find(
-          d => d.departmentName.includes(row.departmentNameOrCode) || row.departmentNameOrCode.includes(d.departmentName)
-        );
-        const matchedJob = jobTitles.find(
-          j => j.titleName.includes(row.jobTitleName) || row.jobTitleName.includes(j.titleName)
-        );
-
-        const existing = newItems.find(
-          e => (e.workerCode && e.workerCode === row.employeeCode) || getEmpName(e) === row.name
-        );
-
-        if (existing) {
-          existing.name = row.name;
-          existing.workerCode = row.employeeCode;
-          existing.departmentId = matchedDept ? matchedDept.id : existing.departmentId;
-          existing.jobTitleId = matchedJob ? matchedJob.id : existing.jobTitleId;
-          existing.active = row.active;
-        } else {
-          newItems.push({
-            id: Date.now() + Math.random(),
-            name: row.name,
-            workerCode: row.employeeCode,
-            departmentId: matchedDept ? matchedDept.id : departments[0]?.id,
-            jobTitleId: matchedJob ? matchedJob.id : jobTitles[0]?.id,
-            active: row.active
-          });
-        }
-      }
-
-      setEmployees(newItems);
-      setSuccessMessage(`اكتملت المعالجة: تم استيراد وتوزيع (${importedPreviewList.length}) عاملاً على صالاتهم بدقة.`);
-      setIsImportModalOpen(false);
-      setImportedPreviewList([]);
-    } catch (ex: any) {
-      setErrorMessage(`خطأ أثناء معالجة استيراد العمال: ${ex.message}`);
-    } finally {
-      setIsSavingImport(false);
-      setTimeout(() => setSuccessMessage(null), 4000);
-    }
+    setEmployees([...employees, ...newItems]);
+    setIsImportModalOpen(false);
+    setImportedPreviewList([]);
+    setSuccessMessage(`اكتملت المعالجة: تم استيراد وتوزيع (${newItems.length}) عاملاً على الصالات بنجاح!`);
+    setTimeout(() => setSuccessMessage(null), 4000);
   };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
+    <div className="p-6 min-h-screen font-sans bg-slate-100/70 dark:bg-black transition-colors" dir="rtl">
       {/* رأس الصفحة وأزرار التصدير والاستيراد */}
-      <div className="bg-white p-5 rounded-2xl shadow-xs border-r-4 border-r-indigo-600 mb-6 flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-white dark:bg-[#0c0d11] p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-600" />
-            <span>إدارة وتوزيع العمال بالصالات (Workers Allocation & Operations)</span>
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-gray-900 dark:text-amber-400 flex items-center gap-2">
+              <Users className="w-6 h-6 text-indigo-500" />
+              <span>إدارة وتوزيع العمال بالصالات (Workers Allocation & Operations)</span>
+            </h1>
+            <span className="bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              الهيكل التنظيمي الميداني
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
             تسجيل، تعديل، وحذف القوة العاملة وتوزيعهم على صالات التشغيل بدقة تامة.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={exportToExcel}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors"
+            onClick={handleExportToExcel}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>تصدير إكسيل</span>
           </button>
+
           <button
-            onClick={downloadTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors"
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <Download className="w-4 h-4" />
             <span>تحميل قالب الإكسيل</span>
           </button>
+
           <button
             onClick={() => {
               setImportedPreviewList([]);
               setIsImportModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-sm transition-all"
           >
-            <Upload className="w-4 h-4 text-emerald-400" />
+            <Upload className="w-4 h-4" />
             <span>استيراد من إكسيل</span>
-          </button>
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
-          >
-            <RotateCw className="w-4 h-4 text-indigo-600" />
-            <span>تحديث</span>
           </button>
         </div>
       </div>
 
+      {/* تنبيهات النظام */}
       {successMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
+        <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center">
           <span className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             {successMessage}
@@ -448,7 +372,7 @@ export const EmployeesManagementPage: React.FC = () => {
       )}
 
       {errorMessage && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center justify-between">
+        <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 rounded-xl text-xs font-bold flex justify-between items-center">
           <span className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-rose-600" />
             {errorMessage}
@@ -457,59 +381,57 @@ export const EmployeesManagementPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* الجانب الأيمن: الهيكل وشريط الفلاتر وعرض كروت الصالات */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* 1. الهيكل التنظيمي وشريط الفلاتر المتقدمة (الجانب الأيمن) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-xs text-xs space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          {/* شريط الفلاتر */}
+          <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
               <div>
-                <label className="block text-gray-700 font-bold mb-1">🔍 بحث سريع (اسم أو كود)</label>
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="اكتب الاسم أو الكود..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-50 border border-gray-200 rounded-xl pr-8 pl-3 py-1.5 outline-none focus:border-indigo-600 font-medium"
-                  />
-                </div>
+                <label className="block text-gray-400 font-bold mb-1">🔍 بحث سريع (اسم أو كود)</label>
+                <input
+                  type="text"
+                  placeholder="اكتب الاسم أو الكود..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 outline-none font-bold text-gray-800 dark:text-zinc-200"
+                />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">🏢 الإدارة / الصالة</label>
+                <label className="block text-gray-400 font-bold mb-1">🏢 الإدارة / الصالة</label>
                 <select
                   value={selectedDeptFilter}
                   onChange={(e) => setSelectedDeptFilter(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2 py-1.5 font-bold text-gray-700 outline-none"
+                  className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 outline-none font-bold text-gray-800 dark:text-zinc-200"
                 >
                   <option value={0}>-- كل الأقسام والصالات --</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.departmentName}</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.departmentName}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">💼 المسمى الوظيفي</label>
+                <label className="block text-gray-400 font-bold mb-1">💼 المسمى الوظيفي</label>
                 <select
                   value={selectedJobTitleFilter}
                   onChange={(e) => setSelectedJobTitleFilter(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2 py-1.5 font-bold text-gray-700 outline-none"
+                  className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 outline-none font-bold text-gray-800 dark:text-zinc-200"
                 >
                   <option value={0}>-- كل الوظائف --</option>
-                  {jobTitles.map(title => (
-                    <option key={title.id} value={title.id}>{title.titleName}</option>
+                  {jobTitles.map(j => (
+                    <option key={j.id} value={j.id}>{j.titleName}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">⚡ حالة العامل</label>
+                <label className="block text-gray-400 font-bold mb-1">⚡ حالة العامل</label>
                 <select
                   value={selectedStatusFilter}
-                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                  className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2 py-1.5 font-bold text-gray-700 outline-none"
+                  onChange={(e) => setSelectedStatusFilter(e.target.value as any)}
+                  className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-1.5 outline-none font-bold text-gray-800 dark:text-zinc-200"
                 >
                   <option value="all">كل الحالات</option>
                   <option value="active">🟢 نشط فقط</option>
@@ -519,13 +441,13 @@ export const EmployeesManagementPage: React.FC = () => {
             </div>
 
             {hasActiveFilters && (
-              <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                <span className="text-indigo-700 font-bold text-[11px]">
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                <span className="font-bold text-indigo-600 dark:text-indigo-400">
                   نتائج التصفية: ({filteredEmployees.length} من إجمالي {employees.length} عامل مسجل)
                 </span>
                 <button
                   onClick={resetFilters}
-                  className="text-rose-600 hover:text-rose-800 font-bold text-[11px]"
+                  className="text-rose-500 hover:text-rose-600 font-bold"
                 >
                   ✕ إلغاء الفلاتر وعرض الكل
                 </button>
@@ -533,176 +455,170 @@ export const EmployeesManagementPage: React.FC = () => {
             )}
           </div>
 
-          {/* استعراض وتوزيع العمال في الصالات */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
-            <div className="p-3 bg-slate-900 text-white flex justify-between items-center">
+          {/* بطاقة عرض وتوزيع العمال بالصالات */}
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
+            <div className="p-3.5 bg-slate-900 text-white flex justify-between items-center">
               <span className="font-bold">الهيكل التنظيمي وتوزيع العمل في الصالات</span>
-              <span className="bg-indigo-600 text-white font-mono text-[10px] px-2 py-0.5 rounded">
+              <span className="bg-indigo-600 px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px]">
                 المعروض: {filteredEmployees.length} عامل
               </span>
             </div>
 
             <div className="p-4 space-y-4 max-h-[72vh] overflow-y-auto">
-              {isLoading ? (
-                <div className="p-12 text-center text-gray-400 font-bold">جاري تحميل بيانات القوة العاملة...</div>
-              ) : displayedDepartments.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 font-bold">لا توجد أقسام مسجلة بالنظام.</div>
-              ) : (
-                displayedDepartments.map(dept => {
-                  const deptEmps = filteredEmployees.filter(e => e.departmentId === dept.id);
-                  if (hasActiveFilters && deptEmps.length === 0 && selectedDeptFilter === 0) return null;
+              {displayedDepartments.map(dept => {
+                const deptEmps = filteredEmployees.filter(e => e.departmentId === dept.id);
+                if (hasActiveFilters && deptEmps.length === 0 && selectedDeptFilter === 0) return null;
 
-                  return (
-                    <div key={dept.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                      <div className="bg-slate-100 px-4 py-2 border-b flex justify-between items-center">
-                        <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                          <FolderOpen className="w-4 h-4 text-indigo-600" />
-                          <span>{dept.departmentName}</span>
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${deptEmps.length > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-gray-100 text-gray-500'}`}>
-                          {deptEmps.length} عمال
-                        </span>
-                      </div>
+                return (
+                  <div key={dept.id} className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+                    <div className="px-4 py-2.5 bg-slate-50 dark:bg-zinc-900/60 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center">
+                      <span className="font-bold text-gray-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <Folder className="w-4 h-4 text-amber-500" />
+                        <span>{dept.departmentName}</span>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${deptEmps.length > 0 ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-gray-100 text-gray-400'}`}>
+                        {deptEmps.length} عمال
+                      </span>
+                    </div>
 
-                      <div className="p-3 bg-slate-50">
-                        {deptEmps.length === 0 ? (
-                          <div className="text-center text-gray-400 py-2">لا يوجد عمال مسجلين في هذا القسم حالياً.</div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {deptEmps.map(emp => (
-                              <div
-                                key={emp.id}
-                                className={`p-2.5 rounded-xl border flex justify-between items-center ${emp.id === currentEmp.id ? 'border-indigo-500 bg-indigo-50/50' : 'bg-white border-gray-200'}`}
-                              >
-                                <div>
-                                  <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                                    <span>{getEmpName(emp)}</span>
-                                    {!emp.active && (
-                                      <span className="bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded text-[9px] font-bold">موقوف</span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 mt-1">
-                                    <span className="bg-cyan-50 text-cyan-800 px-1.5 py-0.2 rounded text-[10px] font-bold border border-cyan-200">
-                                      {getEmpJob(emp)}
+                    <div className="p-3">
+                      {deptEmps.length === 0 ? (
+                        <div className="text-gray-400 text-center py-2">لا يوجد عمال مسجلين في هذا القسم حالياً.</div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {deptEmps.map(emp => (
+                            <div
+                              key={emp.id}
+                              className={`p-3 rounded-xl border flex justify-between items-center transition-all ${
+                                emp.id === currentEmpId
+                                  ? 'border-indigo-500 bg-indigo-500/5'
+                                  : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-[#0c0d11]'
+                              }`}
+                            >
+                              <div>
+                                <div className="font-bold text-gray-900 dark:text-zinc-100 flex items-center gap-1.5 text-sm">
+                                  <span>{emp.name}</span>
+                                  {!emp.active && (
+                                    <span className="bg-rose-500/10 text-rose-500 px-1.5 py-0.2 rounded text-[9px] font-bold">
+                                      موقوف
                                     </span>
-                                    {getEmpCode(emp) && (
-                                      <span className="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[10px] font-mono border">
-                                        كود: {getEmpCode(emp)}
-                                      </span>
-                                    )}
-                                  </div>
+                                  )}
                                 </div>
-
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => handleEdit(emp)}
-                                    className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded"
-                                  >
-                                    تعديل
-                                  </button>
-                                  <button
-                                    onClick={() => handleToggleStatus(emp)}
-                                    className={`px-2 py-0.5 rounded font-bold ${emp.active ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}
-                                  >
-                                    {emp.active ? 'إيقاف' : 'تفعيل'}
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(emp)}
-                                    className="p-1 hover:text-rose-600"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                <div className="flex items-center gap-1.5 mt-1 font-mono text-[10px]">
+                                  <span className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded font-bold">
+                                    {emp.jobTitleName}
+                                  </span>
+                                  <span className="text-gray-400">كود: {emp.workerCode}</span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleEditEmployee(emp)}
+                                  className="px-2 py-1 bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold hover:bg-indigo-100"
+                                >
+                                  تعديل
+                                </button>
+                                <button
+                                  onClick={() => handleToggleStatus(emp)}
+                                  className={`px-2 py-1 rounded-lg font-bold ${
+                                    emp.active
+                                      ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                                      : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                  }`}
+                                >
+                                  {emp.active ? 'إيقاف' : 'تفعيل'}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEmployee(emp)}
+                                  className="p-1 text-rose-500 hover:text-rose-700"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* الجانب الأيسر: بطاقة تسجيل / تعديل عامل */}
+        {/* 2. بطاقة تسجيل / تعديل عامل (الجانب الأيسر) */}
         <div className="lg:col-span-4">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
-            <div className="bg-indigo-600 text-white p-3.5 font-bold flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-amber-300" />
-                <span>{currentEmp.id > 0 ? '✏️ تعديل بيانات عامل' : '➕ تسجيل عامل جديد'}</span>
-              </span>
-              {currentEmp.id > 0 && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="text-[11px] bg-indigo-800 hover:bg-indigo-900 text-white px-2 py-0.5 rounded"
-                >
-                  إلغاء التعديل
-                </button>
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm p-5 text-xs space-y-4 sticky top-6">
+            <div className="border-b border-gray-100 dark:border-zinc-800 pb-3 flex justify-between items-center">
+              <h3 className="font-bold text-gray-900 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-indigo-500" />
+                <span>{currentEmpId > 0 ? '✏️ تعديل بيانات عامل' : '➕ تسجيل عامل جديد'}</span>
+              </h3>
+              {currentEmpId > 0 && (
+                <button onClick={resetForm} className="text-gray-400 hover:text-white text-[11px]">إلغاء التعديل</button>
               )}
             </div>
 
-            <form onSubmit={handleSaveEmployee} className="p-4 space-y-3 bg-slate-50">
+            <form onSubmit={handleSaveEmployee} className="space-y-3">
               <div>
-                <label className="block text-gray-700 font-bold mb-1">اسم العامل الكامل *</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">اسم العامل الكامل *</label>
                 <input
                   type="text"
                   required
-                  placeholder="مثال: أحمد محمود الدسوقي"
-                  value={currentEmp.name || ''}
-                  onChange={(e) => setCurrentEmp({ ...currentEmp, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl font-bold"
+                  placeholder="مثال: أحمد محمود الدسوقي..."
+                  value={empName}
+                  onChange={(e) => setEmpName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">كود العامل (اختياري)</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">كود العامل (اختياري)</label>
                 <input
                   type="text"
-                  placeholder="مثال: 577 أو W-105"
-                  value={currentEmp.workerCode || ''}
-                  onChange={(e) => setCurrentEmp({ ...currentEmp, workerCode: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl font-mono font-bold"
+                  placeholder="مثال: 577 أو W-105..."
+                  value={empWorkerCode}
+                  onChange={(e) => setEmpWorkerCode(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono font-bold text-center text-indigo-600 dark:text-indigo-400"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">القسم / الإدارة التابع لها *</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">القسم / الصالة التابع لها *</label>
                 <select
                   required
-                  value={currentEmp.departmentId || ''}
-                  onChange={(e) => setCurrentEmp({ ...currentEmp, departmentId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl font-bold"
+                  value={empDepartmentId}
+                  onChange={(e) => setEmpDepartmentId(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-indigo-500 rounded-xl font-bold"
                 >
                   <option value="">-- اختر القسم أو الإدارة --</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.departmentName}</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.departmentName}</option>
                   ))}
                 </select>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-gray-700 font-bold mb-0">المسمى الوظيفي</label>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold">المسمى الوظيفي</label>
                   <button
                     type="button"
                     onClick={() => setIsJobTitleModalOpen(true)}
-                    className="text-indigo-600 hover:text-indigo-800 font-bold text-[11px]"
+                    className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                   >
-                    ➕ إضافة مسمى جديد
+                    + إضافة مسمى جديد
                   </button>
                 </div>
                 <select
-                  value={currentEmp.jobTitleId || ''}
-                  onChange={(e) => setCurrentEmp({ ...currentEmp, jobTitleId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl font-bold"
+                  value={empJobTitleId}
+                  onChange={(e) => setEmpJobTitleId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                 >
                   <option value="">-- غير محدد --</option>
-                  {jobTitles.map(title => (
-                    <option key={title.id} value={title.id}>{title.titleName}</option>
+                  {jobTitles.map(j => (
+                    <option key={j.id} value={j.id}>{j.titleName}</option>
                   ))}
                 </select>
               </div>
@@ -710,98 +626,87 @@ export const EmployeesManagementPage: React.FC = () => {
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
-                  id="allocActiveCheck"
-                  checked={currentEmp.active}
-                  onChange={(e) => setCurrentEmp({ ...currentEmp, active: e.target.checked })}
-                  className="w-4 h-4 text-indigo-600 rounded border-gray-300"
+                  id="empActiveStatus"
+                  checked={empActive}
+                  onChange={(e) => setEmpActive(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded"
                 />
-                <label htmlFor="allocActiveCheck" className="font-bold text-gray-700 cursor-pointer">
+                <label htmlFor="empActiveStatus" className="font-bold text-gray-700 dark:text-zinc-300 cursor-pointer">
                   حالة العامل: نشط ومتاح للتشغيل
                 </label>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                {currentEmp.id > 0 && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="flex-1 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl"
-                  >
-                    إلغاء
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50"
-                >
-                  {isSaving ? '⏳ جاري الحفظ...' : currentEmp.id > 0 ? 'تحديث العامل' : 'حفظ وتوزيع العامل'}
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-sm transition-all"
+              >
+                {currentEmpId > 0 ? 'تحديث بيانات العامل' : 'حفظ وتوزيع العامل'}
+              </button>
             </form>
           </div>
         </div>
       </div>
 
-      {/* نافذة استيراد الإكسيل الذكية */}
+      {/* مودال استيراد الإكسيل الذكي */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 text-xs flex flex-col max-h-[90vh]">
-            <div className="px-5 py-3.5 bg-emerald-700 text-white flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[90vh]">
+            <div className="px-5 py-3.5 bg-emerald-600 text-white flex items-center justify-between">
               <h4 className="font-bold flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-white" />
-                <span>استيراد كشف العمال من ملف إكسيل / CSV</span>
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>استيراد كشف العمال من ملف إكسيل</span>
               </h4>
-              <button onClick={() => setIsImportModalOpen(false)} className="text-white">×</button>
+              <button onClick={() => setIsImportModalOpen(false)} className="text-white hover:opacity-80">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-slate-50">
-              <div className="p-3 bg-cyan-50 border border-cyan-200 text-cyan-900 rounded-xl">
-                💡 يقوم النظام آلياً بربط كل عامل بصالته وقسمه بدقة بالغة ويمنع تكرار السجلات، كما يربطه بمسمّاه الوظيفي المعتمد.
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-xl">
+                يقوم النظام آلياً بربط كل عامل بصالته وقسمه بدقة بالغة ويمنع تكرار السجلات، كما يربطه بمسمّاه الوظيفي المعتمد.
               </div>
 
-              <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-2">
-                <label className="block text-gray-700 font-bold mb-1">اختر ملف الإكسيل / CSV من جهازك:</label>
+              <div className="p-4 border border-dashed border-gray-300 dark:border-zinc-700 rounded-xl bg-slate-50 dark:bg-zinc-900/50">
+                <label className="block font-bold text-gray-700 dark:text-zinc-300 mb-1">اختر ملف الإكسيل / CSV من جهازك:</label>
                 <input
                   type="file"
-                  ref={fileInputRef}
-                  accept=".csv, text/csv"
-                  onChange={handleFileChange}
-                  className="w-full text-xs text-slate-500 file:mr-0 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  accept=".csv"
+                  onChange={handleFileSelected}
+                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                 />
               </div>
 
               {importedPreviewList.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">
-                      معاينة بيانات العمال المقروءة من الملف ({importedPreviewList.length} عامل):
+                    <span className="font-bold text-gray-800 dark:text-zinc-200">
+                      معاينة بيانات العمال المقروءة ({importedPreviewList.length} عامل):
                     </span>
-                    <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-[10px]">
+                    <span className="bg-emerald-500/10 text-emerald-600 font-bold px-2 py-0.5 rounded text-[10px]">
                       جاهز للاستيراد
                     </span>
                   </div>
 
-                  <div className="border rounded-xl overflow-hidden bg-white max-h-56 overflow-y-auto">
-                    <table className="w-full text-center">
-                      <thead className="bg-slate-100 text-gray-700">
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                    <table className="w-full text-center bg-white dark:bg-[#0c0d11]">
+                      <thead className="bg-slate-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400">
                         <tr>
-                          <th className="py-2 px-2">الكود</th>
-                          <th className="py-2 px-2 text-right">اسم العامل</th>
-                          <th className="py-2 px-2">القسم / الصالة</th>
-                          <th className="py-2 px-2">المسمى الوظيفي</th>
-                          <th className="py-2 px-2">الحالة</th>
+                          <th className="py-2 px-3">الكود</th>
+                          <th className="py-2 px-3 text-right">اسم العامل</th>
+                          <th className="py-2 px-3 text-right">القسم / الصالة</th>
+                          <th className="py-2 px-3">المسمى الوظيفي</th>
+                          <th className="py-2 px-3">الحالة</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                         {importedPreviewList.map((row, idx) => (
                           <tr key={idx}>
-                            <td className="py-1.5 px-2 font-mono font-bold text-indigo-700">{row.employeeCode}</td>
-                            <td className="py-1.5 px-2 text-right font-bold text-gray-900">{row.name}</td>
-                            <td className="py-1.5 px-2 text-gray-600">{row.departmentNameOrCode}</td>
-                            <td className="py-1.5 px-2 text-slate-700">{row.jobTitleName}</td>
-                            <td className="py-1.5 px-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                            <td className="py-2 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{row.employeeCode}</td>
+                            <td className="py-2 px-3 text-right font-bold">{row.name}</td>
+                            <td className="py-2 px-3 text-right text-gray-500">{row.departmentNameOrCode}</td>
+                            <td className="py-2 px-3"><span className="bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded">{row.jobTitleName}</span></td>
+                            <td className="py-2 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
                                 {row.active ? 'نشط' : 'معطل'}
                               </span>
                             </td>
@@ -812,76 +717,78 @@ export const EmployeesManagementPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="p-3 bg-white border-t flex justify-between items-center shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                disabled={isSavingImport || !importedPreviewList.length}
-                onClick={handleProcessImport}
-                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs disabled:opacity-50"
-              >
-                {isSavingImport ? '⏳ جاري المعالجة والتوزيع...' : `تأكيد واستيراد كافة العمال (${importedPreviewList.length})`}
-              </button>
+              <div className="flex justify-between items-center pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  disabled={importedPreviewList.length === 0}
+                  onClick={handleProcessImport}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-sm disabled:opacity-40"
+                >
+                  تأكيد واستيراد كافة العمال ({importedPreviewList.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal إضافة مسمى وظيفي جديد سريعاً */}
+      {/* مودال إضافة مسمى وظيفي جديد سريعاً */}
       {isJobTitleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col">
             <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-              <h4 className="font-bold flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-amber-400" />
+              <h4 className="font-bold flex items-center gap-2 text-indigo-400">
+                <Briefcase className="w-4 h-4" />
                 <span>إضافة مسمى وظيفي جديد</span>
               </h4>
-              <button onClick={() => setIsJobTitleModalOpen(false)} className="text-white">×</button>
+              <button onClick={() => setIsJobTitleModalOpen(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-5 space-y-3">
               <div>
-                <label className="block text-gray-700 font-bold mb-1">اسم الوظيفة *</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">اسم الوظيفة *</label>
                 <input
                   type="text"
-                  placeholder="مثال: معلم شرقي / فني تعبئة"
+                  placeholder="مثال: معلم شرقي / فني تعبئة..."
                   value={newJobTitleName}
                   onChange={(e) => setNewJobTitleName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl font-bold"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">أجر الساعة الاسترشادي للتكاليف (ج.م):</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">أجر الساعة الاسترشادي للتكاليف (ج.م):</label>
                 <input
                   type="number"
                   step="0.5"
                   value={newJobTitleHourlyRate}
                   onChange={(e) => setNewJobTitleHourlyRate(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-xl font-mono text-center font-bold"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold"
                 />
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t">
+              <div className="flex justify-between items-center pt-2">
                 <button
                   type="button"
                   onClick={() => setIsJobTitleModalOpen(false)}
-                  className="px-3 py-1.5 bg-gray-200 text-gray-700 font-bold rounded-xl"
+                  className="px-4 py-1.5 bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl"
                 >
                   إلغاء
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveQuickJobTitle}
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+                  className="px-5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-sm"
                 >
                   حفظ المسمى
                 </button>

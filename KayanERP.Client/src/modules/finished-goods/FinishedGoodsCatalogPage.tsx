@@ -1,110 +1,240 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
-  Cake,
+  Layers,
   PlusCircle,
   Search,
   CheckCircle2,
-  AlertTriangle,
-  RotateCw,
-  Layers,
   Scale,
-  Barcode,
-  Sparkles,
-  Edit2,
-  Boxes,
-  Package,
-  X
+  Cake,
+  Settings,
+  X,
+  FileSpreadsheet,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
-import {
-  fetchFinishedGoodsCatalogApi,
-  saveItemCatalogApi,
-  saveItemVariantApi,
-  saveUomConversionApi,
-  executeBulkImportApi
-} from './finishedGoodsApi';
-import type {
-  ItemDto,
-  ItemVariantDto,
-  UomConversionDto,
-  DepartmentLookupDto
-} from './finishedGoodsApi';
 
-interface FinishedGoodsCatalogPageProps {
-  onNavigate?: (tab: string) => void;
+export interface ItemDto {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  departmentName: string;
+  basePrice: number;
+  unit: string;
+  barcode?: string;
+  isVariant: boolean;
+  isMerged: boolean;
+  isContainer: boolean;
+  multiUom: boolean;
+  hideDetailPrint: boolean;
+  active: boolean;
 }
 
-export const FinishedGoodsCatalogPage: React.FC<FinishedGoodsCatalogPageProps> = () => {
-  const [items, setItems] = useState<ItemDto[]>([]);
-  const [allVariants, setAllVariants] = useState<ItemVariantDto[]>([]);
-  const [allConversions, setAllConversions] = useState<UomConversionDto[]>([]);
-  const [departmentsList, setDepartmentsList] = useState<DepartmentLookupDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export interface ItemVariantDto {
+  id: number;
+  parentItemId: number;
+  itemCode: string;
+  itemName: string;
+  price: number;
+  barcode?: string;
+}
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string>('');
+export interface UomConversionDto {
+  id: number;
+  itemId: number;
+  fromUnit: string;
+  toUnit: string;
+  conversionFactor: number;
+  notes: string;
+}
 
-  // Messages
-  const [pageMessage, setPageMessage] = useState<string | null>(null);
-  const [isPageError, setIsPageError] = useState<boolean>(false);
+export const FinishedGoodsCatalogPage: React.FC<{ onNavigate?: (tab: string) => void }> = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('');
 
-  // Workstation Modal
-  const [showWorkstationModal, setShowWorkstationModal] = useState<boolean>(false);
-  const [isNewItemMode, setIsNewItemMode] = useState<boolean>(false);
-  const [activeTabModal, setActiveTabModal] = useState<number>(1);
+  const departmentsList = [
+    'صالة تصنيع الحلويات الشرقية',
+    'صالة تصنيع الحلويات الغربية والتورت',
+    'صالة الكنافة والقطايف',
+    'قسم النواشف والكرواسون والبتيفور'
+  ];
+
+  const [items, setItems] = useState<ItemDto[]>([
+    {
+      id: 1,
+      itemCode: '302021',
+      itemName: 'تورتة 30 * 30 فاخرة',
+      departmentName: 'صالة تصنيع الحلويات الغربية والتورت',
+      basePrice: 380,
+      unit: 'قطعة',
+      barcode: '622100101',
+      isVariant: true,
+      isMerged: false,
+      isContainer: false,
+      multiUom: true,
+      hideDetailPrint: false,
+      active: true
+    },
+    {
+      id: 2,
+      itemCode: '301015',
+      itemName: 'بسبوسة بالسمن البلدي والمكسرات',
+      departmentName: 'صالة تصنيع الحلويات الشرقية',
+      basePrice: 190,
+      unit: 'كجم',
+      barcode: '622100102',
+      isVariant: true,
+      isMerged: false,
+      isContainer: false,
+      multiUom: true,
+      hideDetailPrint: false,
+      active: true
+    },
+    {
+      id: 3,
+      itemCode: '303040',
+      itemName: 'صاج مشكل شرقي فاخر',
+      departmentName: 'صالة تصنيع الحلويات الشرقية',
+      basePrice: 1250,
+      unit: 'صاج',
+      barcode: '622100103',
+      isVariant: false,
+      isMerged: true,
+      isContainer: true,
+      multiUom: false,
+      hideDetailPrint: false,
+      active: true
+    }
+  ]);
+
+  const [allVariants, setAllVariants] = useState<ItemVariantDto[]>([
+    { id: 101, parentItemId: 1, itemCode: '302021-1', itemName: 'نصفين (شيكولاتة + فواكه)', price: 390, barcode: '622100101-1' },
+    { id: 102, parentItemId: 1, itemCode: '302021-2', itemName: 'شيكولاتة كيت كات ومكسرات', price: 420, barcode: '622100101-2' },
+    { id: 103, parentItemId: 2, itemCode: '301015-1', itemName: 'سادة مرملة بالسمن البلدي', price: 160, barcode: '622100102-1' },
+    { id: 104, parentItemId: 2, itemCode: '301015-2', itemName: 'مكسرات بندق وفستق فاخر', price: 210, barcode: '622100102-2' }
+  ]);
+
+  const [allConversions, setAllConversions] = useState<UomConversionDto[]>([
+    { id: 201, itemId: 1, fromUnit: 'بلكة', toUnit: 'قطعة', conversionFactor: 48, notes: 'تعبئة صالة الجاتوه والتورت القياسية' },
+    { id: 202, itemId: 2, fromUnit: 'صاج', toUnit: 'كجم', conversionFactor: 6.5, notes: 'وزن صاج البسبوسة النمطي' }
+  ]);
+
+  // Modal Workstation State
+  const [showWorkstationModal, setShowWorkstationModal] = useState(false);
+  const [isNewItemMode, setIsNewItemMode] = useState(false);
+  const [activeTabModal, setActiveTabModal] = useState<1 | 2 | 3>(1);
   const [activeItem, setActiveItem] = useState<ItemDto>({
     id: 0,
     itemCode: '',
     itemName: '',
-    itemType: 'منتج تام',
-    unit: 'قطعة',
-    active: true,
+    departmentName: departmentsList[0],
     basePrice: 0,
-    departmentName: ''
+    unit: 'قطعة',
+    barcode: '',
+    isVariant: true,
+    isMerged: false,
+    isContainer: false,
+    multiUom: true,
+    hideDetailPrint: false,
+    active: true
   });
-  const [currentItemVariants, setCurrentItemVariants] = useState<ItemVariantDto[]>([]);
-  const [currentItemConversions, setCurrentItemConversions] = useState<UomConversionDto[]>([]);
-  const [modalMessage, setModalMessage] = useState<string | null>(null);
-  const [isModalError, setIsModalError] = useState<boolean>(false);
-  const [isSavingMaster, setIsSavingMaster] = useState<boolean>(false);
 
-  // Variant Form
-  const [newVariantName, setNewVariantName] = useState<string>('');
-  const [newVariantCode, setNewVariantCode] = useState<string>('');
+  // Variant Input Form
+  const [newVariantName, setNewVariantName] = useState('');
+  const [newVariantCode, setNewVariantCode] = useState('');
   const [newVariantPrice, setNewVariantPrice] = useState<number>(0);
-  const [newVariantBarcode, setNewVariantBarcode] = useState<string>('');
-  const [isSavingVariant, setIsSavingVariant] = useState<boolean>(false);
+  const [newVariantBarcode, setNewVariantBarcode] = useState('');
 
-  // Conversion Form
-  const [newConvToUnit, setNewConvToUnit] = useState<string>('بلكة');
+  // Conversion Input Form
+  const [newConvToUnit, setNewConvToUnit] = useState('بلكة');
   const [newConvFactor, setNewConvFactor] = useState<number>(48);
-  const [newConvNotes, setNewConvNotes] = useState<string>('');
-  const [isSavingConv, setIsSavingConv] = useState<boolean>(false);
+  const [newConvNotes, setNewConvNotes] = useState('');
 
-  // Bulk Import Modal
-  const [showBulkModal, setShowBulkModal] = useState<boolean>(false);
-  const [bulkRawData, setBulkRawData] = useState<string>('');
-  const [bulkStatusMessage, setBulkStatusMessage] = useState<string | null>(null);
-  const [isBulkProcessing, setIsBulkProcessing] = useState<boolean>(false);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const openWorkstation = (item: ItemDto, tab: 1 | 2 | 3) => {
+    setActiveItem({ ...item });
+    setIsNewItemMode(false);
+    setActiveTabModal(tab);
+    setNewVariantName('');
+    setNewVariantCode(`${item.itemCode}-${allVariants.filter(v => v.parentItemId === item.id).length + 1}`);
+    setNewVariantPrice(item.basePrice);
+    setNewVariantBarcode('');
+    setNewConvToUnit('بلكة');
+    setNewConvFactor(48);
+    setNewConvNotes(`معامل تعبئة ${item.itemName}`);
+    setModalMessage(null);
+    setShowWorkstationModal(true);
+  };
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchFinishedGoodsCatalogApi();
-      setItems(data.items);
-      setAllVariants(data.variants);
-      setAllConversions(data.conversions);
-      setDepartmentsList(data.departments);
-    } catch (ex: any) {
-      setPageMessage('خطأ في تحميل البيانات: ' + ex.message);
-      setIsPageError(true);
-    } finally {
-      setIsLoading(false);
+  const openNewItemModal = () => {
+    setActiveItem({
+      id: Date.now(),
+      itemCode: `PRD-${Math.floor(1000 + Math.random() * 9000)}`,
+      itemName: '',
+      departmentName: departmentsList[0],
+      basePrice: 100,
+      unit: 'قطعة',
+      barcode: '',
+      isVariant: true,
+      isMerged: false,
+      isContainer: false,
+      multiUom: true,
+      hideDetailPrint: false,
+      active: true
+    });
+    setIsNewItemMode(true);
+    setActiveTabModal(1);
+    setModalMessage(null);
+    setShowWorkstationModal(true);
+  };
+
+  const handleSaveActiveItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeItem.itemCode || !activeItem.itemName) {
+      setModalMessage('⚠️ يرجى كتابة كود واسم المنتج التام.');
+      return;
     }
+
+    if (isNewItemMode) {
+      setItems([...items, activeItem]);
+      setIsNewItemMode(false);
+      setModalMessage('✅ تم حفظ بيانات المنتج بنجاح! يمكنك الآن إضافة النكهات ومصفوفة التعبئة.');
+    } else {
+      setItems(items.map(i => i.id === activeItem.id ? activeItem : i));
+      setModalMessage('✅ تم تحديث بيانات المنتج بنجاح!');
+    }
+  };
+
+  const handleAddVariant = () => {
+    if (!newVariantName.trim()) return;
+    const created: ItemVariantDto = {
+      id: Date.now(),
+      parentItemId: activeItem.id,
+      itemCode: newVariantCode.trim() || `${activeItem.itemCode}-${allVariants.length + 1}`,
+      itemName: newVariantName.trim(),
+      price: newVariantPrice > 0 ? newVariantPrice : activeItem.basePrice,
+      barcode: newVariantBarcode.trim()
+    };
+    setAllVariants([...allVariants, created]);
+    setNewVariantName('');
+    setNewVariantCode(`${activeItem.itemCode}-${allVariants.filter(v => v.parentItemId === activeItem.id).length + 2}`);
+    setNewVariantBarcode('');
+    setModalMessage('✅ تم إضافة النكهة بنجاح!');
+  };
+
+  const handleAddConversion = () => {
+    if (!newConvToUnit.trim() || newConvFactor <= 0) return;
+    const created: UomConversionDto = {
+      id: Date.now(),
+      itemId: activeItem.id,
+      fromUnit: newConvToUnit.trim(),
+      toUnit: activeItem.unit,
+      conversionFactor: newConvFactor,
+      notes: newConvNotes.trim()
+    };
+    setAllConversions([...allConversions, created]);
+    setNewConvNotes('');
+    setModalMessage('✅ تم حفظ معامل التحويل بنجاح!');
   };
 
   const filteredItems = useMemo(() => {
@@ -115,462 +245,243 @@ export const FinishedGoodsCatalogPage: React.FC<FinishedGoodsCatalogPageProps> =
       return (
         i.itemName.toLowerCase().includes(term) ||
         i.itemCode.toLowerCase().includes(term) ||
-        (i.barcode && i.barcode.toLowerCase().includes(term))
+        (i.barcode && i.barcode.includes(term))
       );
     });
-  }, [items, searchTerm, selectedDepartmentFilter]);
-
-  const openNewItemModal = () => {
-    setIsNewItemMode(true);
-    setActiveTabModal(1);
-    setModalMessage(null);
-    setActiveItem({
-      id: 0,
-      itemCode: `PRD-${Math.floor(1000 + Math.random() * 9000)}`,
-      itemName: '',
-      itemType: 'منتج تام',
-      unit: 'قطعة',
-      active: true,
-      hasExpiryDate: true,
-      shelfLifeDays: 4,
-      isVariant: true,
-      basePrice: 0,
-      departmentName: departmentsList[0]?.displayName || 'صالة تصنيع الحلويات الشرقية'
-    });
-    setCurrentItemVariants([]);
-    setCurrentItemConversions([]);
-    setShowWorkstationModal(true);
-  };
-
-  const openItemWorkstation = (item: ItemDto, targetTab: number) => {
-    setIsNewItemMode(false);
-    setActiveTabModal(targetTab);
-    setModalMessage(null);
-    setActiveItem({ ...item });
-
-    const vars = allVariants.filter(
-      v => v.parentItemId === item.id || (item.itemCode && v.itemCode.startsWith(`${item.itemCode}-`))
-    );
-    const convs = allConversions.filter(c => c.itemId === item.id);
-
-    setCurrentItemVariants(vars);
-    setCurrentItemConversions(convs);
-
-    setNewVariantName('');
-    setNewVariantCode(`${item.itemCode}-${vars.length + 1}`);
-    setNewVariantPrice(item.basePrice);
-    setNewVariantBarcode('');
-
-    setShowWorkstationModal(true);
-  };
-
-  const handleSaveActiveItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeItem.itemCode.trim() || !activeItem.itemName.trim()) {
-      setModalMessage('يرجى كتابة كود واسم المنتج التام.');
-      setIsModalError(true);
-      return;
-    }
-
-    setIsSavingMaster(true);
-    setModalMessage(null);
-
-    try {
-      await saveItemCatalogApi(activeItem);
-      setItems(prev => {
-        if (activeItem.id > 0) {
-          return prev.map(i => (i.id === activeItem.id ? { ...activeItem } : i));
-        }
-        return [{ ...activeItem, id: Date.now() }, ...prev];
-      });
-
-      setModalMessage('✅ تم حفظ بيانات المنتج بنجاح!');
-      setIsModalError(false);
-      setIsNewItemMode(false);
-    } finally {
-      setIsSavingMaster(false);
-    }
-  };
-
-  const handleAddVariant = async () => {
-    if (!newVariantName.trim()) return;
-
-    setIsSavingVariant(true);
-    setModalMessage(null);
-
-    try {
-      const code = newVariantCode.trim() || `${activeItem.itemCode}-${currentItemVariants.length + 1}`;
-      const newVar: ItemVariantDto = {
-        id: Date.now(),
-        parentItemId: activeItem.id,
-        itemCode: code,
-        itemName: newVariantName.trim(),
-        price: newVariantPrice > 0 ? newVariantPrice : activeItem.basePrice,
-        barcode: newVariantBarcode.trim(),
-        unit: activeItem.unit,
-        active: true
-      };
-
-      await saveItemVariantApi({
-        parentItemId: activeItem.id,
-        variantCode: code,
-        variantName: newVariantName.trim(),
-        price: newVariantPrice > 0 ? newVariantPrice : activeItem.basePrice,
-        barcode: newVariantBarcode.trim(),
-        unit: activeItem.unit
-      });
-
-      setAllVariants(prev => [...prev, newVar]);
-      setCurrentItemVariants(prev => [...prev, newVar]);
-
-      setModalMessage('✅ تم إضافة النكهة بنجاح!');
-      setIsModalError(false);
-
-      setNewVariantName('');
-      setNewVariantCode(`${activeItem.itemCode}-${currentItemVariants.length + 2}`);
-      setNewVariantBarcode('');
-    } finally {
-      setIsSavingVariant(false);
-    }
-  };
-
-  const handleAddConversion = async () => {
-    if (!newConvToUnit.trim() || newConvFactor <= 0) return;
-
-    setIsSavingConv(true);
-    setModalMessage(null);
-
-    try {
-      const newConv: UomConversionDto = {
-        id: Date.now(),
-        itemId: activeItem.id,
-        fromUnit: newConvToUnit.trim(),
-        toUnit: activeItem.unit.trim(),
-        conversionFactor: newConvFactor,
-        notes: newConvNotes.trim() || `معامل تعبئة ${activeItem.itemName}`
-      };
-
-      await saveUomConversionApi({
-        itemId: activeItem.id,
-        fromUnit: newConvToUnit.trim(),
-        toUnit: activeItem.unit.trim(),
-        conversionFactor: newConvFactor,
-        notes: newConvNotes.trim()
-      });
-
-      setAllConversions(prev => [...prev, newConv]);
-      setCurrentItemConversions(prev => [...prev, newConv]);
-
-      setModalMessage('✅ تم حفظ معامل التحويل بنجاح!');
-      setIsModalError(false);
-      setNewConvNotes('');
-    } finally {
-      setIsSavingConv(false);
-    }
-  };
-
-  const handleBulkImport = async () => {
-    if (!bulkRawData.trim()) return;
-
-    setIsBulkProcessing(true);
-    setBulkStatusMessage(null);
-
-    try {
-      const res = await executeBulkImportApi(bulkRawData);
-      setBulkStatusMessage(res.message);
-      setBulkRawData('');
-      await loadData();
-    } finally {
-      setIsBulkProcessing(false);
-    }
-  };
+  }, [items, selectedDepartmentFilter, searchTerm]);
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      {/* الشريط العلوي */}
-      <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-xs border border-slate-800 mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div className="p-6 min-h-screen font-sans bg-slate-100/70 dark:bg-black transition-colors" dir="rtl">
+      {/* الشريط العلوي التنفيذي */}
+      <div className="bg-white dark:bg-[#0c0d11] p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
-              <Cake className="w-6 h-6 text-amber-400" />
+            <h1 className="text-xl font-black text-gray-900 dark:text-amber-400 flex items-center gap-2">
+              <Cake className="w-6 h-6 text-amber-500" />
               <span>كتالوج المنتجات التامة والحلويات (Finished Goods Catalog)</span>
             </h1>
-            <span className="bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-md text-[10px] font-black">
-              إدارة الأصناف والأسعار والنكهات
+            <span className="bg-amber-400/20 text-amber-700 dark:text-amber-400 border border-amber-400/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              إدارة الأصناف والأسعار والتكتيل
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
             إدارة أصناف الحلويات، الأسعار، شجرة النكهات والتفريعات (Variants)، ومصفوفة التعبئة.
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setBulkStatusMessage(null);
-              setBulkRawData('');
-              setShowBulkModal(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs border border-slate-700 shadow-xs transition-colors"
-          >
-            <Boxes className="w-4 h-4 text-cyan-400" />
-            <span>استيراد سريع (Bulk)</span>
-          </button>
-          <button
-            onClick={openNewItemModal}
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-xs transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>إضافة منتج تام جديد</span>
-          </button>
-        </div>
+        <button
+          onClick={openNewItemModal}
+          className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-sm transition-all"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>+ إضافة منتج تام جديد</span>
+        </button>
       </div>
 
-      {pageMessage && (
-        <div className={`mb-4 p-3 rounded-xl text-xs font-bold flex items-center justify-between border ${isPageError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-          <span className="flex items-center gap-2">
-            {isPageError ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-            {pageMessage}
-          </span>
-          <button onClick={() => setPageMessage(null)}>×</button>
-        </div>
-      )}
-
       {/* شريط البحث والفلترة */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-xs mb-6 flex flex-wrap items-center gap-3 text-xs">
-        <div className="relative flex-1 min-w-[240px]">
+      <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="relative flex-1 min-w-[260px]">
           <Search className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
           <input
             type="text"
             placeholder="بحث بالاسم أو الكود أو الباركود..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:border-indigo-600 font-medium"
+            className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9 pl-3 py-2 outline-none font-bold text-gray-800 dark:text-zinc-200"
           />
         </div>
 
         <select
           value={selectedDepartmentFilter}
           onChange={(e) => setSelectedDepartmentFilter(e.target.value)}
-          className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700 outline-none"
+          className="bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-2 font-bold outline-none text-gray-700 dark:text-zinc-300"
         >
           <option value="">-- كل الصالات والأقسام الإنتاجية --</option>
-          {departmentsList.map(dept => (
-            <option key={dept.id} value={dept.displayName}>{dept.displayName}</option>
+          {departmentsList.map(d => (
+            <option key={d} value={d}>{d}</option>
           ))}
         </select>
 
-        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-3 py-2 rounded-xl">
+        <span className="bg-indigo-50 dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-zinc-800 px-3 py-1.5 rounded-xl font-mono font-bold">
           إجمالي المنتجات: {filteredItems.length}
         </span>
       </div>
 
       {/* جدول عرض المنتجات التامة */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
-        <table className="w-full text-center">
-          <thead className="bg-slate-900 text-white">
-            <tr>
-              <th className="py-2.5 px-3">كود الصنف</th>
-              <th className="py-2.5 px-3 text-right">اسم المنتج التام</th>
-              <th className="py-2.5 px-3">القسم / الصالة</th>
-              <th className="py-2.5 px-3">سعر البيع الأساسي</th>
-              <th className="py-2.5 px-3">الوحدة</th>
-              <th className="py-2.5 px-3">شجرة النكهات (Variants)</th>
-              <th className="py-2.5 px-3">معامل التعبئة</th>
-              <th className="py-2.5 px-3">الحالة</th>
-              <th className="py-2.5 px-3">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading ? (
+      <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-center">
+            <thead className="bg-slate-50 dark:bg-zinc-900/70 text-gray-600 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
               <tr>
-                <td colSpan={9} className="py-8 text-center text-gray-400 font-bold">
-                  جاري تحميل كتالوج المنتجات التامة...
-                </td>
+                <th className="py-3 px-3">كود الصنف</th>
+                <th className="py-3 px-3 text-right">اسم المنتج التام</th>
+                <th className="py-3 px-3">القسم / الصالة</th>
+                <th className="py-3 px-3">سعر البيع الأساسي</th>
+                <th className="py-3 px-3">الوحدة</th>
+                <th className="py-3 px-3">شجرة النكهات (Variants)</th>
+                <th className="py-3 px-3">معامل التعبئة</th>
+                <th className="py-3 px-3">الحالة</th>
+                <th className="py-3 px-3">إجراءات</th>
               </tr>
-            ) : filteredItems.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-8 text-center text-gray-400 font-bold">
-                  ⚠️ لا توجد منتجات تامة مسجلة مطابقة للبحث.
-                </td>
-              </tr>
-            ) : (
-              filteredItems.map(item => {
-                const varCount = allVariants.filter(
-                  v => v.parentItemId === item.id || (item.itemCode && v.itemCode.startsWith(`${item.itemCode}-`))
-                ).length;
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+              {filteredItems.map(item => {
+                const varCount = allVariants.filter(v => v.parentItemId === item.id).length;
                 const conv = allConversions.find(c => c.itemId === item.id);
 
                 return (
-                  <tr key={item.id} className={`hover:bg-slate-50 ${item.active ? '' : 'bg-slate-50/60 opacity-70'}`}>
-                    <td className="py-2.5 px-3 font-mono font-bold text-indigo-700">{item.itemCode}</td>
-                    <td className="py-2.5 px-3 text-right font-bold text-gray-900">
-                      <span>{item.itemName}</span>
-                      {item.isMerged && (
-                        <span className="bg-cyan-50 text-cyan-800 border border-cyan-200 px-1.5 py-0.2 rounded text-[10px] mr-1.5 font-bold">
-                          مدمج
-                        </span>
-                      )}
-                      {item.isContainer && (
-                        <span className="bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded text-[10px] mr-1.5 font-bold">
-                          حاوية
-                        </span>
-                      )}
-                      {item.multiUom && (
-                        <span className="bg-slate-100 text-slate-700 border border-slate-300 px-1.5 py-0.2 rounded text-[10px] mr-1.5 font-bold">
-                          متعدد وحدات
-                        </span>
-                      )}
+                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{item.itemCode}</td>
+                    <td className="py-3 px-3 text-right">
+                      <span className="font-bold text-gray-900 dark:text-zinc-100 block">{item.itemName}</span>
+                      <div className="flex gap-1 mt-0.5">
+                        {item.isMerged && <span className="bg-cyan-500/10 text-cyan-600 text-[9px] px-1.5 py-0.2 rounded font-bold">مدمج</span>}
+                        {item.isContainer && <span className="bg-amber-500/10 text-amber-600 text-[9px] px-1.5 py-0.2 rounded font-bold">حاوية</span>}
+                        {item.multiUom && <span className="bg-slate-100 dark:bg-zinc-800 text-gray-400 text-[9px] px-1.5 py-0.2 rounded font-bold">متعدد وحدات</span>}
+                      </div>
                     </td>
-                    <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border text-[10px] font-medium">
-                        {item.departmentName || 'غير محدد'}
-                      </span>
+                    <td className="py-3 px-3 text-gray-500 dark:text-zinc-400">{item.departmentName}</td>
+                    <td className="py-3 px-3 font-mono font-bold text-emerald-600">{item.basePrice.toLocaleString()} ج.م</td>
+                    <td className="py-3 px-3 font-bold">{item.unit}</td>
+                    <td className="py-3 px-3">
+                      <button
+                        onClick={() => openWorkstation(item, 2)}
+                        className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg font-bold text-[11px]"
+                      >
+                        🍰 {varCount > 0 ? `${varCount} نكهات / تفريعات` : '➕ إضافة نكهات'}
+                      </button>
                     </td>
-                    <td className="py-2.5 px-3 font-mono font-black text-emerald-700">
-                      {item.basePrice > 0 ? `${item.basePrice.toLocaleString()} ج.م` : '-'}
-                    </td>
-                    <td className="py-2.5 px-3 font-medium text-gray-600">{item.unit}</td>
-                    <td className="py-2.5 px-3">
-                      {varCount > 0 ? (
-                        <button
-                          onClick={() => openItemWorkstation(item, 2)}
-                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded font-bold"
-                        >
-                          🍰 {varCount} نكهات / تفريعات
-                        </button>
+                    <td className="py-3 px-3 font-mono text-[11px]">
+                      {conv ? (
+                        <span className="text-gray-700 dark:text-zinc-300 font-bold">1 {conv.fromUnit} = {conv.conversionFactor} {conv.toUnit}</span>
                       ) : (
-                        <button
-                          onClick={() => openItemWorkstation(item, 2)}
-                          className="px-2 py-0.5 text-gray-400 hover:text-indigo-600 border border-dashed rounded"
-                        >
-                          ➕ إضافة نكهات
-                        </button>
+                        <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-[11px] text-gray-600">
-                      {conv ? `1 ${conv.fromUnit} = ${conv.conversionFactor} ${conv.toUnit}` : '-'}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                    <td className="py-3 px-3">
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${item.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
                         {item.active ? 'مفعل' : 'موقوف'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-3">
                       <button
-                        onClick={() => openItemWorkstation(item, 1)}
-                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-xs"
+                        onClick={() => openWorkstation(item, 1)}
+                        className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold text-xs"
                       >
                         ⚙️ إدارة الصنف
                       </button>
                     </td>
                   </tr>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* نافذة بطاقة الصنف الشاملة (Item Workstation Modal) */}
+      {/* نافذة بطاقة الصنف الشاملة (Item Workstation Modal) بالثيم الداكن الصافي ليلاً والأبيض نهاراً */}
       {showWorkstationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-200 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <h4 className="font-bold flex items-center gap-2">
-                <Cake className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-zinc-800">
+              <h4 className="font-bold flex items-center gap-2 text-amber-400">
+                <Settings className="w-4 h-4" />
                 <span>{isNewItemMode ? '➕ إضافة منتج تام جديد' : `⚙️ بطاقة المنتج: ${activeItem.itemName} (${activeItem.itemCode})`}</span>
               </h4>
-              <button onClick={() => setShowWorkstationModal(false)} className="text-white">×</button>
+              <button onClick={() => setShowWorkstationModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="bg-slate-100 border-b px-4 pt-2 flex gap-2 shrink-0">
+            {/* أزرار التبويبات الثلاثية داخل المودال */}
+            <div className="flex bg-slate-100 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-5 pt-2 gap-2">
               <button
                 onClick={() => setActiveTabModal(1)}
-                className={`px-4 py-2 font-bold rounded-t-xl transition-colors ${activeTabModal === 1 ? 'bg-white text-indigo-700 border-t-2 border-t-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`py-2 px-4 rounded-t-xl font-bold transition-all border-b-2 ${activeTabModal === 1 ? 'border-amber-500 text-amber-500 bg-white dark:bg-[#0c0d11]' : 'border-transparent text-gray-500'}`}
               >
                 📋 1. البيانات الأساسية والأسعار
               </button>
               <button
                 disabled={isNewItemMode}
                 onClick={() => setActiveTabModal(2)}
-                className={`px-4 py-2 font-bold rounded-t-xl transition-colors disabled:opacity-40 ${activeTabModal === 2 ? 'bg-white text-indigo-700 border-t-2 border-t-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`py-2 px-4 rounded-t-xl font-bold transition-all border-b-2 ${activeTabModal === 2 ? 'border-amber-500 text-amber-500 bg-white dark:bg-[#0c0d11]' : 'border-transparent text-gray-500 disabled:opacity-40'}`}
               >
-                🍰 2. شجرة النكهات ({currentItemVariants.length})
+                🍰 2. شجرة النكهات والتفريعات ({allVariants.filter(v => v.parentItemId === activeItem.id).length})
               </button>
               <button
                 disabled={isNewItemMode}
                 onClick={() => setActiveTabModal(3)}
-                className={`px-4 py-2 font-bold rounded-t-xl transition-colors disabled:opacity-40 ${activeTabModal === 3 ? 'bg-white text-indigo-700 border-t-2 border-t-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`py-2 px-4 rounded-t-xl font-bold transition-all border-b-2 ${activeTabModal === 3 ? 'border-amber-500 text-amber-500 bg-white dark:bg-[#0c0d11]' : 'border-transparent text-gray-500 disabled:opacity-40'}`}
               >
-                ⚖️ 3. مصفوفة التحويل والتعبئة
+                ⚖️ 3. مصفوفة التحويل والتعبئة (UoM)
               </button>
             </div>
 
-            <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-white">
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
               {modalMessage && (
-                <div className={`p-3 rounded-xl font-bold flex items-center justify-between border ${isModalError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                  <span>{modalMessage}</span>
-                  <button onClick={() => setModalMessage(null)}>×</button>
+                <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold">
+                  {modalMessage}
                 </div>
               )}
 
-              {/* Tab 1: البيانات الأساسية */}
+              {/* التبويب 1: البيانات الأساسية والأسعار */}
               {activeTabModal === 1 && (
                 <form onSubmit={handleSaveActiveItem} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">كود الصنف الأساسي *</label>
+                      <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">كود الصنف الأساسي *</label>
                       <input
                         type="text"
                         required
                         value={activeItem.itemCode}
                         onChange={(e) => setActiveItem({ ...activeItem, itemCode: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-mono font-bold text-indigo-700"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono font-bold"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-gray-700 font-bold mb-1">اسم المنتج التام *</label>
+                      <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">اسم المنتج التام *</label>
                       <input
                         type="text"
                         required
                         value={activeItem.itemName}
                         onChange={(e) => setActiveItem({ ...activeItem, itemName: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 font-bold mb-1">القسم الإنتاجي / الصالة *</label>
-                      <select
-                        value={activeItem.departmentName || ''}
-                        onChange={(e) => setActiveItem({ ...activeItem, departmentName: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold"
-                      >
-                        {departmentsList.map(dept => (
-                          <option key={dept.id} value={dept.displayName}>{dept.displayName}</option>
-                        ))}
-                      </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">سعر البيع الأساسي (ج.م) *</label>
+                      <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">القسم / الصالة *</label>
+                      <select
+                        value={activeItem.departmentName}
+                        onChange={(e) => setActiveItem({ ...activeItem, departmentName: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
+                      >
+                        {departmentsList.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">سعر البيع الأساسي (ج.م) *</label>
                       <input
                         type="number"
                         step="0.01"
                         required
-                        value={activeItem.basePrice || ''}
+                        value={activeItem.basePrice}
                         onChange={(e) => setActiveItem({ ...activeItem, basePrice: Number(e.target.value) })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-mono font-black text-emerald-700 text-center"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono font-bold text-emerald-600"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">وحدة الصنف الأساسية *</label>
+                      <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">وحدة الصنف الأساسية *</label>
                       <select
                         value={activeItem.unit}
                         onChange={(e) => setActiveItem({ ...activeItem, unit: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                       >
                         <option value="قطعة">قطعة</option>
                         <option value="علبة">علبة</option>
@@ -579,57 +490,52 @@ export const FinishedGoodsCatalogPage: React.FC<FinishedGoodsCatalogPageProps> =
                         <option value="كجم">كجم</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-gray-700 font-bold mb-1">الباركود</label>
-                      <input
-                        type="text"
-                        value={activeItem.barcode || ''}
-                        onChange={(e) => setActiveItem({ ...activeItem, barcode: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-mono"
-                      />
-                    </div>
                   </div>
 
                   {/* خصائص التشغيل والمطابقة */}
-                  <div className="p-4 bg-slate-50 rounded-xl border border-gray-200">
-                    <h6 className="font-bold text-indigo-700 mb-3">⚙️ خصائص التشغيل والمطابقة</h6>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 bg-slate-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-2">
+                    <span className="font-bold text-gray-800 dark:text-zinc-200 block text-[11px]">⚙️ خصائص التشغيل والمطابقة:</span>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={activeItem.isVariant}
                           onChange={(e) => setActiveItem({ ...activeItem, isVariant: e.target.checked })}
-                          className="w-4 h-4 text-indigo-600 rounded"
+                          className="w-4 h-4 text-amber-500 rounded"
                         />
-                        <span className="font-bold text-gray-700">صنف متنوع (له نكهات وتفريعات)</span>
+                        <span className="font-bold text-gray-700 dark:text-zinc-300">صنف متنوع (له نكهات)</span>
                       </label>
+
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={activeItem.isMerged}
                           onChange={(e) => setActiveItem({ ...activeItem, isMerged: e.target.checked })}
-                          className="w-4 h-4 text-indigo-600 rounded"
+                          className="w-4 h-4 text-amber-500 rounded"
                         />
-                        <span className="font-bold text-gray-700">مدمج (صاجات / أطباق مشكلة)</span>
+                        <span className="font-bold text-gray-700 dark:text-zinc-300">مدمج (صاجات / أطباق مشكلة)</span>
                       </label>
+
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={activeItem.multiUom}
                           onChange={(e) => setActiveItem({ ...activeItem, multiUom: e.target.checked })}
-                          className="w-4 h-4 text-indigo-600 rounded"
+                          className="w-4 h-4 text-amber-500 rounded"
                         />
-                        <span className="font-bold text-gray-700">متعدد الوحدات (قطعة وبلكة/وزن)</span>
+                        <span className="font-bold text-gray-700 dark:text-zinc-300">متعدد الوحدات (قطعة وبلكة)</span>
                       </label>
+
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={activeItem.isContainer}
                           onChange={(e) => setActiveItem({ ...activeItem, isContainer: e.target.checked })}
-                          className="w-4 h-4 text-indigo-600 rounded"
+                          className="w-4 h-4 text-amber-500 rounded"
                         />
-                        <span className="font-bold text-gray-700">صنف حاوية / وعاء نقل (سبت / صينية)</span>
+                        <span className="font-bold text-gray-700 dark:text-zinc-300">صنف حاوية (سبت / صينية)</span>
                       </label>
+
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -637,7 +543,7 @@ export const FinishedGoodsCatalogPage: React.FC<FinishedGoodsCatalogPageProps> =
                           onChange={(e) => setActiveItem({ ...activeItem, active: e.target.checked })}
                           className="w-4 h-4 text-emerald-600 rounded"
                         />
-                        <span className="font-bold text-emerald-800">الصنف مفعّل وجاهز للتشغيل والبيع</span>
+                        <span className="font-bold text-emerald-600">الصنف مفعّل وجاهز للبيع</span>
                       </label>
                     </div>
                   </div>
@@ -645,252 +551,177 @@ export const FinishedGoodsCatalogPage: React.FC<FinishedGoodsCatalogPageProps> =
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      disabled={isSavingMaster}
-                      className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs"
+                      className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-sm"
                     >
-                      {isSavingMaster ? '⏳ جاري الحفظ...' : '💾 حفظ بيانات الصنف'}
+                      💾 حفظ بيانات الصنف
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* Tab 2: شجرة النكهات */}
+              {/* التبويب 2: شجرة النكهات والتفريعات */}
               {activeTabModal === 2 && (
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-4 p-4 bg-slate-50 rounded-xl border border-gray-200 space-y-3">
-                    <h6 className="font-bold text-indigo-700">➕ إضافة نكهة / تفرع جديد</h6>
+                  <div className="md:col-span-5 p-3 bg-slate-50 dark:bg-zinc-900/50 rounded-xl border space-y-2">
+                    <span className="font-bold text-gray-800 dark:text-zinc-200 block">➕ إضافة نكهة / تفرع جديد:</span>
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">اسم النكهة / التفرع *</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">اسم النكهة / التفرع *</label>
                       <input
                         type="text"
-                        placeholder="مثلاً: شيكولاتة، فواكه، لوتس..."
+                        placeholder="مثلاً: شيكولاتة، نصفين، كريمة..."
                         value={newVariantName}
                         onChange={(e) => setNewVariantName(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-bold"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-bold"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">كود التفرع الفريد</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">كود التفرع الفريد</label>
                       <input
                         type="text"
                         value={newVariantCode}
                         onChange={(e) => setNewVariantCode(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-mono"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-mono font-bold"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">سعر البيع للتفرع (ج.م)</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">سعر البيع للتفرع (ج.م)</label>
                       <input
                         type="number"
                         step="0.01"
-                        value={newVariantPrice || ''}
+                        value={newVariantPrice}
                         onChange={(e) => setNewVariantPrice(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-mono text-center font-bold text-emerald-700"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-mono font-bold text-emerald-600"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">الباركود الخاص بالنكهة</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">الباركود الخاص بالنكهة</label>
                       <input
                         type="text"
                         value={newVariantBarcode}
                         onChange={(e) => setNewVariantBarcode(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-mono"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-mono"
                       />
                     </div>
+
                     <button
+                      type="button"
                       onClick={handleAddVariant}
-                      disabled={isSavingVariant || !newVariantName.trim()}
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs"
+                      disabled={!newVariantName.trim()}
+                      className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg disabled:opacity-50"
                     >
-                      {isSavingVariant ? '⏳ جاري الحفظ...' : '💾 حفظ النكهة للصنف'}
+                      💾 حفظ النكهة للصنف
                     </button>
                   </div>
 
-                  <div className="md:col-span-8">
-                    <h6 className="font-bold text-gray-800 mb-2">🍰 قائمة نكهات وتفريعات الصنف المسجلة:</h6>
-                    <div className="border rounded-xl overflow-hidden">
-                      <table className="w-full text-center">
-                        <thead className="bg-slate-100 text-gray-700">
-                          <tr>
-                            <th className="py-2 px-3">كود التفرع</th>
-                            <th className="py-2 px-3 text-right">اسم النكهة</th>
-                            <th className="py-2 px-3">السعر</th>
-                            <th className="py-2 px-3">الباركود</th>
-                            <th className="py-2 px-3">الحالة</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {currentItemVariants.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-6 text-gray-400 font-bold">
-                                لم يتم تسجيل تفريعات لهذا الصنف حتى الآن.
-                              </td>
+                  <div className="md:col-span-7">
+                    <span className="font-bold text-gray-800 dark:text-zinc-200 block mb-2">🍰 قائمة النكهات المسجلة للصنف:</span>
+                    <table className="w-full text-center border bg-white dark:bg-[#0c0d11] rounded-xl overflow-hidden">
+                      <thead className="bg-slate-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400">
+                        <tr>
+                          <th className="py-2 px-3">كود التفرع</th>
+                          <th className="py-2 px-3 text-right">اسم النكهة</th>
+                          <th className="py-2 px-3">السعر</th>
+                          <th className="py-2 px-3">الباركود</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {allVariants.filter(v => v.parentItemId === activeItem.id).length === 0 ? (
+                          <tr><td colSpan={4} className="py-4 text-gray-400">لم يتم تسجيل نكهات لهذا الصنف حتى الآن.</td></tr>
+                        ) : (
+                          allVariants.filter(v => v.parentItemId === activeItem.id).map(v => (
+                            <tr key={v.id}>
+                              <td className="py-2 px-3 font-mono font-bold text-gray-400">{v.itemCode}</td>
+                              <td className="py-2 px-3 text-right font-bold text-indigo-600 dark:text-amber-400">{v.itemName}</td>
+                              <td className="py-2 px-3 font-mono font-bold text-emerald-600">{v.price} ج.م</td>
+                              <td className="py-2 px-3 font-mono text-[10px]">{v.barcode || '-'}</td>
                             </tr>
-                          ) : (
-                            currentItemVariants.map(v => (
-                              <tr key={v.id}>
-                                <td className="py-2 px-3 font-mono font-bold text-indigo-700">{v.itemCode}</td>
-                                <td className="py-2 px-3 text-right font-bold text-gray-900">{v.itemName}</td>
-                                <td className="py-2 px-3 font-mono font-bold text-emerald-700">{v.price.toLocaleString()} ج.م</td>
-                                <td className="py-2 px-3 font-mono text-gray-500">{v.barcode || '-'}</td>
-                                <td className="py-2 px-3">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                                    مفعل
-                                  </span>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
 
-              {/* Tab 3: مصفوفة التحويل والتعبئة */}
+              {/* التبويب 3: مصفوفة التحويل والتعبئة (UoM) */}
               {activeTabModal === 3 && (
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-5 p-4 bg-slate-50 rounded-xl border border-gray-200 space-y-3">
-                    <h6 className="font-bold text-indigo-700">⚖️ ضبط معامل تعبئة جديد لهذا الصنف</h6>
+                  <div className="md:col-span-5 p-3 bg-slate-50 dark:bg-zinc-900/50 rounded-xl border space-y-2">
+                    <span className="font-bold text-gray-800 dark:text-zinc-200 block">⚖️ ضبط معامل تعبئة جديد:</span>
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">الوحدة الكبرى (وحدة التعبئة) *</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">الوحدة الكبرى (وحدة التعبئة) *</label>
                       <input
                         type="text"
                         placeholder="مثلاً: بلكة، صاج، كرتونة..."
                         value={newConvToUnit}
                         onChange={(e) => setNewConvToUnit(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-bold"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-bold"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">تحتوي على عدد من ({activeItem.unit}) *</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">تحتوي على عدد من ({activeItem.unit}) *</label>
                       <input
                         type="number"
-                        min={1}
+                        step="0.01"
+                        min={0.1}
                         value={newConvFactor}
                         onChange={(e) => setNewConvFactor(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl font-mono text-center font-bold text-indigo-700"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg font-mono font-bold text-center text-amber-500"
                       />
-                      <small className="text-gray-400 block mt-0.5">مثال: 48 (أي أن 1 بلكة = 48 قطعة)</small>
+                      <small className="text-gray-400 text-[9px]">مثال: 48 (أي أن 1 بلكة = 48 قطعة)</small>
                     </div>
+
                     <div>
-                      <label className="block text-gray-700 font-bold mb-1">ملاحظات التعبئة</label>
+                      <label className="block text-gray-500 text-[10px] mb-1">ملاحظات التعبئة</label>
                       <input
                         type="text"
                         placeholder="مثال: تعبئة صالة الجاتوه القياسية..."
                         value={newConvNotes}
                         onChange={(e) => setNewConvNotes(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border rounded-xl"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-[#0c0d11] border rounded-lg text-[11px]"
                       />
                     </div>
+
                     <button
+                      type="button"
                       onClick={handleAddConversion}
-                      disabled={isSavingConv || !newConvToUnit.trim() || newConvFactor <= 0}
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg"
                     >
-                      {isSavingConv ? '⏳ جاري الحفظ...' : '💾 اعتماد معامل التحويل'}
+                      💾 اعتماد معامل التحويل
                     </button>
                   </div>
 
                   <div className="md:col-span-7">
-                    <h6 className="font-bold text-gray-800 mb-2">مصفوفة وحدات التعبئة المعتمدة للصنف:</h6>
-                    <div className="border rounded-xl overflow-hidden">
-                      <table className="w-full text-center">
-                        <thead className="bg-slate-100 text-gray-700">
-                          <tr>
-                            <th className="py-2 px-3">معادلة التحويل</th>
-                            <th className="py-2 px-3">المعامل الرياضي</th>
-                            <th className="py-2 px-3 text-right">ملاحظات</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {currentItemConversions.length === 0 ? (
-                            <tr>
-                              <td colSpan={3} className="py-6 text-gray-400 font-bold">
-                                لا توجد معاملات تحويل خاصة بهذا الصنف. يتعامل بوحدته الأساسية ({activeItem.unit}) فقط.
-                              </td>
+                    <span className="font-bold text-gray-800 dark:text-zinc-200 block mb-2">مصفوفة وحدات التعبئة المعتمدة للصنف:</span>
+                    <table className="w-full text-center border bg-white dark:bg-[#0c0d11] rounded-xl overflow-hidden">
+                      <thead className="bg-slate-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400">
+                        <tr>
+                          <th className="py-2 px-3 text-right">معادلة التحويل</th>
+                          <th className="py-2 px-3">المعامل الرياضي</th>
+                          <th className="py-2 px-3 text-right">ملاحظات</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {allConversions.filter(c => c.itemId === activeItem.id).length === 0 ? (
+                          <tr><td colSpan={3} className="py-4 text-gray-400">الصنف يتعامل حالياً بوحدته الأساسية ({activeItem.unit}) فقط.</td></tr>
+                        ) : (
+                          allConversions.filter(c => c.itemId === activeItem.id).map(c => (
+                            <tr key={c.id}>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-amber-500">1 {c.fromUnit} = {c.conversionFactor} {c.toUnit}</td>
+                              <td className="py-2 px-3 font-mono font-bold">{c.conversionFactor}</td>
+                              <td className="py-2 px-3 text-right text-gray-400 text-[11px]">{c.notes}</td>
                             </tr>
-                          ) : (
-                            currentItemConversions.map(c => (
-                              <tr key={c.id}>
-                                <td className="py-2 px-3 font-mono font-bold text-indigo-700">
-                                  1 {c.fromUnit} = {c.conversionFactor} {c.toUnit}
-                                </td>
-                                <td className="py-2 px-3 font-mono font-bold">{c.conversionFactor}</td>
-                                <td className="py-2 px-3 text-right text-gray-500">{c.notes || '-'}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
-            </div>
-
-            <div className="p-3 bg-gray-50 border-t flex justify-end shrink-0">
-              <button
-                onClick={() => setShowWorkstationModal(false)}
-                className="px-5 py-2 bg-slate-800 text-white font-bold rounded-xl text-xs"
-              >
-                إغلاق
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* نافذة الإضافة السريعة (Bulk Import Modal) */}
-      {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 text-xs">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-              <h4 className="font-bold flex items-center gap-2">
-                <Boxes className="w-4 h-4 text-cyan-400" />
-                <span>استيراد دفعات المنتجات التامة (Bulk Quick Import)</span>
-              </h4>
-              <button onClick={() => setShowBulkModal(false)} className="text-white">×</button>
-            </div>
-
-            <div className="p-5 space-y-3 bg-slate-50">
-              <div className="p-3 bg-cyan-50 border border-cyan-200 text-cyan-900 rounded-xl">
-                <strong>ترتيب الأعمدة المطلوب عند اللصق:</strong><br />
-                اسم الصنف | كود الصنف | القسم الإنتاجي | النكهة/التفرع | الوحدة | معامل التحويل | السعر | الباركود
-              </div>
-
-              <textarea
-                rows={8}
-                placeholder="الصق البيانات هنا من شيت الإكسيل..."
-                value={bulkRawData}
-                onChange={(e) => setBulkRawData(e.target.value)}
-                className="w-full p-3 bg-white border border-indigo-200 rounded-xl font-mono text-xs outline-none"
-              ></textarea>
-
-              {bulkStatusMessage && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-bold">
-                  {bulkStatusMessage}
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-2 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowBulkModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="button"
-                  disabled={isBulkProcessing || !bulkRawData.trim()}
-                  onClick={handleBulkImport}
-                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs disabled:opacity-50"
-                >
-                  {isBulkProcessing ? '⏳ جاري المعالجة والحفظ...' : '💾 تحليل وحفظ الكل'}
-                </button>
-              </div>
             </div>
           </div>
         </div>

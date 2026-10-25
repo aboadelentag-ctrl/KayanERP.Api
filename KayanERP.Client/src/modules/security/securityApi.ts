@@ -97,7 +97,7 @@ export const defaultPermissionCatalog: PermissionGroupDto[] = [
     permissions: [
       { code: 'PO.Create', title: 'إصدار أوامر الشراء للموردين', description: 'توليد أمر توريد خامات وفق حد الطلب' },
       { code: 'VendorQC.Rate', title: 'تقييم جودة وتصنيف الموردين', description: 'اعتماد نسب القبول والرفض وشهادات COA' },
-      { code: 'Purchasing.Invoices', title: 'إثبات فواتير الشراء والتسعير', description: 'ترحيل استحقاقات الموردين في الحسابات' },
+      { code: 'Purchasing.Invoices', title: 'إثبات أوامر توريد من الموردين والتسعير', description: 'ترحيل استحقاقات الموردين في الحسابات' },
     ],
   },
   {
@@ -144,7 +144,7 @@ const initialRoles: RoleDto[] = [
     id: 4,
     name: 'CHIEF_ACCOUNTANT',
     displayName: 'محاسب عام ومسؤول خزائن',
-    description: 'إدارة قيود اليومية، سندات القبض والصرف، فواتير الشراء، ومصروفات الغاز',
+    description: 'إدارة قيود اليومية، سندات القبض والصرف، أوامر توريد من الموردين، ومصروفات الغاز',
     permissions: 'Accounts.View,Journal.Post,Treasury.Vouchers,Expenses.Approve,Reports.Financial,Purchasing.Invoices,Stock.View',
     active: true,
     usersCount: 1,
@@ -386,3 +386,4 @@ export const saveUserCustomPermsApi = async (userId: number, permissions: string
   }
   return true;
 };
+

@@ -1,369 +1,424 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
+  BarChart3,
   TrendingUp,
   PlusCircle,
-  Search,
+  Filter,
   CheckCircle2,
-  Award,
   AlertTriangle,
-  Users,
-  Percent,
-  Calendar,
-  Building2
+  Award,
+  Clock,
+  Layers,
+  X,
+  Send,
+  Building2,
+  Search
 } from 'lucide-react';
-import {
-  fetchProductivityLogsApi,
-  fetchProductivityLookupsApi,
-  saveProductivityRecordApi
-} from './productivityApi';
-import type {
-  WorkerProductivityDto,
-  ProductivityLookupsDto
-} from './productivityApi';
+
+export interface WorkerProductivityDto {
+  id: number;
+  department: string;
+  workerName: string;
+  workerCode: string;
+  itemName: string;
+  targetPerHour: number;
+  actualPerHour: number;
+  shift: string;
+  wasteKg: number;
+  bonusAmount: number;
+  date: string;
+}
 
 export const ProductivityPage: React.FC = () => {
-  const [logs, setLogs] = useState<WorkerProductivityDto[]>([]);
-  const [lookups, setLookups] = useState<ProductivityLookupsDto>({
-    departments: [],
-    shifts: [],
-    workers: []
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedDept, setSelectedDept] = useState<string>('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const departmentsList = [
+    'قسم الشرقي',
+    'قسم المخبوزات',
+    'قسم الجاتوه والتورت',
+    'الإسفنجي والنواشف'
+  ];
 
-  // حالة إضافة قيد إنتاجية
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedWorkerCode, setSelectedWorkerCode] = useState<string>('');
-  const [shift, setShift] = useState<'صباحي' | 'مسائي' | 'ليلي'>('صباحي');
-  const [targetOutput, setTargetOutput] = useState<number>(100);
-  const [actualOutput, setActualOutput] = useState<number>(100);
-  const [unit, setUnit] = useState<string>('كجم / صينية');
-  const [wasteQuantity, setWasteQuantity] = useState<number>(0);
-  const [notes, setNotes] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState('قسم الشرقي');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Initial Data directly from Razor logic + enhancements
+  const [allWorkers, setAllWorkers] = useState<WorkerProductivityDto[]>([
+    // قسم الشرقي
+    { id: 1, department: 'قسم الشرقي', workerCode: 'EMP-014', workerName: 'محمود عبد الرازق', itemName: 'بسبوسة سادة بالسمن البلدي', targetPerHour: 50, actualPerHour: 55, shift: 'صباحي', wasteKg: 1.5, bonusAmount: 150, date: '2026-10-24' },
+    { id: 2, department: 'قسم الشرقي', workerCode: 'EMP-022', workerName: 'سامح إبراهيم', itemName: 'كنافة بالكريمة وبورما', targetPerHour: 40, actualPerHour: 36, shift: 'صباحي', wasteKg: 4.0, bonusAmount: 0, date: '2026-10-24' },
+    { id: 3, department: 'قسم الشرقي', workerCode: 'EMP-025', workerName: 'محمود حسن', itemName: 'بقلاوة وأساور مكسرات', targetPerHour: 30, actualPerHour: 22, shift: 'مسائي', wasteKg: 2.2, bonusAmount: 0, date: '2026-10-23' },
+    // قسم المخبوزات
+    { id: 4, department: 'قسم المخبوزات', workerCode: 'EMP-030', workerName: 'إبراهيم علي', itemName: 'باتيه بالجبنة الرومي', targetPerHour: 100, actualPerHour: 100, shift: 'صباحي', wasteKg: 0.5, bonusAmount: 80, date: '2026-10-24' },
+    { id: 5, department: 'قسم المخبوزات', workerCode: 'EMP-031', workerName: 'مصطفى كامل', itemName: 'كرواسون زبدة طبيعي', targetPerHour: 80, actualPerHour: 65, shift: 'صباحي', wasteKg: 1.2, bonusAmount: 0, date: '2026-10-24' },
+    { id: 6, department: 'قسم المخبوزات', workerCode: 'EMP-032', workerName: 'علي جابر', itemName: 'دنش فواكه وشيكولاتة', targetPerHour: 50, actualPerHour: 30, shift: 'مسائي', wasteKg: 2.8, bonusAmount: 0, date: '2026-10-23' },
+    // قسم الجاتوه والتورت
+    { id: 7, department: 'قسم الجاتوه والتورت', workerCode: 'EMP-040', workerName: 'شيف طارق', itemName: 'جاتوه شيكولاتة موس فاخر', targetPerHour: 60, actualPerHour: 65, shift: 'صباحي', wasteKg: 0.8, bonusAmount: 120, date: '2026-10-24' },
+    { id: 8, department: 'قسم الجاتوه والتورت', workerCode: 'EMP-041', workerName: 'علي عثمان', itemName: 'تورتة بلاك فورست 30*30', targetPerHour: 20, actualPerHour: 21, shift: 'مسائي', wasteKg: 0.8, bonusAmount: 80, date: '2026-10-23' }
+  ]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [records, lkps] = await Promise.all([
-        fetchProductivityLogsApi(),
-        fetchProductivityLookupsApi()
-      ]);
-      setLogs(records);
-      setLookups(lkps);
-      if (lkps.workers.length > 0) {
-        setSelectedWorkerCode(lkps.workers[0].code);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  // Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newWorkerName, setNewWorkerName] = useState('محمود عبد الرازق');
+  const [newWorkerCode, setNewWorkerCode] = useState('EMP-014');
+  const [newDepartment, setNewDepartment] = useState('قسم الشرقي');
+  const [newItemName, setNewItemName] = useState('بسبوسة سادة بالسمن البلدي');
+  const [newTargetPerHour, setNewTargetPerHour] = useState<number>(50);
+  const [newActualPerHour, setNewActualPerHour] = useState<number>(55);
+  const [newShift, setNewShift] = useState('صباحي');
+  const [newWasteKg, setNewWasteKg] = useState<number>(1.2);
+  const [newBonusAmount, setNewBonusAmount] = useState<number>(100);
+
+  // Filter Data directly by Department and Search Term
+  const filteredWorkers = useMemo(() => {
+    return allWorkers.filter(w => {
+      const inDept = selectedDepartment === 'الكل' || w.department === selectedDepartment;
+      if (!inDept) return false;
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        w.workerName.toLowerCase().includes(term) ||
+        w.workerCode.toLowerCase().includes(term) ||
+        w.itemName.toLowerCase().includes(term)
+      );
+    });
+  }, [allWorkers, selectedDepartment, searchTerm]);
+
+  // Executive Totals
+  const totalTarget = useMemo(() => filteredWorkers.reduce((sum, w) => sum + w.targetPerHour, 0), [filteredWorkers]);
+  const totalActual = useMemo(() => filteredWorkers.reduce((sum, w) => sum + w.actualPerHour, 0), [filteredWorkers]);
+  const avgEfficiency = useMemo(() => {
+    if (filteredWorkers.length === 0) return 0;
+    const effSum = filteredWorkers.reduce((sum, w) => sum + (w.targetPerHour > 0 ? (w.actualPerHour / w.targetPerHour) * 100 : 0), 0);
+    return Math.round((effSum / filteredWorkers.length) * 10) / 10;
+  }, [filteredWorkers]);
+  const totalWaste = useMemo(() => filteredWorkers.reduce((sum, w) => sum + w.wasteKg, 0), [filteredWorkers]);
+  const totalBonus = useMemo(() => filteredWorkers.reduce((sum, w) => sum + w.bonusAmount, 0), [filteredWorkers]);
+
+  const getEfficiency = (actual: number, target: number) => {
+    return target > 0 ? Math.round((actual / target) * 1000) / 10 : 0;
   };
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      const matchSearch =
-        !searchTerm.trim() ||
-        log.workerName.includes(searchTerm) ||
-        log.workerCode.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchDept = !selectedDept || log.department === selectedDept;
-      return matchSearch && matchDept;
-    });
-  }, [logs, searchTerm, selectedDept]);
+  const getEvaluation = (efficiency: number) => {
+    if (efficiency >= 100) return 'فوق المتوقع';
+    if (efficiency >= 90) return 'ممتاز';
+    return 'يحتاج مراجعة';
+  };
 
-  const avgEfficiency = useMemo(() => {
-    if (logs.length === 0) return 0;
-    const sum = logs.reduce((acc, curr) => acc + curr.efficiencyPercentage, 0);
-    return Number((sum / logs.length).toFixed(1));
-  }, [logs]);
+  const getBadgeClass = (efficiency: number) => {
+    if (efficiency >= 100) return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30';
+    if (efficiency >= 90) return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+    return 'bg-rose-500/10 text-rose-500 border border-rose-500/30';
+  };
 
-  const totalBonuses = useMemo(() => logs.reduce((acc, curr) => acc + curr.bonusAmount, 0), [logs]);
-  const totalWaste = useMemo(() => logs.reduce((acc, curr) => acc + curr.wasteQuantity, 0), [logs]);
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSaveShiftRecord = (e: React.FormEvent) => {
     e.preventDefault();
-    const worker = lookups.workers.find(w => w.code === selectedWorkerCode);
-    if (!worker || targetOutput <= 0) return;
-
-    const eff = Number(((actualOutput / targetOutput) * 100).toFixed(1));
-    const bonus = eff > 100 ? (eff - 100) * 10 : 0;
-    const penalty = eff < 95 ? (95 - eff) * 8 : 0;
-
-    const newRecord: WorkerProductivityDto = {
+    const created: WorkerProductivityDto = {
       id: Date.now(),
-      workerCode: worker.code,
-      workerName: worker.name,
-      department: worker.department,
-      shift,
-      targetOutput: Number(targetOutput),
-      actualOutput: Number(actualOutput),
-      unit,
-      wasteQuantity: Number(wasteQuantity),
-      efficiencyPercentage: eff,
-      bonusAmount: Math.round(bonus),
-      penaltyAmount: Math.round(penalty),
-      date: new Date().toISOString().slice(0, 10),
-      notes
+      department: newDepartment,
+      workerName: newWorkerName,
+      workerCode: newWorkerCode,
+      itemName: newItemName,
+      targetPerHour: Number(newTargetPerHour),
+      actualPerHour: Number(newActualPerHour),
+      shift: newShift,
+      wasteKg: Number(newWasteKg),
+      bonusAmount: Number(newBonusAmount),
+      date: new Date().toISOString().slice(0, 10)
     };
-
-    await saveProductivityRecordApi(newRecord);
-    setLogs(prev => [newRecord, ...prev]);
-    setIsModalOpen(false);
-    setStatusMessage(`تم قيد مؤشر إنتاجية (${worker.name}) واحتساب الحافز آلياً.`);
-    setTimeout(() => setStatusMessage(null), 4000);
+    setAllWorkers([created, ...allWorkers]);
+    setIsAddModalOpen(false);
   };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      {/* الترويسة */}
-      <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-xs border border-slate-800 mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 min-h-screen font-sans bg-slate-100/70 dark:bg-black transition-colors" dir="rtl">
+      {/* رأس الشاشة التنفيذي */}
+      <div className="bg-white dark:bg-[#0c0d11] p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-emerald-400" />
+            <h1 className="text-xl font-black text-gray-900 dark:text-amber-400 flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-amber-500" />
               <span>متابعة الإنتاجية وكفاءة صالات التشغيل (Worker Productivity)</span>
             </h1>
-            <span className="bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-md text-[10px] font-black">
-              رقابة الأداء وحوافز العمال
+            <span className="bg-amber-400/20 text-amber-700 dark:text-amber-400 border border-amber-400/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              رقابة الأداء وحوافز العمل
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
             مقارنة المستهدف بالفعلي لكل شيف وعامل، مراقبة الهدر في الخامات، واحتساب مكافآت الإنجاز آلياً.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-xs transition-colors"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>تسجيل بيان إنتاجية وردية</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={selectedDepartment}
+            onChange={(e) => setSelectedDepartment(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold text-xs text-gray-800 dark:text-zinc-200 outline-none"
+          >
+            <option value="الكل">-- كل الأقسام والصالات --</option>
+            {departmentsList.map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-sm transition-all"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ تسجيل بيان إنتاجية وردية</span>
+          </button>
+        </div>
       </div>
 
-      {statusMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />{statusMessage}</span>
-          <button onClick={() => setStatusMessage(null)}>×</button>
-        </div>
-      )}
-
-      {/* بطاقات المؤشرات */}
+      {/* البطاقات التلخيصية العليا */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-emerald-500 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">متوسط كفاءة التشغيل العام</span>
-          <h4 className="text-2xl font-black text-emerald-600 font-mono mt-1">{avgEfficiency}%</h4>
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-indigo-600 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">إجمالي المستهدف بالساعة</span>
+          <h4 className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono mt-1">
+            {totalTarget} <span className="text-xs font-normal">وحدة</span>
+          </h4>
+          <small className="text-[10px] text-gray-400">حسب خطط التشغيل المعتمدة</small>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">عدد تسجيلات الورديات</span>
-          <h4 className="text-2xl font-black text-indigo-700 font-mono mt-1">{logs.length} <span className="text-xs font-normal text-gray-500">سجل</span></h4>
+
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-emerald-500 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">الإنتاج الفعلي المحقق</span>
+          <h4 className="text-2xl font-black text-emerald-600 font-mono mt-1">
+            {totalActual} <span className="text-xs font-normal">وحدة</span>
+          </h4>
+          <small className="text-[10px] text-gray-400">إجمالي الناتج التام بالصالات</small>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-amber-500 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي حوافز التميز المقدرة</span>
-          <h4 className="text-2xl font-black text-amber-600 font-mono mt-1">{totalBonuses.toLocaleString()} <span className="text-xs font-normal text-gray-500">ج.م</span></h4>
+
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-amber-500 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">متوسط كفاءة التشغيل العام</span>
+          <h4 className="text-2xl font-black text-amber-500 font-mono mt-1">
+            {avgEfficiency}%
+          </h4>
+          <small className="text-[10px] text-gray-400">({filteredWorkers.length} شيف وعامل مسجلين)</small>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-rose-500 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">مجموع الهدر المرصود</span>
-          <h4 className="text-2xl font-black text-rose-600 font-mono mt-1">{totalWaste.toFixed(1)} <span className="text-xs font-normal text-gray-500">كجم</span></h4>
+
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-rose-600 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">مجموع الهدر / الحوافز</span>
+          <h4 className="text-xl font-black text-rose-500 font-mono mt-1">
+            {totalWaste.toFixed(1)} كجم <span className="text-xs text-emerald-500 mr-2">+{totalBonus} ج.م حوافز</span>
+          </h4>
+          <small className="text-[10px] text-gray-400">المرصود خلال فترة العمل</small>
         </div>
       </div>
 
-      {/* شريط الفلترة */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-xs mb-6 flex flex-wrap items-center gap-3 text-xs">
-        <div className="relative flex-1 min-w-[240px]">
+      {/* شريط البحث الميداني */}
+      <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6 flex items-center justify-between gap-3 text-xs">
+        <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
           <input
             type="text"
-            placeholder="بحث باسم الشيف، كود الموظف..."
+            placeholder="بحث باسم الشيف، كود الموظف، الصنف..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:border-indigo-600 font-medium"
+            className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9 pl-3 py-2 outline-none font-bold text-gray-800 dark:text-zinc-200"
           />
         </div>
-
-        <select
-          value={selectedDept}
-          onChange={(e) => setSelectedDept(e.target.value)}
-          className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700 outline-none"
-        >
-          <option value="">-- كافة الصالات والأقسام --</option>
-          {lookups.departments.map((d, i) => (
-            <option key={i} value={d}>{d}</option>
-          ))}
-        </select>
+        <span className="font-bold text-gray-500">
+          القسم المعروض: <strong className="text-amber-500">{selectedDepartment}</strong>
+        </span>
       </div>
 
-      {/* جدول كفاءة الإنتاجية */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-400 font-bold">جاري تحميل بيانات إنتاجية الصالات...</div>
-        ) : filteredLogs.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 font-bold">لا توجد بيانات مسجلة.</div>
-        ) : (
+      {/* جدول تفاصيل إنتاجية العمال بالساعة */}
+      <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
+        <div className="overflow-x-auto">
           <table className="w-full text-center">
-            <thead className="bg-slate-900 text-white">
+            <thead className="bg-slate-50 dark:bg-zinc-900/70 text-gray-600 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
               <tr>
                 <th className="py-3 px-3">التاريخ</th>
                 <th className="py-3 px-3 text-right">الموظف / الشيف</th>
-                <th className="py-3 px-3">الصالة</th>
+                <th className="py-3 px-3 text-right">الصالة / القسم</th>
                 <th className="py-3 px-3">الوردية</th>
                 <th className="py-3 px-3">المستهدف</th>
                 <th className="py-3 px-3">الفعلي المحقق</th>
                 <th className="py-3 px-3">نسبة الكفاءة</th>
                 <th className="py-3 px-3">الهدر</th>
                 <th className="py-3 px-3">الحافز المقدر</th>
+                <th className="py-3 px-3">تقييم الأداء</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-3 font-mono text-gray-500">{log.date}</td>
-                  <td className="py-3 px-3 text-right font-bold text-gray-900">
-                    {log.workerName}
-                    <span className="text-[10px] text-gray-400 block font-mono">[{log.workerCode}]</span>
-                  </td>
-                  <td className="py-3 px-3 font-medium text-gray-700">{log.department}</td>
-                  <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 bg-slate-100 rounded text-gray-700 font-bold">{log.shift}</span>
-                  </td>
-                  <td className="py-3 px-3 font-mono">{log.targetOutput} {log.unit}</td>
-                  <td className="py-3 px-3 font-mono font-bold text-indigo-900">{log.actualOutput} {log.unit}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`font-mono font-black px-2 py-0.5 rounded-full text-[11px] ${
-                        log.efficiencyPercentage >= 100
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : log.efficiencyPercentage >= 95
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'bg-rose-50 text-rose-700'
-                      }`}
-                    >
-                      {log.efficiencyPercentage}%
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 font-mono text-rose-600 font-bold">{log.wasteQuantity} كجم</td>
-                  <td className="py-3 px-3 font-mono font-bold text-emerald-700">
-                    {log.bonusAmount > 0 ? `+${log.bonusAmount} ج.م` : '-'}
-                  </td>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+              {filteredWorkers.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-8 text-gray-400 font-bold">لا توجد بيانات مسجلة لهذا القسم حالياً.</td>
                 </tr>
-              ))}
+              ) : (
+                filteredWorkers.map(w => {
+                  const eff = getEfficiency(w.actualPerHour, w.targetPerHour);
+                  return (
+                    <tr key={w.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <td className="py-3 px-3 font-mono text-gray-400">{w.date}</td>
+                      <td className="py-3 px-3 text-right">
+                        <span className="font-bold text-gray-900 dark:text-zinc-100 block">{w.workerName}</span>
+                        <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400">[{w.workerCode}]</span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <span className="font-bold text-gray-700 dark:text-zinc-300 block">{w.department}</span>
+                        <small className="text-gray-400">{w.itemName}</small>
+                      </td>
+                      <td className="py-3 px-3 font-bold">{w.shift}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-gray-700 dark:text-zinc-300">{w.targetPerHour}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{w.actualPerHour}</td>
+                      <td className="py-3 px-3 font-mono font-black text-amber-500">{eff}%</td>
+                      <td className="py-3 px-3 font-mono text-rose-500 font-bold">{w.wasteKg > 0 ? `${w.wasteKg} كجم` : '-'}</td>
+                      <td className="py-3 px-3 font-mono text-emerald-500 font-bold">{w.bonusAmount > 0 ? `+${w.bonusAmount} ج.م` : '-'}</td>
+                      <td className="py-3 px-3">
+                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${getBadgeClass(eff)}`}>
+                          {getEvaluation(eff)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
-        )}
+        </div>
       </div>
 
-      {/* نافذة تسجيل بيان إنتاجية */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 text-xs">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-              <h4 className="font-bold flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
-                <span>تسجيل إنتاجية وردية لشيف / عامل</span>
+      {/* Modal: تسجيل بيان إنتاجية وردية جديد */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col">
+            <div className="px-5 py-3.5 bg-amber-500 text-slate-950 flex items-center justify-between">
+              <h4 className="font-black flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                <span>تسجيل بيان إنتاجية وردية جديد</span>
               </h4>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/80 hover:text-white font-bold text-base">×</button>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-950 hover:opacity-75">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-5 space-y-4">
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">الموظف / الشيف *</label>
-                <select
-                  value={selectedWorkerCode}
-                  onChange={(e) => setSelectedWorkerCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                >
-                  {lookups.workers.map(w => (
-                    <option key={w.code} value={w.code}>[{w.code}] {w.name} - {w.department}</option>
-                  ))}
-                </select>
+            <form onSubmit={handleSaveShiftRecord} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">اسم الشيف / العامل *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newWorkerName}
+                    onChange={(e) => setNewWorkerName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">كود الموظف</label>
+                  <input
+                    type="text"
+                    value={newWorkerCode}
+                    onChange={(e) => setNewWorkerCode(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-700 font-bold mb-1">الوردية</label>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">القسم / الصالة *</label>
                   <select
-                    value={shift}
-                    onChange={(e) => setShift(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
+                  >
+                    {departmentsList.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">الوردية</label>
+                  <select
+                    value={newShift}
+                    onChange={(e) => setNewShift(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                   >
                     <option value="صباحي">صباحي</option>
                     <option value="مسائي">مسائي</option>
                     <option value="ليلي">ليلي</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">وحدة القياس</label>
-                  <input
-                    type="text"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">الإنتاج المستهدف *</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={targetOutput}
-                    onChange={(e) => setTargetOutput(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-mono text-center font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-emerald-800 font-bold mb-1">الإنتاج الفعلي *</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={actualOutput}
-                    onChange={(e) => setActualOutput(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-emerald-400 rounded-xl font-mono text-center font-bold text-emerald-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-rose-800 font-bold mb-1">الهدر (كجم)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.1}
-                    value={wasteQuantity}
-                    onChange={(e) => setWasteQuantity(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-rose-300 rounded-xl font-mono text-center font-bold text-rose-700"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">ملاحظات التشغيل وأسباب التفاوت</label>
+                <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">الصنف أو خط العمل *</label>
                 <input
                   type="text"
-                  placeholder="أسباب التميز أو الأعطال إن وجدت..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl"
+                  required
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-bold"
                 />
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">المستهدف في الساعة (وحدة) *</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={newTargetPerHour}
+                    onChange={(e) => setNewTargetPerHour(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 dark:text-zinc-300 font-bold mb-1">الفعلي المحقق في الساعة (وحدة) *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    required
+                    value={newActualPerHour}
+                    onChange={(e) => setNewActualPerHour(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold text-emerald-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-rose-500 font-bold mb-1">الهدر المرصود (كجم)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    value={newWasteKg}
+                    onChange={(e) => setNewWasteKg(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold text-rose-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-emerald-600 font-bold mb-1">الحافز التقديري (ج.م)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newBonusAmount}
+                    onChange={(e) => setNewBonusAmount(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-center font-bold text-emerald-600"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+                  className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-sm"
                 >
-                  💾 اعتماد الإنتاجية
+                  💾 حفظ بيان الإنتاجية
                 </button>
               </div>
             </form>

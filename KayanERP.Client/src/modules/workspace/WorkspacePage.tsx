@@ -1,260 +1,453 @@
 ﻿import React, { useState } from 'react';
 import {
   Search,
-  Factory,
-  Warehouse,
-  ShoppingBag,
-  Coins,
+  ShoppingCart,
   Boxes,
+  Cpu,
+  Store,
+  ShieldCheck,
+  Calculator,
   Users,
-  ShieldAlert,
-  ClipboardCheck,
-  Building2,
-  Calendar,
-  Layers,
-  Sparkles,
+  AlertOctagon,
   ArrowRight
 } from 'lucide-react';
 
 interface WorkspacePageProps {
-  onNavigate: (tab: string) => void;
+  onNavigate?: (tab: string) => void;
 }
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({ onNavigate }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSector, setSelectedSector] = useState('ALL');
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const sectors = [
-    { id: 'ALL', name: 'كافة القطاعات' },
-    { id: 'PROD', name: 'الإنتاج والتصنيع' },
-    { id: 'SCM', name: 'المخازن واللوجستيات' },
-    { id: 'SALES', name: 'المبيعات والفروع' },
-    { id: 'FIN', name: 'الإدارة المالية' },
-    { id: 'PURCH', name: 'المشتريات والموردين' },
-    { id: 'HR', name: 'الموارد البشرية' },
-    { id: 'QC', name: 'الجودة والـ HACCP' },
-    { id: 'SOS', name: 'الطوارئ والـ SOS' }
-  ];
-
-  const modules = [
-    // 1. الإنتاج والتصنيع
-    {
-      sector: 'PROD',
-      title: 'العمليات الصناعية والتشغيل (MES)',
-      desc: 'إدارة أوامر التصنيع، ومحطات الحوكمة وتكاليف الصالات',
-      icon: Factory,
-      items: [
-        { label: 'غرفة عمليات الإنتاج والتكاليف (MES)', tab: 'production' },
-        { label: 'حوكمة تحويل المنتج التام والكنترول (المراحل الخمس)', tab: 'fg-transfers', badge: 'هام' },
-        { label: 'وصفات التصنيع المعيارية (BOM)', tab: 'recipes' },
-        { label: 'طلب وصرف خامات صالة التشغيل', tab: 'materials' },
-        { label: 'كتالوج المنتجات التامة والمواصفات والنكهات', tab: 'finished-goods-catalog' }
-      ]
-    },
-
-    // 2. المخازن واللوجستيات
-    {
-      sector: 'SCM',
-      title: 'المخازن وسلاسل الإمداد اللوجستية',
-      desc: 'الأرصدة اللحظية، تتبع اللوطات، وتحويلات الفروع',
-      icon: Warehouse,
-      items: [
-        { label: 'أرصدة المخازن اللحظية والرقابة (Live Inventory)', tab: 'inventory' },
-        { label: 'كارت الصنف والمسار المخزني التراكمي', tab: 'stock-card' },
-        { label: 'إمداد الفروع واستلام المنافذ ولجنة النزاع', tab: 'transfers' },
-        { label: 'فحص واستلام الخامات الموردة (GMP)', tab: 'receiving' },
-        { label: 'إدارة وتعريف المستودعات والصالات', tab: 'warehouses' },
-        { label: 'تتبع دوران وحركة الصناديق والأسبات', tab: 'crates' }
-      ]
-    },
-
-    // 3. المبيعات والتوزيع
-    {
-      sector: 'SALES',
-      title: 'المبيعات والتوزيع وشبكة الفروع',
-      desc: 'الفواتير اللحظية، حسابات العملاء، ونقاط البيع',
-      icon: ShoppingBag,
-      items: [
-        { label: 'بوابة الفروع والعمليات (سياق التشغيل المعزول)', tab: 'branches-portal' },
-        { label: 'إدارة فواتير المبيعات والترحيل المالي المباشر', tab: 'sales' },
-        { label: 'سجل العملاء والتجار ومديونيات المنافذ', tab: 'customers' },
-        { label: 'إدارة بيانات الفروع ومنافذ المعارض', tab: 'branches' }
-      ]
-    },
-
-    // 4. الإدارة المالية
-    {
-      sector: 'FIN',
-      title: 'الإدارة المالية والمحاسبة العامة',
-      desc: 'دليل الحسابات، الميزان، والقيود الآلية المزدوجة',
-      icon: Coins,
-      items: [
-        { label: 'شجرة الحسابات ودليل المركز المالي', tab: 'accounts' },
-        { label: 'القوائم المالية الختامية وميزان المراجعة (P&L)', tab: 'finance', badge: 'جديد' },
-        { label: 'سندات القبض والصرف وخزائن الفروع', tab: 'treasury' },
-        { label: 'دفتر قيود اليومية العامة والاستاذ', tab: 'journal' },
-        { label: 'مصروفات التشغيل، الغاز، ومستحقات الموردين (AP)', tab: 'expenses' }
-      ]
-    },
-
-    // 5. المشتريات والموردين
-    {
-      sector: 'PURCH',
-      title: 'إدارة المشتريات والموردين',
-      desc: 'أوامر التوريد، التسعير، وتقييم جودة الموردين',
-      icon: Boxes,
-      items: [
-        { label: 'سجل الموردين المعتمدين وبياناتهم', tab: 'suppliers' },
-        { label: 'أوامر الشراء والتوريد (Purchase Orders)', tab: 'purchasing' },
-        { label: 'فواتير الشراء والتكاليف المباشرة', tab: 'procurement' },
-        { label: 'قوائم أسعار التوريد وعروض الأسعار', tab: 'supplier-prices' },
-        { label: 'تقييم جودة خامات الموردين (Vendor QC)', tab: 'vendor-qc' }
-      ]
-    },
-
-    // 6. الجودة والـ HACCP
-    {
-      sector: 'QC',
-      title: 'الجودة والتفتيش الميداني الرقمي',
-      desc: 'محرك تعبئة الاستمارات، أرشيف الفحوصات، ومصمم النماذج',
-      icon: ClipboardCheck,
-      items: [
-        { label: 'تعبئة نماذج التفتيش والعمليات الميدانية', tab: 'form-viewer', badge: 'حي' },
-        { label: 'أرشيف سجلات الفحص المعتمدة والتقارير', tab: 'form-reports' },
-        { label: 'مصمم قوالب النماذج الرقمية (Form Studio)', tab: 'dynamic-forms' }
-      ]
-    },
-
-    // 7. الموارد البشرية
-    {
-      sector: 'HR',
-      title: 'إدارة القوة العاملة وشؤون الموظفين',
-      desc: 'حصر العمال، توزيع الصالات، وتقييم الإنتاجية',
-      icon: Users,
-      items: [
-        { label: 'إدارة وتوزيع القوى العاملة بالصالات', tab: 'employees-management' },
-        { label: 'سجل الموظفين والمسميات وتكلفة الساعة', tab: 'employees' },
-        { label: 'قياس إنتاجية العمال والورديات', tab: 'productivity' }
-      ]
-    },
-
-    // 8. الطوارئ والـ SOS
-    {
-      sector: 'SOS',
-      title: 'غرفة الطوارئ والمهام الحرجة (SOS)',
-      desc: 'البلاغات العاجلة، انقطاع التيار، وأعطال الماكينات',
-      icon: ShieldAlert,
-      items: [
-        { label: 'تسجيل بلاغ عاجل أو استدعاء طارئ', tab: 'emergency' },
-        { label: 'أرشيف وتقارير مهام الطوارئ المنجزة', tab: 'emergency-reports' }
-      ]
+  const navigateTo = (tabKey: string) => {
+    if (onNavigate) {
+      onNavigate(tabKey);
     }
-  ];
+  };
 
-  const filteredModules = modules.filter(m => {
-    if (selectedSector !== 'ALL' && m.sector !== selectedSector) return false;
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
-    const inTitle = m.title.toLowerCase().includes(term);
-    const inDesc = m.desc.toLowerCase().includes(term);
-    const inItems = m.items.some(it => it.label.toLowerCase().includes(term));
-    return inTitle || inDesc || inItems;
-  });
+  const categories = [
+    { id: 'all', label: 'كافة القطاعات' },
+    { id: 'mes', label: 'الإنتاج والتصنيع' },
+    { id: 'inventory', label: 'المخازن واللوجستيات' },
+    { id: 'pos', label: 'المبيعات والفروع' },
+    { id: 'finance', label: 'الإدارة المالية' },
+    { id: 'procurement', label: 'المشتريات والموردين' },
+    { id: 'hr', label: 'الموارد البشرية' },
+    { id: 'qc', label: 'الجودة والـ HACCP' },
+    { id: 'emergency', label: 'الطوارئ والـ SOS' }
+  ];
 
   return (
-    <div className="p-6 min-h-screen font-sans transition-colors duration-200 bg-slate-100/70 dark:bg-black" dir="rtl">
-      {/* البانر الترحيبي المنقى (أبيض ناصع نهاراً / أسود صافي ليلاً بدون أزرق) */}
-      <div className="bg-white dark:bg-[#0a0a0d] border border-gray-200 dark:border-zinc-800 p-6 rounded-3xl shadow-sm mb-6 flex flex-wrap justify-between items-center gap-4 transition-colors">
+    <div className="p-6 pt-4 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      {/* ترويسة المنصة المركزية */}
+      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800 mb-5 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-black text-gray-900 dark:text-amber-400">
-              منصة كيان المركزية لإدارة العمليات (Enterprise Workspace)
+            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
+              <span>منصة كيان المركزية لإدارة العمليات (Enterprise Workspace)</span>
             </h1>
-            <span className="bg-amber-400/20 text-amber-700 dark:text-amber-400 border border-amber-400/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
               أبو عادل - بيئة التشغيل الصناعي
             </span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-zinc-400">
+          <p className="text-xs text-zinc-400">
             الوصول المباشر لكافة وحدات التصنيع، المخازن، سلاسل الإمداد، الجودة، والمحاسبة المالية.
           </p>
         </div>
-
-        {/* حقل البحث السريع */}
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-gray-400 dark:text-zinc-500 absolute right-3.5 top-3" />
-          <input
-            type="text"
-            placeholder="ابحث فوراً عن أي شاشة أو وظيفة (فواتير، كارت صنف، خامات...)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 rounded-2xl pr-10 pl-4 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 outline-none focus:border-amber-500 transition-colors"
-          />
-        </div>
       </div>
 
-      {/* شريط فلترة القطاعات */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6 text-xs font-bold scrollbar-none">
-        {sectors.map(sec => (
+      {/* شريط البحث المباشر */}
+      <div className="mb-4 relative">
+        <Search className="w-4 h-4 text-zinc-500 absolute right-4 top-3" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="ابحث فوراً عن أي شاشة أو وظيفة (فواتير، كارت صنف، خامات، أوامر تصنيع، قيود، رواتب...)"
+          className="w-full pr-11 pl-4 py-2.5 bg-[#0f1117] border border-zinc-800 rounded-xl text-xs text-zinc-100 outline-none focus:border-amber-500 shadow-md transition-all"
+        />
+      </div>
+
+      {/* أزرار فلاتر القطاعات */}
+      <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-2 text-xs">
+        {categories.map(c => (
           <button
-            key={sec.id}
-            onClick={() => setSelectedSector(sec.id)}
-            className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all ${
-              selectedSector === sec.id
-                ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
-                : 'bg-white dark:bg-[#101115] text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-800/80 hover:border-amber-500/50'
+            key={c.id}
+            type="button"
+            onClick={() => setActiveCategory(c.id)}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all shadow-sm ${
+              activeCategory === c.id
+                ? 'bg-amber-500 text-slate-950 font-black'
+                : 'bg-[#0f1117] text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
             }`}
           >
-            {sec.name}
+            {c.label}
           </button>
         ))}
       </div>
 
-      {/* شبكة كروت الموديولات */}
+      {/* شبكة القطاعات الـ 8 كاملة */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredModules.map((mod, idx) => {
-          const Icon = mod.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white dark:bg-[#0c0d11] border border-gray-200 dark:border-zinc-800/90 rounded-2xl shadow-sm p-5 flex flex-col justify-between hover:border-amber-500/60 transition-all hover:shadow-md"
-            >
-              <div>
-                <div className="flex items-center gap-3 mb-3 border-b border-gray-100 dark:border-zinc-800/80 pb-3">
-                  <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-amber-500 dark:text-amber-400">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-gray-900 dark:text-zinc-100">{mod.title}</h3>
-                    <p className="text-[10px] text-gray-500 dark:text-zinc-400 line-clamp-1">{mod.desc}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 my-3">
-                  {mod.items.map((item, iIdx) => (
-                    <button
-                      key={iIdx}
-                      onClick={() => onNavigate(item.tab)}
-                      className="w-full text-right p-2 rounded-xl text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 flex items-center justify-between transition-colors group"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 group-hover:bg-amber-500"></span>
-                        <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          {item.label}
-                        </span>
-                      </span>
-                      {item.badge && (
-                        <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800 px-1.5 py-0.2 rounded text-[9px] font-mono">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+        
+        {/* 1. العمليات الصناعية والتشغيل (MES) */}
+        {(activeCategory === 'all' || activeCategory === 'mes') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">العمليات الصناعية والتشغيل (MES)</h3>
+                  <small className="text-[10px] text-zinc-500">إدارة أوامر التصنيع، ومحطات الحوكمة وتكاليف الصالات</small>
                 </div>
               </div>
             </div>
-          );
-        })}
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('production')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>غرفة عمليات الإنتاج والتكاليف (MES)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('production')} className="w-full text-right hover:text-amber-400 flex items-center justify-between transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>حوكمة تحويل المنتج التام والكنترول (المراحل الخمس)</span>
+                  </div>
+                  <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded text-[9px] font-bold">هام</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('recipes')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>وصفات التصنيع المعيارية (BOM)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('materials')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>طلب وصرف خامات صالة التشغيل</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('finished-goods-catalog')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>كتالوج المنتجات التامة والمواصفات والنكهات</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 2. المخازن وسلاسل الإمداد اللوجستية */}
+        {(activeCategory === 'all' || activeCategory === 'inventory') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">المخازن وسلاسل الإمداد اللوجستية</h3>
+                  <small className="text-[10px] text-zinc-500">الأرصدة اللحظية، تتبع اللوطات، وتحويلات الفروع</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('inventory')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>أرصدة المخازن اللحظية والرقابة (Live Inventory)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('stock-card')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>كارت الصنف والمسار المخزني التراكمي</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('transfers')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>إمداد الفروع واستلام المنافذ ولجنة النزاع</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('receiving')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>فحص واستلام الخامات الموردة (GMP)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('warehouses')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>إدارة وتعريف المستودعات والصالات</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('crates')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>تتبع دوران وحركة الصناديق والأسبات</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 3. المبيعات والتوزيع وشبكة الفروع */}
+        {(activeCategory === 'all' || activeCategory === 'pos') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">المبيعات والتوزيع وشبكة الفروع</h3>
+                  <small className="text-[10px] text-zinc-500">الفواتير اللحظية، حسابات العملاء، ونقاط البيع</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('branches-portal')} className="w-full text-right hover:text-emerald-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>بوابة الفروع والعمليات (سياق التشغيل المعزول)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('sales')} className="w-full text-right hover:text-emerald-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>إدارة فواتير المبيعات والترحيل المالي المباشر</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('customers')} className="w-full text-right hover:text-emerald-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>سجل العملاء والتجار ومديونيات المنافذ</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('branches')} className="w-full text-right hover:text-emerald-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>إدارة بيانات الفروع ومنافذ المعارض</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 4. الإدارة المالية والمحاسبة العامة */}
+        {(activeCategory === 'all' || activeCategory === 'finance') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">الإدارة المالية والمحاسبة العامة</h3>
+                  <small className="text-[10px] text-zinc-500">دليل الحسابات، الميزان، والقيود الآلية المزدوجة</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('accounts')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>شجرة الحسابات ودليل المركز المالي</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('finance')} className="w-full text-right hover:text-indigo-400 flex items-center justify-between transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                    <span>القوائم المالية الختامية وميزان المراجعة (P&L)</span>
+                  </div>
+                  <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded text-[9px] font-bold">جديد</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('treasury')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>سندات القبض والصرف وخزائن الفروع</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('journal')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>دفتر قيود اليومية العامة والاستاذ</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('expenses')} className="w-full text-right hover:text-indigo-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span>مصروفات التشغيل، الغاز، ومستحقات الموردين (AP)</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 5. إدارة المشتريات والموردين */}
+        {(activeCategory === 'all' || activeCategory === 'procurement') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-amber-500" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">إدارة المشتريات والموردين</h3>
+                  <small className="text-[10px] text-zinc-500">أوامر التوريد، التسعير، وتقييم جودة الموردين</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('suppliers')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>سجل الموردين المعتمدين وبياناتهم</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('purchasing')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>طلبات واحتياجات الشراء (Procurement)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('procurement')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>أوامر توريد من الموردين (PO & COA)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('supplier-prices')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>قوائم أسعار التوريد وعروض الأسعار</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('vendor-qc')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>تقييم جودة خامات الموردين (Vendor QC)</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 6. الجودة والتفتيش الميداني الرقمي */}
+        {(activeCategory === 'all' || activeCategory === 'qc') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-rose-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">الجودة والتفتيش الميداني الرقمي</h3>
+                  <small className="text-[10px] text-zinc-500">محرك تعبئة الاستمارات، أرشيف الفحوصات، ومصمم النماذج</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('dynamic-forms')} className="w-full text-right hover:text-rose-400 flex items-center justify-between transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                    <span>تعبئة نماذج التفتيش والعمليات الميدانية</span>
+                  </div>
+                  <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-1.5 py-0.2 rounded text-[9px] font-bold">حي</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('forms')} className="w-full text-right hover:text-rose-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  <span>أرشيف سجلات الفحص المعتمدة والتقارير</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('form-viewer')} className="w-full text-right hover:text-rose-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  <span>مصمم قوالب النماذج الرقمية (Form Studio)</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 7. الموارد البشرية وإدارة المؤسسة */}
+        {(activeCategory === 'all' || activeCategory === 'hr') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-cyan-400" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">الموارد البشرية وشؤون العاملين</h3>
+                  <small className="text-[10px] text-zinc-500">سجلات العاملين، الأقسام، وتقييم مؤشرات الأداء</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('employees-management')} className="w-full text-right hover:text-cyan-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>إدارة ملفات الموظفين والرواتب</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('departments')} className="w-full text-right hover:text-cyan-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>هيكل الإدارات والوظائف</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('department-kpis')} className="w-full text-right hover:text-cyan-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>مؤشرات أداء الإدارات (KPIs)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('companies')} className="w-full text-right hover:text-cyan-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>بيانات الشركات والفروع القانونية</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {/* 8. الطوارئ والـ SOS والمهام العاجلة */}
+        {(activeCategory === 'all' || activeCategory === 'emergency') && (
+          <div className="bg-[#0f1117] p-5 rounded-2xl border border-zinc-800 shadow-md">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-3">
+              <div className="flex items-center gap-2">
+                <AlertOctagon className="w-5 h-5 text-amber-500" />
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-100">الطوارئ والـ SOS والمهام العاجلة</h3>
+                  <small className="text-[10px] text-zinc-500">بلاغات الأعطال الحرجة، الصيانة، ومهام الطوارئ</small>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-2.5 text-xs text-zinc-300">
+              <li>
+                <button type="button" onClick={() => navigateTo('emergency')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>غرفة بلاغات الطوارئ والأعطال (SOS)</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('emergency-reports')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>تقارير وسجلات مهام الطوارئ المنجزة</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigateTo('assets')} className="w-full text-right hover:text-amber-400 flex items-center gap-2 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span>سجل أصول وخطوط إنتاج المصنع</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+
       </div>
     </div>
   );
 };
+
+export default WorkspacePage;

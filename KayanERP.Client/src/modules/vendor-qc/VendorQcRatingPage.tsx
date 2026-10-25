@@ -1,535 +1,307 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Award,
-  Truck,
-  AlertCircle,
-  ShieldAlert,
-  FileSpreadsheet,
-  FileText,
-  RefreshCw,
   Search,
-  CheckCircle2,
-  XCircle,
+  FileSpreadsheet,
+  RotateCw,
+  Truck,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
   Calendar,
-  Filter,
-  Check
+  X
 } from 'lucide-react';
-import {
-  fetchVendorQcRatingsApi,
-  fetchVendorQcHistoryApi,
-} from './vendorQcApi';
-import type { VendorQcScoreDto, QcInspectionHistoryDto } from './vendorQcApi';
+
+export interface VendorQcScoreDto {
+  supplierId: number;
+  supplierName: string;
+  totalShipments: number;
+  totalReceivedQty: number;
+  totalAcceptedQty: number;
+  totalRejectedQty: number;
+  acceptanceRate: number;
+  qualityGrade: 'A' | 'B' | 'C';
+}
+
+export interface QcInspectionHistoryDto {
+  movementId: number;
+  inspectionDate: string;
+  supplierName: string;
+  itemCode: string;
+  itemName: string;
+  movementType: 'PURCHASE_RECEIPT' | 'REJECTED';
+  quantity: number;
+  notes: string;
+}
 
 export const VendorQcRatingPage: React.FC = () => {
-  const [ratings, setRatings] = useState<VendorQcScoreDto[]>([]);
-  const [history, setHistory] = useState<QcInspectionHistoryDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [ratings] = useState<VendorQcScoreDto[]>([
+    { supplierId: 1, supplierName: 'شركة مطاحن الدلتا والصعيد', totalShipments: 12, totalReceivedQty: 30000, totalAcceptedQty: 29500, totalRejectedQty: 500, acceptanceRate: 98.3, qualityGrade: 'A' },
+    { supplierId: 2, supplierName: 'مزارع الوادي لمنتجات الألبان والسمن البلدي', totalShipments: 8, totalReceivedQty: 7200, totalAcceptedQty: 7000, totalRejectedQty: 200, acceptanceRate: 97.2, qualityGrade: 'A' },
+    { supplierId: 3, supplierName: 'الشركة المصرية لتجارة وتكرير السكر', totalShipments: 6, totalReceivedQty: 15000, totalAcceptedQty: 13500, totalRejectedQty: 1500, acceptanceRate: 90.0, qualityGrade: 'B' },
+    { supplierId: 4, supplierName: 'الأهرام للكرتون ومواد التعبئة والتغليف', totalShipments: 5, totalReceivedQty: 10000, totalAcceptedQty: 8000, totalRejectedQty: 2000, acceptanceRate: 80.0, qualityGrade: 'C' }
+  ]);
 
-  // الفلاتر
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>('all');
-  const [selectedDecisionFilter, setSelectedDecisionFilter] = useState<string>('all');
-  const [fromDate, setFromDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().slice(0, 10);
-  });
-  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [history] = useState<QcInspectionHistoryDto[]>([
+    { movementId: 101, inspectionDate: '2026-10-24 10:30', supplierName: 'شركة مطاحن الدلتا والصعيد', itemCode: 'RAW-FLR-04', itemName: 'دقيق فاخر استخراج 72%', movementType: 'PURCHASE_RECEIPT', quantity: 5000, notes: 'مطابق للمواصفة القياسية ورطوبة 13.5%' },
+    { movementId: 102, inspectionDate: '2026-10-24 14:15', supplierName: 'مزارع الوادي لمنتجات الألبان والسمن البلدي', itemCode: 'RAW-BTR-02', itemName: 'سمن بلدي بقري طبيعي', movementType: 'PURCHASE_RECEIPT', quantity: 1200, notes: 'مطابق للتحليل الكيميائي وخالي من الزيوت النباتية' },
+    { movementId: 103, inspectionDate: '2026-10-23 11:00', supplierName: 'الشركة المصرية لتجارة وتكرير السكر', itemCode: 'RAW-SUG-01', itemName: 'سكر مكرر ناعم فاخر', movementType: 'REJECTED', quantity: 1500, notes: 'تكتل في الشكائر بسبب سوء التخزين أثناء النقل' },
+    { movementId: 104, inspectionDate: '2026-10-22 09:45', supplierName: 'الأهرام للكرتون ومواد التعبئة والتغليف', itemCode: 'PCK-BOX-09', itemName: 'كرتون صواني البسبوسة 50*50', movementType: 'REJECTED', quantity: 2000, notes: 'عيوب طباعة وتمزق في سماكة الكرتون الدوبلكس' }
+  ]);
 
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState('all');
+  const [selectedDecisionFilter, setSelectedDecisionFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('2026-09-25');
+  const [toDate, setToDate] = useState('2026-10-25');
 
-  const loadData = async () => {
-    setIsLoading(true);
-    setStatusMessage(null);
-    try {
-      const [rList, hList] = await Promise.all([
-        fetchVendorQcRatingsApi(fromDate, toDate),
-        fetchVendorQcHistoryApi(fromDate, toDate),
-      ]);
-      setRatings(rList);
-      setHistory(hList);
-    } catch (err: any) {
-      setIsSuccess(false);
-      setStatusMessage(`خطأ في جلب بيانات الفحص والجودة: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [fromDate, toDate]);
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedGradeFilter('all');
-    setSelectedDecisionFilter('all');
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    setFromDate(d.toISOString().slice(0, 10));
-    setToDate(new Date().toISOString().slice(0, 10));
-  };
-
-  const hasActiveFilters = useMemo(() => {
-    return Boolean(
-      searchTerm.trim() ||
-      selectedGradeFilter !== 'all' ||
-      selectedDecisionFilter !== 'all'
-    );
-  }, [searchTerm, selectedGradeFilter, selectedDecisionFilter]);
-
-  // تصفية جدول تقييم الموردين
   const filteredRatings = useMemo(() => {
-    return ratings.filter((r) => {
-      const matchSearch =
-        !searchTerm.trim() ||
-        r.supplierName.toLowerCase().includes(searchTerm.trim().toLowerCase());
-      const matchGrade =
-        selectedGradeFilter === 'all' ||
-        r.qualityGrade.toUpperCase() === selectedGradeFilter.toUpperCase();
-      return matchSearch && matchGrade;
+    return ratings.filter(r => {
+      if (selectedGradeFilter !== 'all' && r.qualityGrade !== selectedGradeFilter) return false;
+      if (!searchTerm.trim()) return true;
+      return r.supplierName.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [ratings, searchTerm, selectedGradeFilter]);
+  }, [ratings, selectedGradeFilter, searchTerm]);
 
-  // تصفية جدول سجل الفحوصات
   const filteredHistory = useMemo(() => {
-    return history.filter((h) => {
-      const term = searchTerm.trim().toLowerCase();
-      const matchSearch =
-        !term ||
+    return history.filter(h => {
+      if (selectedDecisionFilter !== 'all' && h.movementType !== selectedDecisionFilter) return false;
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
         h.supplierName.toLowerCase().includes(term) ||
         h.itemName.toLowerCase().includes(term) ||
         h.itemCode.toLowerCase().includes(term) ||
-        (h.notes && h.notes.toLowerCase().includes(term));
-
-      const matchDecision =
-        selectedDecisionFilter === 'all' ||
-        h.movementType.toUpperCase() === selectedDecisionFilter.toUpperCase();
-
-      return matchSearch && matchDecision;
+        h.notes.toLowerCase().includes(term)
+      );
     });
-  }, [history, searchTerm, selectedDecisionFilter]);
+  }, [history, selectedDecisionFilter, searchTerm]);
 
-  // تصدير جدول تقييم الموردين إلى Excel (CSV بـ UTF-8 BOM)
   const exportRatingsToExcel = () => {
-    if (filteredRatings.length === 0) {
-      setIsSuccess(false);
-      setStatusMessage('لا توجد تقييمات مطابقة لتصديرها.');
-      return;
-    }
-
-    const headers = ['اسم_المورد', 'عدد_الشحنات', 'إجمالي_الوارد', 'الكمية_المقبولة', 'الكمية_المرفوضة', 'معدل_القبول_النسبة', 'تصنيف_الجودة'];
-    const rows = filteredRatings.map((r) => {
+    let csv = 'اسم_المورد,عدد_الشحنات,إجمالي_الوارد,الكمية_المقبولة,الكمية_المرفوضة,معدل_القبول_النسبة,تصنيف_الجودة\n';
+    filteredRatings.forEach(r => {
       const gradeTitle = r.qualityGrade === 'A' ? 'A - ممتاز' : r.qualityGrade === 'B' ? 'B - تحت الملاحظة' : 'C - غير مطابق';
-      return [
-        `"${r.supplierName}"`,
-        r.totalShipments,
-        r.totalReceivedQty.toFixed(2),
-        r.totalAcceptedQty.toFixed(2),
-        r.totalRejectedQty.toFixed(2),
-        `"${r.acceptanceRate.toFixed(1)}%"`,
-        `"${gradeTitle}"`,
-      ];
+      csv += `"${r.supplierName}",${r.totalShipments},${r.totalReceivedQty},${r.totalAcceptedQty},${r.totalRejectedQty},${r.acceptanceRate.toFixed(1)}%,"${gradeTitle}"\n`;
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `تقرير_تقييم_جودة_الموردين_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `تقرير_تقييم_جودة_الموردين_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
-
-    setIsSuccess(true);
-    setStatusMessage(`تم تصدير تقييم (${filteredRatings.length}) مورد إلى إكسيل بنجاح.`);
-  };
-
-  // تصدير سجل الفحوصات التفصيلي
-  const exportHistoryToExcel = () => {
-    if (filteredHistory.length === 0) {
-      setIsSuccess(false);
-      setStatusMessage('لا يوجد سجل فحوصات مطابق لتصديره.');
-      return;
-    }
-
-    const headers = ['تاريخ_الفحص', 'اسم_المورد', 'كود_الخامة', 'اسم_الخامة', 'الكمية', 'القرار_الفني', 'ملاحظات_مفتش_الجودة_والتشغيل'];
-    const rows = filteredHistory.map((h) => {
-      const decision = h.movementType === 'PURCHASE_RECEIPT' ? 'إفراج ومقبول' : 'مرفوض فني';
-      const safeNotes = (h.notes || '').replace(/"/g, '""');
-      return [
-        `"${h.inspectionDate}"`,
-        `"${h.supplierName}"`,
-        `"${h.itemCode}"`,
-        `"${h.itemName}"`,
-        h.quantity.toFixed(2),
-        `"${decision}"`,
-        `"${safeNotes}"`,
-      ];
-    });
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `سجل_الفحوصات_الفنية_للخامات_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setIsSuccess(true);
-    setStatusMessage(`تم تصدير (${filteredHistory.length}) حركة فحص واستلام إلى إكسيل بنجاح.`);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen font-sans" dir="rtl">
-      {/* رأس الصفحة وأزرار التصدير والتحديث */}
-      <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 p-4 mb-6 shadow-xs flex flex-wrap justify-between items-center gap-3">
+    <div className="p-6 pt-2 min-h-screen font-sans bg-slate-100/70 dark:bg-black transition-colors" dir="rtl">
+      {/* رأس الصفحة */}
+      <div className="bg-white dark:bg-[#0c0d11] p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>📊 مؤشرات جودة الموردين وسجل الفحص الفني</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            متابعة نسب القبول والرفض وتصنيف الموردين وفق معايير فحص استلام الخامات (ISO 22000 / HACCP)
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-gray-900 dark:text-amber-400 flex items-center gap-2">
+              <Award className="w-6 h-6 text-amber-500" />
+              <span>مؤشرات جودة الموردين وسجل الفحص الفني (Vendor QC Rating)</span>
+            </h1>
+            <span className="bg-amber-400/20 text-amber-700 dark:text-amber-400 border border-amber-400/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              معايير ISO 22000 / HACCP
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
+            متابعة نسب القبول والرفض وتصنيف الموردين وفق معايير فحص استلام الخامات.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-2">
           <button
             onClick={exportRatingsToExcel}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-xs font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>تصدير تقرير تقييم الموردين</span>
           </button>
-
-          <button
-            onClick={exportHistoryToExcel}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded-xl border border-cyan-200 text-xs font-bold transition-colors"
-          >
-            <FileText className="w-4 h-4" />
-            <span>تصدير سجل الفحوصات التفصيلي</span>
-          </button>
-
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>تحديث المؤشرات</span>
-          </button>
         </div>
       </div>
-
-      {/* تنبيهات النظام */}
-      {statusMessage && (
-        <div className={`mb-4 p-3 rounded-xl border text-xs font-bold flex items-center justify-between ${
-          isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-        }`}>
-          <div className="flex items-center gap-2">
-            {isSuccess ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
-            <span>{statusMessage}</span>
-          </div>
-          <button onClick={() => setStatusMessage(null)} className="text-gray-500 hover:text-gray-800 font-bold">×</button>
-        </div>
-      )}
 
       {/* كروت ملخص الأداء العام للجودة (KPIs) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-100 border-r-4 border-r-emerald-500 p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 block font-bold">إجمالي الموردين المفحوصين</span>
-            <span className="text-2xl font-bold font-mono text-emerald-600 mt-1 block">
-              {filteredRatings.length}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-full bg-slate-100 border border-slate-200 text-emerald-600">
-            <Truck className="w-5 h-5" />
-          </div>
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-emerald-500 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">إجمالي الموردين المفحوصين</span>
+          <h4 className="text-2xl font-black text-emerald-600 font-mono mt-1">{filteredRatings.length}</h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 border-r-4 border-r-indigo-500 p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 block font-bold">موردين ممتازين (Grade A)</span>
-            <span className="text-2xl font-bold font-mono text-indigo-600 mt-1 block">
-              {filteredRatings.filter((r) => r.qualityGrade === 'A').length}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-full bg-slate-100 border border-slate-200 text-indigo-600">
-            <Award className="w-5 h-5" />
-          </div>
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-indigo-600 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">موردين بتصنيف ممتاز (Grade A)</span>
+          <h4 className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono mt-1">
+            {filteredRatings.filter(r => r.qualityGrade === 'A').length}
+          </h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 border-r-4 border-r-amber-500 p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 block font-bold">موردين تحت الملاحظة (Grade B)</span>
-            <span className="text-2xl font-bold font-mono text-amber-600 mt-1 block">
-              {filteredRatings.filter((r) => r.qualityGrade === 'B').length}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-full bg-slate-100 border border-slate-200 text-amber-600">
-            <AlertCircle className="w-5 h-5" />
-          </div>
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-amber-500 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">موردين تحت الملاحظة (Grade B)</span>
+          <h4 className="text-2xl font-black text-amber-500 font-mono mt-1">
+            {filteredRatings.filter(r => r.qualityGrade === 'B').length}
+          </h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 border-r-4 border-r-rose-500 p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 block font-bold">موردين ذوو خطورة (Grade C)</span>
-            <span className="text-2xl font-bold font-mono text-rose-600 mt-1 block">
-              {filteredRatings.filter((r) => r.qualityGrade === 'C').length}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-full bg-slate-100 border border-slate-200 text-rose-600">
-            <ShieldAlert className="w-5 h-5" />
-          </div>
+        <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border-r-4 border-r-rose-600 border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-bold block">موردين ذوو خطورة جودة (Grade C)</span>
+          <h4 className="text-2xl font-black text-rose-600 font-mono mt-1">
+            {filteredRatings.filter(r => r.qualityGrade === 'C').length}
+          </h4>
         </div>
       </div>
 
-      {/* شريط البحث والفلترة المتعددة */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-xs border-t-4 border-t-indigo-600 text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-3">
-            <label className="block text-gray-600 font-bold mb-1">🔍 بحث (مورد، خامة، LOT، أو ملاحظات)</label>
-            <input
-              type="text"
-              placeholder="ابحث باسم المورد أو الخامة أو رقم التشغيلة..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">🏆 تصنيف الجودة</label>
-            <select
-              value={selectedGradeFilter}
-              onChange={(e) => setSelectedGradeFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-600"
-            >
-              <option value="all">-- كل التصنيفات --</option>
-              <option value="A">Grade A (ممتاز ≥ 95%)</option>
-              <option value="B">Grade B (تحت الملاحظة 85%-94%)</option>
-              <option value="C">Grade C (مرفوض / خطر &lt; 85%)</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">⚖️ القرار الفني للفحص</label>
-            <select
-              value={selectedDecisionFilter}
-              onChange={(e) => setSelectedDecisionFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-600"
-            >
-              <option value="all">-- كل القرارات --</option>
-              <option value="PURCHASE_RECEIPT">✅ إفراج ومقبول فقط</option>
-              <option value="REJECTED">❌ مرفوض فني فقط</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">📅 من تاريخ</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">📅 إلى تاريخ</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono focus:outline-none focus:border-indigo-600"
-            />
-          </div>
-
-          <div className="md:col-span-1 flex items-end">
-            <button
-              onClick={resetFilters}
-              title="تفريغ الفلاتر"
-              className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+      {/* شريط البحث والفلترة */}
+      <div className="bg-white dark:bg-[#0c0d11] p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6 flex flex-wrap items-center gap-3 text-xs">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="ابحث باسم المورد أو الخامة أو رقم التشغيلة..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9 pl-3 py-2 outline-none font-bold text-gray-800 dark:text-zinc-200"
+          />
         </div>
 
-        {hasActiveFilters && (
-          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-            <span className="text-indigo-700 font-bold flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5" />
-              <span>نتائج التصفية: ({filteredRatings.length} مورد مطابق | {filteredHistory.length} حركة فحص فني)</span>
-            </span>
-            <button
-              onClick={resetFilters}
-              className="text-rose-600 hover:text-rose-800 font-bold"
-            >
-              ✕ إلغاء الفلاتر وعرض الكل
-            </button>
-          </div>
-        )}
+        <select
+          value={selectedGradeFilter}
+          onChange={(e) => setSelectedGradeFilter(e.target.value)}
+          className="bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-2 font-bold outline-none text-gray-700 dark:text-zinc-300"
+        >
+          <option value="all">-- كل التصنيفات --</option>
+          <option value="A">Grade A (ممتاز ≥ 95%)</option>
+          <option value="B">Grade B (تحت الملاحظة 85%-94%)</option>
+          <option value="C">Grade C (مرفوض / خطر &lt; 85%)</option>
+        </select>
+
+        <select
+          value={selectedDecisionFilter}
+          onChange={(e) => setSelectedDecisionFilter(e.target.value)}
+          className="bg-slate-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-2 font-bold outline-none text-gray-700 dark:text-zinc-300"
+        >
+          <option value="all">-- كل القرارات --</option>
+          <option value="PURCHASE_RECEIPT">✅ إفراج ومقبول فقط</option>
+          <option value="REJECTED">❌ مرفوض فني فقط</option>
+        </select>
+
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">من:</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900 border rounded-xl font-mono text-xs"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">إلى:</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900 border rounded-xl font-mono text-xs"
+          />
+        </div>
       </div>
 
-      {/* جدول تقييم أداء الموردين ومعدل مطابقة الجودة */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden mb-6">
-        <div className="bg-slate-900 text-white px-5 py-3 flex justify-between items-center">
-          <h2 className="text-xs font-bold">🏆 تقييم أداء الموردين ومعدل مطابقة الجودة (% Acceptance Rate)</h2>
-          <span className="bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[11px] font-mono">
-            المعروض: {filteredRatings.length} مورد
-          </span>
+      {/* جدول تقييم أداء الموردين */}
+      <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden text-xs mb-6">
+        <div className="p-3.5 bg-slate-900 text-white flex justify-between items-center">
+          <span className="font-bold">🏆 تقييم أداء الموردين ومعدل مطابقة الجودة (% Acceptance Rate)</span>
+          <span className="bg-indigo-600 px-2.5 py-0.5 rounded font-mono text-[10px]">المعروض: {filteredRatings.length} مورد</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
-            <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200 text-center">
+          <table className="w-full text-center">
+            <thead className="bg-slate-50 dark:bg-zinc-900/70 text-gray-600 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
               <tr>
-                <th className="py-3 px-4 text-start">اسم المورد</th>
-                <th className="py-3 px-4">عدد الشحنات</th>
-                <th className="py-3 px-4">إجمالي الوارد</th>
-                <th className="py-3 px-4">الكمية المقبولة</th>
-                <th className="py-3 px-4">الكمية المرفوضة</th>
-                <th className="py-3 px-4" style={{ width: '180px' }}>معدل القبول %</th>
-                <th className="py-3 px-4">تصنيف الجودة</th>
+                <th className="py-3 px-3 text-right">اسم المورد</th>
+                <th className="py-3 px-3">عدد الشحنات</th>
+                <th className="py-3 px-3">إجمالي الوارد</th>
+                <th className="py-3 px-3">الكمية المقبولة</th>
+                <th className="py-3 px-3">الكمية المرفوضة</th>
+                <th className="py-3 px-3 w-40">معدل القبول %</th>
+                <th className="py-3 px-3">تصنيف الجودة</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-center">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-gray-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-indigo-600 mb-1" />
-                    <span>جاري حساب التقييمات للفترة المحددة...</span>
-                  </td>
-                </tr>
-              ) : filteredRatings.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-gray-400">
-                    لا توجد حركات استلام وفحص جودة مسجلة مطابقة للفلاتر الحالية.
-                  </td>
-                </tr>
-              ) : (
-                filteredRatings.map((r) => (
-                  <tr key={r.supplierId} className="hover:bg-slate-50/75 transition-colors">
-                    <td className="py-3 px-4 text-start font-bold text-indigo-700">{r.supplierName}</td>
-                    <td className="py-3 px-4">
-                      <span className="bg-slate-100 text-slate-700 font-mono font-bold px-2.5 py-0.5 rounded-md">
-                        {r.totalShipments} شحنة
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+              {filteredRatings.map(r => (
+                <tr key={r.supplierId} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                  <td className="py-3 px-3 text-right font-bold text-gray-900 dark:text-zinc-100">{r.supplierName}</td>
+                  <td className="py-3 px-3 font-mono">{r.totalShipments} شحنة</td>
+                  <td className="py-3 px-3 font-mono font-bold">{r.totalReceivedQty.toLocaleString()}</td>
+                  <td className="py-3 px-3 font-mono font-bold text-emerald-600">{r.totalAcceptedQty.toLocaleString()}</td>
+                  <td className="py-3 px-3 font-mono font-bold text-rose-500">{r.totalRejectedQty.toLocaleString()}</td>
+                  <td className="py-3 px-3">
+                    <div className="w-full bg-gray-200 dark:bg-zinc-800 h-4 rounded-full overflow-hidden relative">
+                      <div
+                        className={`h-full ${r.acceptanceRate >= 95 ? 'bg-emerald-500' : r.acceptanceRate >= 85 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                        style={{ width: `${r.acceptanceRate}%` }}
+                      ></div>
+                      <span className="absolute inset-0 flex items-center justify-center font-mono font-bold text-[10px] text-slate-900 dark:text-white">
+                        {r.acceptanceRate.toFixed(1)}%
                       </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-gray-900">{r.totalReceivedQty.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-600">{r.totalAcceptedQty.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-rose-600">{r.totalRejectedQty.toLocaleString()}</td>
-                    <td className="py-3 px-4">
-                      <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden relative">
-                        <div
-                          className={`h-full flex items-center justify-center font-mono font-bold text-[10px] text-white transition-all ${
-                            r.acceptanceRate >= 95
-                              ? 'bg-emerald-500'
-                              : r.acceptanceRate >= 85
-                              ? 'bg-amber-500 text-slate-900'
-                              : 'bg-rose-500'
-                          }`}
-                          style={{ width: `${Math.min(r.acceptanceRate, 100)}%` }}
-                        >
-                          {r.acceptanceRate.toFixed(1)}%
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {r.qualityGrade === 'A' ? (
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-3 py-1 rounded-full text-xs inline-block">
-                          A - ممتاز
-                        </span>
-                      ) : r.qualityGrade === 'B' ? (
-                        <span className="bg-amber-50 text-amber-800 border border-amber-200 font-bold px-3 py-1 rounded-full text-xs inline-block">
-                          B - تحت الملاحظة
-                        </span>
-                      ) : (
-                        <span className="bg-rose-50 text-rose-700 border border-rose-200 font-bold px-3 py-1 rounded-full text-xs inline-block">
-                          C - غير مطابق
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      r.qualityGrade === 'A' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30' :
+                      r.qualityGrade === 'B' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/30' : 'bg-rose-500/10 text-rose-600 border border-rose-500/30'
+                    }`}>
+                      {r.qualityGrade === 'A' ? 'A - ممتاز' : r.qualityGrade === 'B' ? 'B - تحت الملاحظة' : 'C - غير مطابق'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* سجل الفحوصات التفصيلية وأسباب الرفض */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-        <div className="bg-slate-800 text-white px-5 py-3 flex justify-between items-center">
-          <h2 className="text-xs font-bold">📜 سجل الفحوصات الفنية للخامات وأسباب الرفض</h2>
-          <span className="bg-slate-700 text-slate-200 px-2.5 py-0.5 rounded-full text-[11px] font-mono">
-            المعروض: {filteredHistory.length} حركة استلام وفحص
-          </span>
+      <div className="bg-white dark:bg-[#0c0d11] rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
+        <div className="p-3.5 bg-slate-900 text-white flex justify-between items-center">
+          <span className="font-bold">📜 سجل الفحوصات الفنية للخامات وأسباب الرفض</span>
+          <span className="bg-zinc-800 px-2.5 py-0.5 rounded text-[10px]">المعروض: {filteredHistory.length} حركة فحص</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
-            <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200">
+          <table className="w-full text-center">
+            <thead className="bg-slate-50 dark:bg-zinc-900/70 text-gray-600 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
               <tr>
-                <th className="py-3 px-4 text-center">تاريخ الفحص</th>
-                <th className="py-3 px-4">المورد</th>
-                <th className="py-3 px-4">الصنف / الخامة</th>
-                <th className="py-3 px-4 text-center">الكمية</th>
-                <th className="py-3 px-4 text-center">القرار الفني</th>
-                <th className="py-3 px-4">ملاحظات ومفتش الجودة والشهادات</th>
+                <th className="py-3 px-3">تاريخ الفحص</th>
+                <th className="py-3 px-3 text-right">المورد</th>
+                <th className="py-3 px-3 text-right">الصنف / الخامة</th>
+                <th className="py-3 px-3">الكمية</th>
+                <th className="py-3 px-3">القرار الفني</th>
+                <th className="py-3 px-3 text-right">ملاحظات ومفتش الجودة</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-indigo-600 mb-1" />
-                    <span>جاري تحميل السجل...</span>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+              {filteredHistory.map(h => (
+                <tr key={h.movementId} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                  <td className="py-3 px-3 font-mono text-gray-400">{h.inspectionDate}</td>
+                  <td className="py-3 px-3 text-right font-bold text-gray-900 dark:text-zinc-100">{h.supplierName}</td>
+                  <td className="py-3 px-3 text-right">
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 block">{h.itemName}</span>
+                    <small className="text-gray-400 font-mono">{h.itemCode}</small>
                   </td>
-                </tr>
-              ) : filteredHistory.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-400">
-                    لا يوجد سجل فحوصات خلال هذه الفترة مطابق للفلاتر المحددة.
+                  <td className="py-3 px-3 font-mono font-bold text-gray-900 dark:text-zinc-100">{h.quantity.toLocaleString()}</td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      h.movementType === 'PURCHASE_RECEIPT'
+                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                        : 'bg-rose-500/10 text-rose-500 border border-rose-500/30'
+                    }`}>
+                      {h.movementType === 'PURCHASE_RECEIPT' ? '✅ إفراج ومقبول' : '❌ مرفوض فني'}
+                    </span>
                   </td>
+                  <td className="py-3 px-3 text-right text-gray-500">{h.notes}</td>
                 </tr>
-              ) : (
-                filteredHistory.map((h) => (
-                  <tr key={h.movementId} className="hover:bg-slate-50/75 transition-colors">
-                    <td className="py-3 px-4 text-center font-mono text-gray-500">{h.inspectionDate}</td>
-                    <td className="py-3 px-4 font-bold text-gray-900">{h.supplierName}</td>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-indigo-700">{h.itemName}</div>
-                      <span className="font-mono text-[11px] text-gray-400">{h.itemCode}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono font-bold text-gray-900">
-                      {h.quantity.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {h.movementType === 'PURCHASE_RECEIPT' ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-3 py-1 rounded-full text-xs">
-                          <Check className="w-3.5 h-3.5" />
-                          <span>إفراج ومقبول</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 font-bold px-3 py-1 rounded-full text-xs">
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>مرفوض فني</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 max-w-sm">
-                      {h.notes || '---'}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>

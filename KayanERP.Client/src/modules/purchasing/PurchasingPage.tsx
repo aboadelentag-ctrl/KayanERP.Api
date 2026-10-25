@@ -1,896 +1,532 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   ShoppingCart,
   PlusCircle,
-  RotateCw,
-  FileSpreadsheet,
   Search,
+  FileSpreadsheet,
   CheckCircle2,
-  AlertTriangle,
-  Building2,
-  Warehouse,
-  Eye,
-  CheckCheck,
-  Plus,
   Trash2,
-  Calendar,
   X,
-  ShieldCheck,
-  BadgePercent,
-  Receipt
+  Building2,
+  ArrowRightLeft,
+  Check
 } from 'lucide-react';
-import {
-  fetchPurchaseOrdersApi,
-  fetchPoLookupsApi,
-  createPurchaseOrderApi,
-  approvePurchaseOrderApi,
-} from './purchasingApi';
-import type {
-  PurchaseOrderDto,
-  PurchaseOrderLookupsDto,
-  PurchaseOrderCreateDto,
-  PurchaseOrderCreateLineDto,
-  PoApproveDto,
-} from './purchasingApi';
+
+export interface RawMaterialDefinition {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  availableUnits: string[];
+  defaultUnit: string;
+  defaultPrice: number;
+  suggestedSupplierId: number;
+}
+
+export interface PurchaseRequestLineDto {
+  id: number;
+  itemId: number;
+  itemCode: string;
+  itemName: string;
+  selectedUnit: string;
+  requestedQty: number;
+  notes?: string;
+  assignedSupplierId?: number;
+  unitPrice?: number;
+}
+
+export interface PurchaseRequestDto {
+  id: number;
+  orderNumber: string;
+  orderDate: string;
+  requestingDepartment: string;
+  requestedBy: string;
+  status: 'PENDING_PROCUREMENT' | 'CONVERTED_TO_PO';
+  lines: PurchaseRequestLineDto[];
+}
 
 export const PurchasingPage: React.FC = () => {
-  const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
-  const [lookups, setLookups] = useState<PurchaseOrderLookupsDto>({
-    suppliers: [],
-    warehouses: [],
-    items: [],
-  });
+  const departmentsList = [
+    'إدارة المخازن المركزية',
+    'صالة تصنيع الحلويات الشرقية',
+    'صالة تصنيع الحلويات الغربية والتورت',
+    'صالة الكنافة والقطايف',
+    'قسم النواشف والكرواسون والبتيفور',
+    'إدارة الصيانة والتشغيل'
+  ];
 
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [modalError, setModalError] = useState<string | null>(null);
+  const suppliersList = [
+    { id: 1, supplierCode: 'SUP-01', supplierName: 'شركة مطاحن الدلتا والصعيد' },
+    { id: 2, supplierCode: 'SUP-02', supplierName: 'مزارع الوادي لمنتجات الألبان والسمن البلدي' },
+    { id: 3, supplierCode: 'SUP-03', supplierName: 'الشركة المصرية لتجارة وتكرير السكر' },
+    { id: 4, supplierCode: 'SUP-04', supplierName: 'الأهرام للكرتون ومواد التعبئة والتغليف' },
+    { id: 5, supplierCode: 'SUP-05', supplierName: 'الشركة السورية لاستيراد المكسرات' }
+  ];
 
-  // النوافذ المنبثقة
-  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
-  const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
-  const [showApproveModal, setShowApproveModal] = useState<boolean>(false);
+  const rawMaterialsList: RawMaterialDefinition[] = [
+    { id: 101, itemCode: 'RAW-FLOUR-72', itemName: 'دقيق فاخر استخراج 72%', availableUnits: ['كجم', 'شيكارة (50 كجم)', 'طن'], defaultUnit: 'شيكارة (50 كجم)', defaultPrice: 925.0, suggestedSupplierId: 1 },
+    { id: 102, itemCode: 'RAW-BTR-02', itemName: 'سمن بلدي بقري طبيعي ممتاز', availableUnits: ['كجم', 'صفيحة (16 كجم)', 'برميل (200 كجم)'], defaultUnit: 'صفيحة (16 كجم)', defaultPrice: 3040.0, suggestedSupplierId: 2 },
+    { id: 103, itemCode: 'RAW-SUG-01', itemName: 'سكر مكرر ناعم فاخر', availableUnits: ['كجم', 'شيكارة (50 كجم)', 'طن'], defaultUnit: 'شيكارة (50 كجم)', defaultPrice: 1400.0, suggestedSupplierId: 3 },
+    { id: 104, itemCode: 'RAW-SMD-03', itemName: 'سميد بسبوسة نمرة 1 مرمل', availableUnits: ['كجم', 'شيكارة (50 كجم)'], defaultUnit: 'شيكارة (50 كجم)', defaultPrice: 1200.0, suggestedSupplierId: 1 },
+    { id: 105, itemCode: 'RAW-PST-05', itemName: 'فستق حلبي محمص نمرة 1', availableUnits: ['كجم', 'كرتونة (10 كجم)'], defaultUnit: 'كجم', defaultPrice: 750.0, suggestedSupplierId: 5 },
+    { id: 106, itemCode: 'PCK-BOX-09', itemName: 'كرتون صواني البسبوسة 50*50', availableUnits: ['قطعة', 'ربطة (100 قطعة)'], defaultUnit: 'قطعة', defaultPrice: 4.5, suggestedSupplierId: 4 }
+  ];
 
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrderDto | null>(null);
-  const [newOrder, setNewOrder] = useState<PurchaseOrderCreateDto>({
-    supplierId: 0,
-    warehouseId: 0,
-    orderDate: new Date().toISOString().slice(0, 10),
-    lines: [],
-  });
-  const [approveModel, setApproveModel] = useState<PoApproveDto | null>(null);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [ordersData, lookupsData] = await Promise.all([
-        fetchPurchaseOrdersApi(),
-        fetchPoLookupsApi(),
-      ]);
-      setOrders(ordersData);
-      setLookups(lookupsData);
-    } catch (err: any) {
-      setErrorMessage(`تعذر جلب أوامر الشراء: ${err.message}`);
-    } finally {
-      setIsLoading(false);
+  // قراءة الطلبات من التخزين المحلي لتثبيت حالتها بعد التحويل
+  const [requests, setRequests] = useState<PurchaseRequestDto[]>(() => {
+    const saved = localStorage.getItem('kayan_purchase_requests');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
     }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // حساب مؤشرات الـ KPIs
-  const pendingCount = useMemo(
-    () => orders.filter((o) => o.status === 'Pending_Procurement').length,
-    [orders]
-  );
-  const approvedCount = useMemo(
-    () => orders.filter((o) => o.status === 'Approved' || o.status === 'Partially_Received').length,
-    [orders]
-  );
-  const totalValue = useMemo(
-    () => orders.reduce((sum, o) => sum + o.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0), 0),
-    [orders]
-  );
-
-  const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
-      if (selectedStatus && o.status !== selectedStatus) return false;
-      if (searchTerm.trim()) {
-        const term = searchTerm.trim().toLowerCase();
-        const matchNum = o.orderNumber.toLowerCase().includes(term);
-        const matchSup = o.supplierName.toLowerCase().includes(term);
-        if (!matchNum && !matchSup) return false;
+    return [
+      {
+        id: 1,
+        orderNumber: 'PR-2026-00101',
+        orderDate: '2026-10-24',
+        requestingDepartment: 'إدارة المخازن المركزية',
+        requestedBy: 'أمين المخزن الرئيسي',
+        status: 'PENDING_PROCUREMENT',
+        lines: [
+          { id: 11, itemId: 101, itemCode: 'RAW-FLOUR-72', itemName: 'دقيق فاخر استخراج 72%', selectedUnit: 'شيكارة (50 كجم)', requestedQty: 100, notes: 'رصيد الدقيق قارب على حد إعادة الطلب', assignedSupplierId: 1, unitPrice: 925 },
+          { id: 12, itemId: 103, itemCode: 'RAW-SUG-01', itemName: 'سكر مكرر ناعم فاخر', selectedUnit: 'شيكارة (50 كجم)', requestedQty: 60, notes: 'لاستهلاك تشغيل الأسبوع القادم', assignedSupplierId: 3, unitPrice: 1400 }
+        ]
+      },
+      {
+        id: 2,
+        orderNumber: 'PR-2026-00102',
+        orderDate: '2026-10-23',
+        requestingDepartment: 'صالة تصنيع الحلويات الشرقية',
+        requestedBy: 'أحمد السعدي (مشرف صالة)',
+        status: 'CONVERTED_TO_PO',
+        lines: [
+          { id: 21, itemId: 102, itemCode: 'RAW-BTR-02', itemName: 'سمن بلدي بقري طبيعي ممتاز', selectedUnit: 'صفيحة (16 كجم)', requestedQty: 75, notes: 'عاجل لتشغيل طلبات عطلة نهاية الأسبوع', assignedSupplierId: 2, unitPrice: 3040 }
+        ]
       }
-      return true;
-    });
-  }, [orders, selectedStatus, searchTerm]);
+    ];
+  });
 
-  // إدارة إنشاء أمر شراء جديد
-  const openCreateModal = () => {
-    setNewOrder({
-      supplierId: lookups.suppliers[0]?.id || 0,
-      warehouseId: lookups.warehouses[0]?.id || 0,
-      orderDate: new Date().toISOString().slice(0, 10),
-      lines: [
-        {
-          itemId: lookups.items[0]?.id || 0,
-          quantity: 100,
-          unitPrice: lookups.items[0]?.basePrice || 0,
-          notes: '',
-        },
-      ],
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [modalRequestDept, setModalRequestDept] = useState(departmentsList[0]);
+  const [modalOrderDate, setModalOrderDate] = useState('2026-10-25');
+  const [modalLines, setModalLines] = useState<{
+    itemId: number;
+    selectedUnit: string;
+    requestedQty: number;
+    notes: string;
+    itemSearchText: string;
+    isDropdownOpen: boolean;
+  }[]>([
+    { itemId: 101, selectedUnit: 'شيكارة (50 كجم)', requestedQty: 100, notes: '', itemSearchText: '', isDropdownOpen: false }
+  ]);
+
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [requestToConvert, setRequestToConvert] = useState<PurchaseRequestDto | null>(null);
+  const [convertLinesData, setConvertLinesData] = useState<{
+    id: number;
+    supplierId: number;
+    unitPrice: number;
+  }[]>([]);
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter(r => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        r.orderNumber.toLowerCase().includes(term) ||
+        r.requestingDepartment.toLowerCase().includes(term) ||
+        r.lines.some(l => l.itemName.toLowerCase().includes(term))
+      );
     });
-    setModalError(null);
+  }, [requests, searchTerm]);
+
+  const openCreateModal = () => {
+    setModalRequestDept(departmentsList[0]);
+    setModalOrderDate(new Date().toISOString().slice(0, 10));
+    setModalLines([
+      { itemId: rawMaterialsList[0].id, selectedUnit: rawMaterialsList[0].defaultUnit, requestedQty: 50, notes: '', itemSearchText: '', isDropdownOpen: false }
+    ]);
     setShowCreateModal(true);
   };
 
-  const addNewLine = () => {
-    const defaultItem = lookups.items[0];
-    setNewOrder((prev) => ({
-      ...prev,
-      lines: [
-        ...prev.lines,
-        {
-          itemId: defaultItem ? defaultItem.id : 0,
-          quantity: 10,
-          unitPrice: defaultItem ? defaultItem.basePrice : 0,
-          notes: '',
-        },
-      ],
-    }));
+  const handleAddNewLine = () => {
+    const item = rawMaterialsList[0];
+    setModalLines([
+      ...modalLines,
+      { itemId: item.id, selectedUnit: item.defaultUnit, requestedQty: 10, notes: '', itemSearchText: '', isDropdownOpen: false }
+    ]);
   };
 
-  const removeLine = (idx: number) => {
-    setNewOrder((prev) => ({
-      ...prev,
-      lines: prev.lines.filter((_, i) => i !== idx),
-    }));
+  const handleSaveRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newReq: PurchaseRequestDto = {
+      id: Date.now(),
+      orderNumber: `PR-2026-00${String(requests.length + 101)}`,
+      orderDate: modalOrderDate,
+      requestingDepartment: modalRequestDept,
+      requestedBy: 'مشرف الصالة الطالبة',
+      status: 'PENDING_PROCUREMENT',
+      lines: modalLines.map((l, idx) => {
+        const item = rawMaterialsList.find(i => i.id === l.itemId) || rawMaterialsList[0];
+        return {
+          id: Date.now() + idx,
+          itemId: item.id,
+          itemCode: item.itemCode,
+          itemName: item.itemName,
+          selectedUnit: l.selectedUnit,
+          requestedQty: Number(l.requestedQty),
+          notes: l.notes || '',
+          assignedSupplierId: item.suggestedSupplierId,
+          unitPrice: item.defaultPrice
+        };
+      })
+    };
+    const updated = [newReq, ...requests];
+    setRequests(updated);
+    localStorage.setItem('kayan_purchase_requests', JSON.stringify(updated));
+    setShowCreateModal(false);
+    setStatusMessage(`✅ تم إصدار طلب الشراء [${newReq.orderNumber}] بنجاح.`);
   };
 
-  const handleItemChanged = (idx: number, itemId: number) => {
-    const item = lookups.items.find((i) => i.id === itemId);
-    setNewOrder((prev) => {
-      const copy = [...prev.lines];
-      copy[idx] = {
-        ...copy[idx],
-        itemId,
-        unitPrice: item ? item.basePrice : 0,
-      };
-      return { ...prev, lines: copy };
-    });
+  const openConvertModal = (req: PurchaseRequestDto) => {
+    if (req.status === 'CONVERTED_TO_PO') return; // منع الفتح إذا كان محولاً مسبقاً
+    setRequestToConvert(req);
+    setConvertLinesData(
+      req.lines.map(l => {
+        const item = rawMaterialsList.find(i => i.id === l.itemId);
+        return {
+          id: l.id,
+          supplierId: l.assignedSupplierId || item?.suggestedSupplierId || 1,
+          unitPrice: l.unitPrice || item?.defaultPrice || 100
+        };
+      })
+    );
+    setShowConvertModal(true);
   };
 
-  const handleSaveOrder = async () => {
-    if (newOrder.supplierId <= 0 || newOrder.warehouseId <= 0) {
-      setModalError('يرجى تحديد المورد ومستودع الاستلام.');
-      return;
-    }
-    if (!newOrder.lines.length || newOrder.lines.some((l) => l.itemId <= 0 || l.quantity <= 0)) {
-      setModalError('يجب إضافة صنف واحد على الأقل بكمية صالحة.');
-      return;
-    }
+  const handleConfirmAndNavigate = () => {
+    if (!requestToConvert) return;
 
-    setIsSaving(true);
-    setModalError(null);
-    try {
-      await createPurchaseOrderApi(newOrder);
-      setStatusMessage('تم إنشاء أمر الشراء بنجاح وهو الآن قيد المراجعة والاعتماد.');
-      setShowCreateModal(false);
-      await loadData();
-    } catch (err: any) {
-      setModalError(`خطأ: ${err.message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    // 1. تحديث وتثبيت حالة الطلب لمنع الضغط عليه مرة أخرى
+    const updatedRequests = requests.map(r => 
+      r.id === requestToConvert.id ? { ...r, status: 'CONVERTED_TO_PO' as const } : r
+    );
+    setRequests(updatedRequests);
+    localStorage.setItem('kayan_purchase_requests', JSON.stringify(updatedRequests));
 
-  // فتح نافذة التفاصيل
-  const openDetailsModal = (order: PurchaseOrderDto) => {
-    setSelectedOrder(order);
-    setShowDetailsModal(true);
-  };
+    // 2. تجميع الأصناف حسب المورد وتوليد أوامر التوريد بدون تكرار
+    const existingPOs = JSON.parse(localStorage.getItem('kayan_purchase_orders') || '[]');
+    const supplierGroups: { [suppId: number]: any[] } = {};
 
-  // فتح نافذة الاعتماد
-  const openApproveModal = (order: PurchaseOrderDto) => {
-    setApproveModel({
-      orderId: order.id,
-      status: 'Approved',
-      lines: order.lines.map((l) => ({
-        lineId: l.id,
-        itemId: l.itemId,
-        quantity: l.quantity,
-        unitPrice: l.unitPrice,
-        notes: l.notes || '',
-      })),
-    });
-    setShowApproveModal(true);
-  };
-
-  const submitApproval = async () => {
-    if (!approveModel) return;
-    setIsSaving(true);
-    try {
-      await approvePurchaseOrderApi(approveModel);
-      setStatusMessage('تم اعتماد أمر الشراء والفاتورة بنجاح، وتم ترحيله لمحطة فحص الجودة والاستلام المخزني.');
-      setShowApproveModal(false);
-      await loadData();
-    } catch (err: any) {
-      setErrorMessage(`خطأ في الاعتماد: ${err.message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // تصدير إكسيل
-  const handleExportCsv = () => {
-    if (!filteredOrders.length) return;
-
-    try {
-      const headers = ['رقم_الأمر', 'التاريخ', 'المورد', 'عدد_البنود', 'القيمة_الإجمالية_ج.م', 'الحالة'];
-      const rows = filteredOrders.map((o) => {
-        const total = o.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
-        return [
-          `"${o.orderNumber}"`,
-          `"${o.orderDate}"`,
-          `"${o.supplierName}"`,
-          o.lines.length,
-          total.toFixed(2),
-          `"${getStatusLabel(o.status)}"`,
-        ].join(',');
+    requestToConvert.lines.forEach(l => {
+      const lineData = convertLinesData.find(c => c.id === l.id);
+      const sId = lineData?.supplierId || 1;
+      const price = lineData?.unitPrice || 100;
+      if (!supplierGroups[sId]) supplierGroups[sId] = [];
+      supplierGroups[sId].push({
+        ...l,
+        unitPrice: price,
+        total: l.requestedQty * price
       });
+    });
 
-      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `أوامر_وفواتير_الشراء_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setStatusMessage('تم تصدير أوامر الشراء إلى إكسيل بنجاح.');
-    } catch (err: any) {
-      setErrorMessage(`فشل التصدير: ${err.message}`);
-    }
-  };
+    const newGeneratedPOs: any[] = [];
+    let counter = existingPOs.length + 101;
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'Pending_Procurement':
-        return 'bg-amber-50 text-amber-800 border border-amber-200';
-      case 'Approved':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      case 'Partially_Received':
-        return 'bg-cyan-50 text-cyan-800 border border-cyan-200';
-      case 'Closed':
-        return 'bg-slate-100 text-slate-700 border border-slate-200';
-      case 'Rejected':
-        return 'bg-rose-50 text-rose-700 border border-rose-200';
-      default:
-        return 'bg-slate-100 text-slate-700 border border-slate-200';
-    }
-  };
+    Object.keys(supplierGroups).forEach(suppIdStr => {
+      const suppId = Number(suppIdStr);
+      const suppObj = suppliersList.find(s => s.id === suppId);
+      const lines = supplierGroups[suppId];
+      const totalSum = lines.reduce((acc, curr) => acc + curr.total, 0);
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'Pending_Procurement': return 'قيد الاعتماد ⏳';
-      case 'Approved': return 'معتمد للتوريد ✅';
-      case 'Partially_Received': return 'توريد جزئي 🚚';
-      case 'Closed': return 'مكتمل ومغلق 🔒';
-      case 'Rejected': return 'مرفوض فني ❌';
-      default: return status;
+      newGeneratedPOs.push({
+        id: Date.now() + Math.random(),
+        poNumber: `PO-2026-${counter++}`,
+        supplierName: suppObj?.supplierName || 'مورد معتمد',
+        details: lines.map(i => `${i.itemName} (${i.requestedQty} ${i.selectedUnit})`).join('، '),
+        issueDate: new Date().toISOString().slice(0, 10),
+        expectedDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10),
+        totalAmount: totalSum,
+        status: 'معتمد قيد التوريد',
+        coaStatus: 'شهادات مطابقة'
+      });
+    });
+
+    localStorage.setItem('kayan_purchase_orders', JSON.stringify([...newGeneratedPOs, ...existingPOs]));
+    setShowConvertModal(false);
+
+    // 3. التحويل المباشر لشاشة أوامر التوريد
+    const poTabBtn = Array.from(document.querySelectorAll('button, a')).find(el => 
+      el.textContent?.includes('أوامر توريد من الموردين') || el.textContent?.includes('فواتير الشراء')
+    ) as HTMLElement;
+
+    if (poTabBtn) {
+      poTabBtn.click();
+    } else {
+      window.location.hash = '#/purchase-orders';
+      window.location.reload();
     }
   };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      
-      {/* 1. Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800/80 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-indigo-600" />
-            <span>أوامر وفواتير الشراء والتوريد</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            إصدار أوامر الشراء، اعتماد فواتير الموردين، وتجهيز الشحنات للفحص المخزني (GMP)
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
+              <ShoppingCart className="w-6 h-6 text-amber-500" />
+              <span>إدارة طلبات واحتياجات الشراء (Procurement & Sourcing)</span>
+            </h1>
+            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              طلبات الأقسام ⟵ تفكيك وتوزيع الموردين
+            </span>
+          </div>
+          <p className="text-xs text-zinc-400">
+            تقديم طلبات الأصناف والكميات بالصالات، وتخصيص كل صنف لمورده المعتمد وتحويله لأمر توريد مستقل.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {orders.length > 0 && (
-            <button
-              onClick={handleExportCsv}
-              disabled={isLoading || !filteredOrders.length}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-xs font-bold transition-colors shadow-xs disabled:opacity-50"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>تصدير (Excel)</span>
-            </button>
-          )}
-
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>أمر شراء جديد</span>
-          </button>
-
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-            title="تحديث"
-          >
-            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+        <button
+          onClick={openCreateModal}
+          className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>+ إنشاء طلب شراء أصناف جديد</span>
+        </button>
       </div>
 
-      {/* 2. رسائل التنبيه */}
       {statusMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{statusMessage}</span>
-          </div>
-          <button onClick={() => setStatusMessage(null)} className="text-emerald-700 hover:text-emerald-900 font-bold">×</button>
+        <div className="mb-4 p-3 bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {statusMessage}
+          </span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-700 hover:text-rose-900 font-bold">×</button>
-        </div>
-      )}
-
-      {/* 3. بطاقات المؤشرات اللحظية (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي أوامر الشراء</span>
-          <span className="text-2xl font-black font-mono text-gray-900 mt-1 block">
-            {orders.length}
-          </span>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-amber-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">قيد المراجعة والاعتماد</span>
-          <span className="text-2xl font-black font-mono text-amber-600 mt-1 block">
-            {pendingCount}
-          </span>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-emerald-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">فواتير معتمدة للتوريد</span>
-          <span className="text-2xl font-black font-mono text-emerald-600 mt-1 block">
-            {approvedCount}
-          </span>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-cyan-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي القيمة المالية للمشتريات</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black font-mono text-cyan-800">
-              {totalValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-            </span>
-            <span className="text-xs font-bold text-gray-500">ج.م</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. فلاتر العرض والبحث */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-3 mb-6 shadow-xs text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-7">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setSelectedStatus(null)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  selectedStatus === null
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                الكل ({orders.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedStatus('Pending_Procurement')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  selectedStatus === 'Pending_Procurement'
-                    ? 'bg-amber-500 text-slate-950 shadow-xs'
-                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                }`}
-              >
-                قيد الاعتماد ⏳ ({pendingCount})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedStatus('Approved')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  selectedStatus === 'Approved'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                }`}
-              >
-                معتمد للتوريد ✅
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedStatus('Partially_Received')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  selectedStatus === 'Partially_Received'
-                    ? 'bg-cyan-600 text-white shadow-xs'
-                    : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
-                }`}
-              >
-                توريد جزئي 🚚
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedStatus('Closed')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  selectedStatus === 'Closed'
-                    ? 'bg-slate-800 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                مكتمل ومغلق 🔒
-              </button>
-            </div>
-          </div>
-
-          <div className="md:col-span-5">
-            <div className="relative flex items-center">
-              <Search className="absolute right-3 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="ابحث برقم الأمر، اسم المورد..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-9 pl-3 py-2 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-600 font-medium"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. جدول أوامر وفواتير الشراء */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 text-xs">
-              <RotateCw className="w-7 h-7 animate-spin mx-auto text-indigo-600 mb-2" />
-              <p>جاري تحميل أوامر الشراء...</p>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-xs font-bold">
-              لا توجد فواتير أو أوامر شراء مطابقة للبحث.
-            </div>
-          ) : (
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200 text-center">
-                <tr>
-                  <th className="py-3 px-3">رقم الأمر / الفاتورة</th>
-                  <th className="py-3 px-3">التاريخ</th>
-                  <th className="py-3 px-3 text-right">المورد</th>
-                  <th className="py-3 px-3">عدد البنود</th>
-                  <th className="py-3 px-3">إجمالي القيمة التقديرية</th>
-                  <th className="py-3 px-3">الحالة الرقابية</th>
-                  <th className="py-3 px-3" style={{ width: '160px' }}>الإجراءات</th>
+      {/* جدول الطلبات */}
+      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800/80 shadow-lg overflow-hidden text-xs">
+        <table className="w-full text-center">
+          <thead className="bg-[#151822] text-zinc-400 border-b border-zinc-800">
+            <tr>
+              <th className="py-3 px-3">رقم الطلب</th>
+              <th className="py-3 px-3">التاريخ</th>
+              <th className="py-3 px-3 text-right">الإدارة الطالبة / المسؤول</th>
+              <th className="py-3 px-3">عدد الأصناف</th>
+              <th className="py-3 px-3">الحالة الرقابية</th>
+              <th className="py-3 px-3">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/60">
+            {filteredRequests.map(r => {
+              const isConverted = r.status === 'CONVERTED_TO_PO';
+              return (
+                <tr key={r.id} className="hover:bg-zinc-900/60 transition-colors">
+                  <td className="py-3 px-3 font-mono font-bold text-amber-400">{r.orderNumber}</td>
+                  <td className="py-3 px-3 font-mono text-zinc-400">{r.orderDate}</td>
+                  <td className="py-3 px-3 text-right font-bold text-zinc-100">
+                    <span>{r.requestingDepartment}</span>
+                    <small className="block text-zinc-500 font-normal">بطلب من: {r.requestedBy}</small>
+                  </td>
+                  <td className="py-3 px-3 font-mono">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded font-bold text-[10px] text-zinc-300">
+                      {r.lines.length} أصناف
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      isConverted ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {isConverted ? 'تم التحويل لأوامر توريد معتمدة ✅' : 'قيد الاعتماد بالكميات ⏳'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    {/* إذا تم التحويل يصبح الزر معطلاً وثابتاً لمنع الضغط عليه مرة أخرى */}
+                    {isConverted ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-xl text-[11px]">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>مكتمل ومعتمد</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => openConvertModal(r)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-[11px] shadow-sm mx-auto"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                        <span>توزيع الموردين والتحويل لأمر توريد</span>
+                      </button>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-center">
-                {filteredOrders.map((o) => {
-                  const orderTotal = o.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
-                  return (
-                    <tr key={o.id} className="hover:bg-slate-50/75 transition-colors">
-                      <td className="py-3 px-3 font-mono font-bold text-indigo-700">{o.orderNumber}</td>
-                      <td className="py-3 px-3 font-mono text-gray-500 text-[11px]">{o.orderDate}</td>
-                      <td className="py-3 px-3 text-right font-bold text-gray-900">
-                        <span className="flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{o.supplierName}</span>
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-mono text-[11px]">
-                          {o.lines.length} أصناف
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 font-mono font-black text-gray-900 text-sm">
-                        {orderTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} <small className="text-[10px] text-gray-500 font-normal">ج.م</small>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeClass(o.status)}`}>
-                          {getStatusLabel(o.status)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openDetailsModal(o)}
-                            className="px-2.5 py-1 text-cyan-800 hover:bg-cyan-50 border border-cyan-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
-                            title="عرض التفاصيل"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-cyan-600" />
-                            <span>التفاصيل</span>
-                          </button>
-
-                          {o.status === 'Pending_Procurement' && (
-                            <button
-                              onClick={() => openApproveModal(o)}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
-                              title="اعتماد الفاتورة والأسعار"
-                            >
-                              <CheckCheck className="w-3.5 h-3.5" />
-                              <span>اعتماد</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* 6. Modal 1: إنشاء أمر شراء جديد */}
+      {/* Modal 1: إنشاء طلب شراء جديد */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-200 flex flex-col max-h-[92vh] text-xs">
-            <div className="px-5 py-3.5 bg-indigo-600 text-white flex items-center justify-between shrink-0">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-amber-300" />
-                <span>إنشاء أمر شراء وتوريد خامات</span>
-              </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-white/80 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
+          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-[#151822] text-white flex items-center justify-between border-b border-zinc-800">
+              <h4 className="font-bold flex items-center gap-2 text-amber-400">
+                <ShoppingCart className="w-4 h-4" />
+                <span>طلب شراء واحتياج أصناف جديد (للصالات والمخازن)</span>
+              </h4>
+              <button onClick={() => setShowCreateModal(false)} className="text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
-              {modalError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl font-bold flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{modalError}</span>
-                </div>
-              )}
-
-              <div className="bg-white p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <form onSubmit={handleSaveRequest} className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-black/40 rounded-xl border border-zinc-800">
                 <div>
-                  <label className="block text-gray-700 font-bold mb-1">
-                    المورد المعتمد <span className="text-rose-500">*</span>
-                  </label>
+                  <label className="block text-zinc-300 font-bold mb-1">الإدارة / الصالة الطالبة *</label>
                   <select
-                    value={newOrder.supplierId}
-                    onChange={(e) => setNewOrder({ ...newOrder, supplierId: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
+                    value={modalRequestDept}
+                    onChange={(e) => setModalRequestDept(e.target.value)}
+                    className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-lg font-bold text-zinc-100"
                   >
-                    <option value={0}>-- اختر المورد --</option>
-                    {lookups.suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.supplierName} ({s.supplierCode})
-                      </option>
+                    {departmentsList.map(d => (
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-gray-700 font-bold mb-1">
-                    مستودع الاستلام المستهدف <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={newOrder.warehouseId}
-                    onChange={(e) => setNewOrder({ ...newOrder, warehouseId: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-                  >
-                    <option value={0}>-- اختر المستودع --</option>
-                    {lookups.warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.warehouseName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">تاريخ إصدار الطلب</label>
+                  <label className="block text-zinc-300 font-bold mb-1">تاريخ الطلب</label>
                   <input
                     type="date"
-                    value={newOrder.orderDate}
-                    onChange={(e) => setNewOrder({ ...newOrder, orderDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono focus:outline-none focus:border-indigo-600"
+                    value={modalOrderDate}
+                    onChange={(e) => setModalOrderDate(e.target.value)}
+                    className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-zinc-100"
                   />
                 </div>
               </div>
 
-              {/* بنود أمر الشراء */}
-              <div className="bg-white p-4 rounded-xl border border-gray-200">
-                <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
-                  <h4 className="font-bold text-gray-800">📋 بنود الخامات ومواد التعبئة المطلوبة</h4>
+              <div className="border border-zinc-800 rounded-xl overflow-visible bg-[#0a0c10]">
+                <div className="p-3 bg-[#13161f] border-b border-zinc-800 flex justify-between items-center">
+                  <span className="font-bold text-zinc-200">📋 قائمة الأصناف والكميات المطلوبة:</span>
                   <button
                     type="button"
-                    onClick={addNewLine}
-                    className="flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold hover:bg-emerald-100 transition-colors"
+                    onClick={handleAddNewLine}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>إضافة بند خامة</span>
+                    ➕ إضافة صنف آخر
                   </button>
                 </div>
 
-                <div className="overflow-x-auto border border-gray-200 rounded-xl">
-                  <table className="w-full text-center text-xs">
-                    <thead className="bg-slate-50 text-gray-700 font-bold border-b">
-                      <tr>
-                        <th className="py-2.5 px-3 text-right" style={{ width: '45%' }}>الصنف / الخامة</th>
-                        <th className="py-2.5 px-3" style={{ width: '20%' }}>الكمية المطلوبة</th>
-                        <th className="py-2.5 px-3" style={{ width: '20%' }}>سعر الوحدة التقديري</th>
-                        <th className="py-2.5 px-3" style={{ width: '15%' }}>الإجمالي</th>
-                        <th className="py-2.5 px-2" style={{ width: '5%' }}>إجراء</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {newOrder.lines.map((line, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="py-2 px-3 text-right">
-                            <select
-                              value={line.itemId}
-                              onChange={(e) => handleItemChanged(idx, Number(e.target.value))}
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-gray-300 rounded-lg font-bold text-gray-800 outline-none focus:border-indigo-600"
-                            >
-                              <option value={0}>-- اختر الصنف --</option>
-                              {lookups.items.map((itm) => (
-                                <option key={itm.id} value={itm.id}>
-                                  {itm.itemName} ({itm.itemCode}) - [{itm.categoryName}]
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="number"
-                              step="0.5"
-                              min="0.1"
-                              value={line.quantity}
-                              onChange={(e) => {
-                                const copy = [...newOrder.lines];
-                                copy[idx].quantity = Number(e.target.value);
-                                setNewOrder({ ...newOrder, lines: copy });
-                              }}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-gray-300 rounded-lg text-center font-mono font-bold text-indigo-700 outline-none"
-                            />
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={line.unitPrice}
-                              onChange={(e) => {
-                                const copy = [...newOrder.lines];
-                                copy[idx].unitPrice = Number(e.target.value);
-                                setNewOrder({ ...newOrder, lines: copy });
-                              }}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-gray-300 rounded-lg text-center font-mono outline-none"
-                            />
-                          </td>
-                          <td className="py-2 px-3 font-mono font-bold text-emerald-600">
-                            {(line.quantity * line.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
-                          </td>
-                          <td className="py-2 px-2">
-                            <button
-                              type="button"
-                              onClick={() => removeLine(idx)}
-                              className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-end pt-3">
-                  <div className="bg-slate-100 px-4 py-2 rounded-xl text-left border border-gray-200">
-                    <span className="text-gray-500 font-bold ml-2">الإجمالي الكلي التقديري:</span>
-                    <strong className="text-base font-black font-mono text-indigo-700">
-                      {newOrder.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
-                    </strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-5 py-3 bg-white border-t border-gray-200 flex justify-between items-center shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={handleSaveOrder}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                {isSaving ? 'جاري الحفظ...' : '💾 حفظ وإصدار أمر الشراء'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 7. Modal 2: عرض تفاصيل أمر الشراء */}
-      {showDetailsModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 flex flex-col max-h-[90vh] text-xs">
-            <div className="px-5 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-cyan-400" />
-                <span>تفاصيل أمر الشراء: {selectedOrder.orderNumber}</span>
-              </h3>
-              <button onClick={() => setShowDetailsModal(false)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
-              <div className="grid grid-cols-3 gap-3 p-3 bg-white rounded-xl border border-gray-200 font-medium">
-                <div><strong>المورد:</strong> {selectedOrder.supplierName}</div>
-                <div><strong>التاريخ:</strong> {selectedOrder.orderDate}</div>
-                <div>
-                  <strong>الحالة:</strong>{' '}
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(selectedOrder.status)}`}>
-                    {getStatusLabel(selectedOrder.status)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white">
-                <table className="w-full text-center text-xs">
-                  <thead className="bg-slate-50 text-gray-700 font-bold border-b">
+                <table className="w-full text-center">
+                  <thead className="bg-[#171a24] text-zinc-400 border-b border-zinc-800">
                     <tr>
-                      <th className="py-2.5 px-3 text-right">الصنف</th>
-                      <th className="py-2.5 px-3">الكمية المطلوبة</th>
-                      <th className="py-2.5 px-3">سعر الوحدة</th>
-                      <th className="py-2.5 px-3">المستلم مخزنياً</th>
-                      <th className="py-2.5 px-3">الإجمالي</th>
+                      <th className="py-2.5 px-3 text-right" style={{ width: '40%' }}>الصنف (بحث بالاسم أو الكود) *</th>
+                      <th className="py-2.5 px-3 w-48">الكمية والوحدة *</th>
+                      <th className="py-2.5 px-3 text-right">ملاحظات أمام الصنف</th>
+                      <th className="py-2.5 px-3 w-14">حذف</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {selectedOrder.lines.map((l, i) => (
-                      <tr key={i} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 text-right font-bold text-gray-900">
-                          <div>{l.itemName}</div>
-                          <span className="font-mono text-gray-400 text-[10px]">{l.itemCode}</span>
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold">{l.quantity} {l.unit}</td>
-                        <td className="py-2.5 px-3 font-mono text-gray-700">{l.unitPrice.toFixed(2)} ج.م</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
-                          {l.receivedQuantity > 0 ? `${l.receivedQuantity} ${l.unit}` : '---'}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-indigo-700">
-                          {(l.quantity * l.unitPrice).toFixed(2)} ج.م
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  <tbody className="divide-y divide-zinc-800/80">
+                    {modalLines.map((line, idx) => {
+                      const selectedItem = rawMaterialsList.find(i => i.id === line.itemId) || rawMaterialsList[0];
+                      const query = line.itemSearchText.trim().toLowerCase();
+                      const searchResults = rawMaterialsList.filter(item =>
+                        !query || item.itemName.toLowerCase().includes(query) || item.itemCode.toLowerCase().includes(query)
+                      );
 
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowDetailsModal(false)}
-                className="px-5 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl"
-              >
-                إغلاق
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 8. Modal 3: اعتماد أمر الشراء والفاتورة */}
-      {showApproveModal && approveModel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 flex flex-col max-h-[90vh] text-xs">
-            <div className="px-5 py-3 bg-emerald-600 text-white flex items-center justify-between shrink-0">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <CheckCheck className="w-4 h-4 text-amber-300" />
-                <span>اعتماد الفاتورة وتثبيت أسعار التوريد النهائية</span>
-              </h3>
-              <button onClick={() => setShowApproveModal(false)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
-              <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-xl text-cyan-800 font-medium">
-                مراجعة الأسعار المعتمدة مع المورد لترحيل أمر الشراء مباشرة إلى محطة <strong>فحص الجودة واستلام الخامات (GMP)</strong>:
-              </div>
-
-              <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white">
-                <table className="w-full text-center text-xs">
-                  <thead className="bg-slate-50 text-gray-700 font-bold border-b">
-                    <tr>
-                      <th className="py-2.5 px-3 text-right">الصنف</th>
-                      <th className="py-2.5 px-3" style={{ width: '25%' }}>الكمية المعتمدة</th>
-                      <th className="py-2.5 px-3" style={{ width: '25%' }}>سعر الوحدة النهائي</th>
-                      <th className="py-2.5 px-3" style={{ width: '30%' }}>ملاحظات الاعتماد</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {approveModel.lines.map((line, idx) => {
-                      const item = lookups.items.find((i) => i.id === line.itemId);
                       return (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="py-2 px-3 text-right font-bold text-gray-900">
-                            {item?.itemName || `صنف ${line.itemId}`}
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="number"
-                              step="0.5"
-                              value={line.quantity}
-                              onChange={(e) => {
-                                const copy = [...approveModel.lines];
-                                copy[idx].quantity = Number(e.target.value);
-                                setApproveModel({ ...approveModel, lines: copy });
-                              }}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-gray-300 rounded-lg text-center font-mono font-bold"
-                            />
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={line.unitPrice}
-                              onChange={(e) => {
-                                const copy = [...approveModel.lines];
-                                copy[idx].unitPrice = Number(e.target.value);
-                                setApproveModel({ ...approveModel, lines: copy });
-                              }}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-emerald-400 rounded-lg text-center font-mono font-bold text-emerald-600"
-                            />
-                          </td>
-                          <td className="py-2 px-3">
+                        <tr key={idx} className="relative">
+                          <td className="py-2 px-3 text-right relative">
                             <input
                               type="text"
-                              placeholder="ملاحظة أو اتفاق خاص..."
-                              value={line.notes || ''}
-                              onChange={(e) => {
-                                const copy = [...approveModel.lines];
-                                copy[idx].notes = e.target.value;
-                                setApproveModel({ ...approveModel, lines: copy });
+                              value={line.isDropdownOpen ? line.itemSearchText : `${selectedItem.itemName} [${selectedItem.itemCode}]`}
+                              onFocus={() => {
+                                const copy = [...modalLines];
+                                copy[idx].isDropdownOpen = true;
+                                copy[idx].itemSearchText = '';
+                                setModalLines(copy);
                               }}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-gray-200 rounded-lg text-[11px]"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const copy = [...modalLines];
+                                copy[idx].itemSearchText = val;
+                                copy[idx].isDropdownOpen = true;
+                                setModalLines(copy);
+                              }}
+                              placeholder="ابحث بالاسم أو الكود..."
+                              className="w-full px-3 py-1.5 bg-[#171922] border border-zinc-700 rounded-lg font-bold text-xs outline-none text-zinc-100 focus:border-amber-500"
                             />
+
+                            {line.isDropdownOpen && (
+                              <div className="absolute z-50 top-full right-0 w-full bg-[#171922] border border-zinc-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto mt-1 text-xs">
+                                {searchResults.map(item => (
+                                  <div
+                                    key={item.id}
+                                    onMouseDown={() => {
+                                      const copy = [...modalLines];
+                                      copy[idx].itemId = item.id;
+                                      copy[idx].selectedUnit = item.defaultUnit;
+                                      copy[idx].isDropdownOpen = false;
+                                      setModalLines(copy);
+                                    }}
+                                    className="p-2.5 px-3 hover:bg-amber-500/20 cursor-pointer flex justify-between items-center border-b border-zinc-800"
+                                  >
+                                    <span className="font-bold text-zinc-100">{item.itemName}</span>
+                                    <span className="font-mono text-amber-400 font-bold">[{item.itemCode}]</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5 justify-center">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0.001"
+                                value={line.requestedQty}
+                                onChange={(e) => {
+                                  const copy = [...modalLines];
+                                  copy[idx].requestedQty = Number(e.target.value);
+                                  setModalLines(copy);
+                                }}
+                                className="w-20 px-2 py-1 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-center text-amber-400"
+                              />
+                              <select
+                                value={line.selectedUnit}
+                                onChange={(e) => {
+                                  const copy = [...modalLines];
+                                  copy[idx].selectedUnit = e.target.value;
+                                  setModalLines(copy);
+                                }}
+                                className="px-1.5 py-1 bg-[#202330] border border-zinc-700 rounded-lg font-bold text-[11px] text-amber-300 outline-none"
+                              >
+                                {selectedItem.availableUnits.map(u => (
+                                  <option key={u} value={u}>{u}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </td>
+
+                          <td className="py-2 px-3 text-right">
+                            <input
+                              type="text"
+                              value={line.notes}
+                              placeholder="ملاحظات التشغيل..."
+                              onChange={(e) => {
+                                const copy = [...modalLines];
+                                copy[idx].notes = e.target.value;
+                                setModalLines(copy);
+                              }}
+                              className="w-full px-2.5 py-1 bg-[#171922] border border-zinc-700 rounded-lg text-xs text-zinc-200"
+                            />
+                          </td>
+
+                          <td className="py-2 px-3">
+                            <button type="button" onClick={() => setModalLines(modalLines.filter((_, i) => i !== idx))} className="text-rose-400 hover:text-rose-600">
+                              <Trash2 className="w-4 h-4 mx-auto" />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -898,29 +534,118 @@ export const PurchasingPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
 
-            <div className="px-5 py-3 bg-white border-t border-gray-200 flex justify-between items-center shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowApproveModal(false)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={submitApproval}
-                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
-              >
-                ✓ تأكيد الاعتماد وترحيل الأمر لمحطة الاستلام
-              </button>
-            </div>
+              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl">إلغاء</button>
+                <button type="submit" className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md">🚀 إرسال طلب الشراء للمشتريات</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
+      {/* Modal 2: توزيع وتخصيص المورد لكل صنف */}
+      {showConvertModal && requestToConvert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
+          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-zinc-800">
+              <h4 className="font-bold flex items-center gap-2 text-emerald-400">
+                <ArrowRightLeft className="w-4 h-4" />
+                <span>تحويل الطلب [{requestToConvert.orderNumber}] - تخصيص الموردين وتوليد أوامر التوريد</span>
+              </h4>
+              <button onClick={() => setShowConvertModal(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 rounded-xl">
+                💡 <strong>منظومة المشتريات:</strong> نظراً لأن طلب الشراء يحتوي على خامات متعددة، حدد أمام كل صنف المورد المعتمد له وسعر الوحدة، وسيقوم النظام آلياً بتفكيكها إلى أمر توريد منفصل لكل مورد ونقلها لشاشة أوامر التوريد فوراً.
+              </div>
+
+              <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
+                <table className="w-full text-center">
+                  <thead className="bg-[#171a24] text-zinc-400">
+                    <tr>
+                      <th className="py-2.5 px-3 text-right" style={{ width: '28%' }}>الصنف المطلوب</th>
+                      <th className="py-2.5 px-3 w-28">الكمية والوحدة</th>
+                      <th className="py-2.5 px-3 text-right" style={{ width: '35%' }}>🏢 المورد المعتمد لهذا الصنف *</th>
+                      <th className="py-2.5 px-3 w-28">سعر الوحدة (ج.م)</th>
+                      <th className="py-2.5 px-3">الإجمالي</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {requestToConvert.lines.map((l) => {
+                      const cur = convertLinesData.find(c => c.id === l.id);
+                      const suppId = cur?.supplierId || 1;
+                      const price = cur?.unitPrice || 0;
+                      const lineTotal = l.requestedQty * price;
+
+                      return (
+                        <tr key={l.id}>
+                          <td className="py-2.5 px-3 text-right font-bold text-zinc-100">
+                            {l.itemName}
+                            {l.notes && <small className="block text-zinc-500">{l.notes}</small>}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-amber-400">{l.requestedQty} {l.selectedUnit}</td>
+                          
+                          <td className="py-2.5 px-3 text-right">
+                            <select
+                              value={suppId}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setConvertLinesData(convertLinesData.map(c => c.id === l.id ? { ...c, supplierId: val } : c));
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-[#171922] border border-emerald-500/50 rounded-lg font-bold text-emerald-300 text-xs"
+                            >
+                              {suppliersList.map(s => (
+                                <option key={s.id} value={s.id}>{s.supplierName}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="number"
+                              step="any"
+                              value={price}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setConvertLinesData(convertLinesData.map(c => c.id === l.id ? { ...c, unitPrice: val } : c));
+                              }}
+                              className="w-full px-2 py-1 bg-[#171922] border border-zinc-700 rounded font-mono font-bold text-center text-zinc-100"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
+                            {lineTotal.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+                <button type="button" onClick={() => setShowConvertModal(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl">إلغاء</button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAndNavigate}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg flex items-center gap-2"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                  <span>اعتماد وتوليد أوامر التوريد والتحويل لشاشة الموردين ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export const PurchasesPage = PurchasingPage;
+export const PurchaseOrdersPage = PurchasingPage;
+export const PurchaseInvoicesPage = PurchasingPage;
+export default PurchasingPage;
