@@ -1,258 +1,604 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { DataTable } from '../../core/components/data-table';
-import type { ColumnDef, FilterField } from '../../core/components/data-table';
-import { fetchJournalEntriesApi, saveJournalEntriesToLocal } from './journalApi';
-import type { JournalEntry } from './journalApi';
-import { NewJournalEntryModal } from './NewJournalEntryModal';
-import { PermissionGuard } from '../../core/auth/PermissionGuard';
-import { Scale, Plus, CheckCircle2, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  BookOpen,
+  PlusCircle,
+  Search,
+  CheckCircle2,
+  Eye,
+  Trash2,
+  Scale,
+  RotateCw,
+  FileText
+} from 'lucide-react';
+import {
+  fetchJournalEntriesApi,
+  saveJournalEntryApi
+} from './journalApi';
+import type {
+  JournalEntryViewDto,
+  JournalEntryLineViewDto
+} from './journalApi';
 
 export const JournalEntriesPage: React.FC = () => {
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [entries, setEntries] = useState<JournalEntryViewDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [pageIndex, setPageIndex] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [expandedEntryId, setExpandedEntryId] = useState<number | null>(null);
+  const [selectedSourceFilter, setSelectedSourceFilter] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Modal فحص الأطراف
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState<boolean>(false);
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntryViewDto | null>(null);
+
+  // Modal قيد يدوي جديد
+  const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
+  const [newEntry, setNewEntry] = useState<{
+    entryDate: string;
+    branchName: string;
+    referenceNumber: string;
+    description: string;
+    lines: JournalEntryLineViewDto[];
+  }>({
+    entryDate: new Date().toISOString().slice(0, 10),
+    branchName: 'المركز الرئيسي (المصنع)',
+    referenceNumber: '',
+    description: '',
+    lines: [
+      { accountCode: '54', accountName: 'هالك تشغيل غير طبيعي', debit: 0, credit: 0, memo: '' },
+      { accountCode: '1231', accountName: 'مخزن المواد الخام والتعبئة', debit: 0, credit: 0, memo: '' }
+    ]
+  });
 
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      const data = await fetchJournalEntriesApi();
-      setEntries(data);
-      setIsLoading(false);
-    };
-    load();
+    loadEntries();
   }, []);
 
-  const handleSaveEntry = (newEntry: JournalEntry) => {
-    const updated = [newEntry, ...entries];
-    setEntries(updated);
-    saveJournalEntriesToLocal(updated);
-
-    const accData = JSON.parse(localStorage.getItem('kayan_chart_of_accounts') || '[]');
-    const updatedAccounts = accData.map((acc: any) => {
-      const matchLines = newEntry.lines.filter((l) => l.accountId === acc.id);
-      if (matchLines.length > 0) {
-        let balanceDelta = 0;
-        matchLines.forEach((l) => {
-          if (acc.nature === 'مدين') {
-            balanceDelta += (l.debit - l.credit);
-          } else {
-            balanceDelta += (l.credit - l.debit);
-          }
-        });
-        return { ...acc, currentBalance: acc.currentBalance + balanceDelta };
-      }
-      return acc;
-    });
-    localStorage.setItem('kayan_chart_of_accounts', JSON.stringify(updatedAccounts));
+  const loadEntries = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchJournalEntriesApi();
+      setEntries(data);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const columns = useMemo<ColumnDef<JournalEntry>[]>(
-    () => [
-      {
-        key: 'entryNumber',
-        header: 'رقم القيد',
-        width: '135px',
-        render: (row) => (
-          <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-xs">
-            {row.entryNumber}
-          </span>
-        ),
-      },
-      {
-        key: 'date',
-        header: 'التاريخ',
-        align: 'center',
-        render: (row) => <span className="font-mono text-xs text-gray-500">{row.date}</span>,
-      },
-      {
-        key: 'description',
-        header: 'البيان والمرجع',
-        render: (row) => (
-          <div>
-            <div className="font-semibold text-gray-900 text-xs">{row.description}</div>
-            <div className="text-[11px] text-gray-400 mt-0.5">
-              {row.referenceType} ({row.referenceNumber}) - بواسطة: {row.createdBy}
-            </div>
-          </div>
-        ),
-      },
-      {
-        key: 'totalDebit',
-        header: 'إجمالي الطرف المدين',
-        align: 'center',
-        render: (row) => (
-          <span className="font-mono font-bold text-xs text-emerald-700">
-            {row.totalDebit.toLocaleString()} ج.م
-          </span>
-        ),
-      },
-      {
-        key: 'totalCredit',
-        header: 'إجمالي الطرف الدائن',
-        align: 'center',
-        render: (row) => (
-          <span className="font-mono font-bold text-xs text-amber-700">
-            {row.totalCredit.toLocaleString()} ج.م
-          </span>
-        ),
-      },
-      {
-        key: 'status',
-        header: 'الحالة',
-        align: 'center',
-        render: (row) => (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{row.status}</span>
-          </span>
-        ),
-      },
-      {
-        key: 'actions',
-        header: 'تفاصيل القيد',
-        align: 'center',
-        width: '100px',
-        render: (row) => (
-          <button
-            onClick={() => setExpandedEntryId(expandedEntryId === row.id ? null : row.id)}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200"
-          >
-            <span>{expandedEntryId === row.id ? 'إخفاء' : 'عرض'}</span>
-            {expandedEntryId === row.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-        ),
-      },
-    ],
-    [expandedEntryId]
-  );
-
-  const filterFields: FilterField[] = [
-    {
-      key: 'referenceType',
-      label: 'نوع المستند المرجعي',
-      type: 'select',
-      options: [
-        { label: 'فاتورة مبيعات', value: 'فاتورة مبيعات' },
-        { label: 'صرف خامات معمل', value: 'صرف خامات معمل' },
-        { label: 'سند صرف مصروفات', value: 'سند صرف مصروفات' },
-        { label: 'قيد تسوية يدوي', value: 'قيد تسوية يدوي' },
-      ],
-    },
-  ];
-
-  const filteredData = useMemo(() => {
-    return entries.filter((item) => {
+  const filteredEntries = useMemo(() => {
+    return entries.filter(e => {
+      const matchSource = !selectedSourceFilter || e.referenceType === selectedSourceFilter;
       const matchSearch =
-        item.entryNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchType = typeFilter ? item.referenceType === typeFilter : true;
-      return matchSearch && matchType;
+        !searchTerm.trim() ||
+        e.entryNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.description.includes(searchTerm) ||
+        e.lines.some(l => l.accountName.includes(searchTerm) || l.accountCode.includes(searchTerm));
+      return matchSource && matchSearch;
     });
-  }, [entries, searchTerm, typeFilter]);
+  }, [entries, selectedSourceFilter, searchTerm]);
 
-  const paginatedData = useMemo(() => {
-    const start = (pageIndex - 1) * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, pageIndex, pageSize]);
+  const totalDebitVolume = useMemo(() => {
+    return entries.reduce((sum, e) => sum + e.totalDebit, 0);
+  }, [entries]);
+
+  const autoGeneratedCount = useMemo(() => {
+    return entries.filter(e => e.referenceType !== 'MANUAL').length;
+  }, [entries]);
+
+  const newEntryTotalDebit = useMemo(() => {
+    return newEntry.lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
+  }, [newEntry.lines]);
+
+  const newEntryTotalCredit = useMemo(() => {
+    return newEntry.lines.reduce((sum, l) => sum + Number(l.credit || 0), 0);
+  }, [newEntry.lines]);
+
+  const isBalanced = newEntryTotalDebit === newEntryTotalCredit && newEntryTotalDebit > 0;
+
+  const handleOpenDetails = (entry: JournalEntryViewDto) => {
+    setSelectedEntry(entry);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleOpenNewModal = () => {
+    setErrorMessage(null);
+    setNewEntry({
+      entryDate: new Date().toISOString().slice(0, 10),
+      branchName: 'المركز الرئيسي (المصنع)',
+      referenceNumber: '',
+      description: '',
+      lines: [
+        { accountCode: '54', accountName: 'هالك تشغيل غير طبيعي', debit: 0, credit: 0, memo: '' },
+        { accountCode: '1231', accountName: 'مخزن المواد الخام والتعبئة', debit: 0, credit: 0, memo: '' }
+      ]
+    });
+    setIsNewModalOpen(true);
+  };
+
+  const addLine = () => {
+    setNewEntry(prev => ({
+      ...prev,
+      lines: [...prev.lines, { accountCode: '', accountName: '', debit: 0, credit: 0, memo: '' }]
+    }));
+  };
+
+  const removeLine = (idx: number) => {
+    if (newEntry.lines.length <= 2) return;
+    setNewEntry(prev => ({
+      ...prev,
+      lines: prev.lines.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleSaveNewEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEntry.description.trim()) {
+      setErrorMessage('⚠️ يرجى إدخال بيان وشرح القيد.');
+      return;
+    }
+
+    if (!isBalanced) {
+      setErrorMessage('⚠️ لا يمكن ترحيل قيد غير متزن.');
+      return;
+    }
+
+    const created: JournalEntryViewDto = {
+      id: Date.now(),
+      entryNumber: `JE-2026-${Date.now().toString().slice(-3)}`,
+      entryDate: newEntry.entryDate,
+      description: newEntry.description,
+      referenceType: 'MANUAL',
+      referenceNumber: newEntry.referenceNumber || undefined,
+      branchName: newEntry.branchName,
+      isPosted: true,
+      totalDebit: newEntryTotalDebit,
+      totalCredit: newEntryTotalCredit,
+      lines: newEntry.lines.map(l => ({
+        ...l,
+        debit: Number(l.debit || 0),
+        credit: Number(l.credit || 0)
+      }))
+    };
+
+    await saveJournalEntryApi(created);
+    setEntries(prev => [created, ...prev]);
+    setIsNewModalOpen(false);
+    setStatusMessage(`تم ترحيل القيد المحاسبي المتزن (${created.entryNumber}) بقيمة ${created.totalDebit.toLocaleString()} ج.م.`);
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
+  const getSourceBadge = (refType: string) => {
+    switch (refType) {
+      case 'SALES_INVOICE': return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+      case 'RECEIPT_VOUCHER': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'MATERIAL_REQUISITION': return 'bg-amber-50 text-amber-800 border border-amber-200';
+      default: return 'bg-slate-100 text-slate-700 border border-slate-200';
+    }
+  };
+
+  const getSourceArabic = (refType: string) => {
+    switch (refType) {
+      case 'SALES_INVOICE': return 'فاتورة مبيعات';
+      case 'RECEIPT_VOUCHER': return 'تحصيل خزينة';
+      case 'MATERIAL_REQUISITION': return 'صرف خامات MES';
+      default: return 'تسوية يدوية';
+    }
+  };
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen" dir="rtl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
+      {/* الترويسة المالية */}
+      <div className="bg-white p-5 rounded-2xl shadow-xs border-r-4 border-r-indigo-600 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Scale className="w-7 h-7 text-indigo-600" />
-            <span>سجل ودفتر قيود اليومية العامة (General Journal)</span>
+          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-indigo-600" />
+            <span>دفتر قيود اليومية العامة ومحرك الترحيل (Journal Hub)</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            الترحيل المحاسبي المزدوج التلقائي لفواتير المبيعات وصرف الخامات، وتسجيل قيود التسويات اليدوية
+          <p className="text-xs text-slate-500 mt-1">
+            استعراض القيود المحاسبية المتولدة آلياً من دورات التشغيل والتوزيع وإثبات التسويات اليدوية.
           </p>
         </div>
 
-        <PermissionGuard permission="Journal.Post" showDisabled>
+        <div className="flex gap-2">
           <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-sm text-sm"
+            onClick={loadEntries}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            <span>تحرير قيد يومية يدوي</span>
+            <RotateCw className="w-4 h-4 text-indigo-600" />
+            <span>تحديث القيود</span>
           </button>
-        </PermissionGuard>
+          <button
+            onClick={handleOpenNewModal}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-xs transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>إنشاء قيد تسوية يدوي</span>
+          </button>
+        </div>
       </div>
 
-      <DataTable<JournalEntry>
-        columns={columns}
-        data={paginatedData}
-        totalRecords={filteredData.length}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        onPageChange={setPageIndex}
-        onPageSizeChange={setPageSize}
-        onSearch={setSearchTerm}
-        filters={filterFields}
-        onFilterChange={(f) => setTypeFilter(f.referenceType || '')}
-        isLoading={isLoading}
-        exportFileName="دفتر_قيود_اليومية_كيان"
-        enableExport={true}
-      />
-
-      {expandedEntryId && (
-        <div className="mt-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-fadeIn">
-          {(() => {
-            const entry = entries.find((e) => e.id === expandedEntryId);
-            if (!entry) return null;
-            return (
-              <div>
-                <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-                    <FileText className="w-4 h-4 text-indigo-600" />
-                    <span>تفاصيل سطور وحسابات القيد ({entry.entryNumber})</span>
-                  </div>
-                  <span className="text-xs text-gray-500 font-mono">{entry.description}</span>
-                </div>
-
-                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs">
-                  <div className="grid grid-cols-12 bg-slate-50 p-2 font-bold text-gray-600">
-                    <div className="col-span-3">كود واسم الحساب</div>
-                    <div className="col-span-5">شرح البند</div>
-                    <div className="col-span-2 text-center text-emerald-800">مدين (Debit)</div>
-                    <div className="col-span-2 text-center text-amber-800">دائن (Credit)</div>
-                  </div>
-
-                  {entry.lines.map((line) => (
-                    <div key={line.id} className="grid grid-cols-12 p-2.5 items-center">
-                      <div className="col-span-3">
-                        <span className="font-mono font-bold text-indigo-700 ml-1">{line.accountCode}</span>
-                        <span className="text-gray-800">{line.accountName}</span>
-                      </div>
-                      <div className="col-span-5 text-gray-500">{line.description}</div>
-                      <div className="col-span-2 text-center font-mono font-bold text-emerald-700">
-                        {line.debit > 0 ? `${line.debit.toLocaleString()} ج.م` : '-'}
-                      </div>
-                      <div className="col-span-2 text-center font-mono font-bold text-amber-700">
-                        {line.credit > 0 ? `${line.credit.toLocaleString()} ج.م` : '-'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+      {statusMessage && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
+          <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />{statusMessage}</span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      <NewJournalEntryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveEntry}
-      />
+      {/* بطاقات المؤشرات المالية */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 shadow-xs">
+          <span className="text-xs text-gray-500 font-bold block">إجمالي القيود المسجلة</span>
+          <h4 className="text-2xl font-black text-indigo-700 font-mono mt-1">{entries.length} <span className="text-xs font-normal text-gray-500">قيد</span></h4>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-emerald-500 shadow-xs">
+          <span className="text-xs text-gray-500 font-bold block">حجم التداول المحاسبي المتزن</span>
+          <h4 className="text-2xl font-black text-emerald-600 font-mono mt-1">{totalDebitVolume.toLocaleString()} <span className="text-xs font-normal text-gray-500">ج.م</span></h4>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-cyan-500 shadow-xs">
+          <span className="text-xs text-gray-500 font-bold block">قيود آلية من دورات التشغيل</span>
+          <h4 className="text-2xl font-black text-cyan-700 font-mono mt-1">{autoGeneratedCount} <span className="text-xs font-normal text-gray-500">قيد آلي</span></h4>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-amber-500 shadow-xs">
+          <span className="text-xs text-gray-500 font-bold block">حالة توازن الدفتر العام</span>
+          <h4 className="text-2xl font-black text-slate-800 font-mono mt-1">متزن 100% ✓</h4>
+        </div>
+      </div>
+
+      {/* البحث والفلترة */}
+      <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-xs mb-6 flex flex-wrap items-center gap-3 text-xs">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="ابحث برقم القيد، البيان، اسم الحساب أو الكود..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:border-indigo-600 font-medium"
+          />
+        </div>
+
+        <select
+          value={selectedSourceFilter}
+          onChange={(e) => setSelectedSourceFilter(e.target.value)}
+          className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700 outline-none"
+        >
+          <option value="">-- كافة مصادر القيود --</option>
+          <option value="SALES_INVOICE">فواتير مبيعات التوزيع</option>
+          <option value="RECEIPT_VOUCHER">سندات تحصيل الخزينة</option>
+          <option value="MATERIAL_REQUISITION">صرف خامات الصالات (MES)</option>
+          <option value="MANUAL">قيود تسوية يدوية</option>
+        </select>
+      </div>
+
+      {/* جدول القيود */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
+        <table className="w-full text-center">
+          <thead className="bg-slate-900 text-white">
+            <tr>
+              <th className="py-3 px-3">رقم القيد</th>
+              <th className="py-3 px-3">التاريخ</th>
+              <th className="py-3 px-3">مصدر القيد والمرجع</th>
+              <th className="py-3 px-3 text-right">البيان والشرح العام</th>
+              <th className="py-3 px-3">الفرع التابع</th>
+              <th className="py-3 px-3">إجمالي القيد</th>
+              <th className="py-3 px-3">الحالة</th>
+              <th className="py-3 px-3">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredEntries.map(e => (
+              <tr key={e.id} className="hover:bg-slate-50">
+                <td className="py-3 px-3 font-mono font-bold text-indigo-700">{e.entryNumber}</td>
+                <td className="py-3 px-3 font-mono text-gray-500">{e.entryDate}</td>
+                <td className="py-3 px-3">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getSourceBadge(e.referenceType)}`}>
+                    {getSourceArabic(e.referenceType)}
+                  </span>
+                  {e.referenceNumber && (
+                    <span className="block text-[10px] font-mono text-gray-400 mt-0.5">{e.referenceNumber}</span>
+                  )}
+                </td>
+                <td className="py-3 px-3 text-right font-bold text-gray-900">{e.description}</td>
+                <td className="py-3 px-3"><span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700">{e.branchName}</span></td>
+                <td className="py-3 px-3 font-mono font-black text-emerald-700">{e.totalDebit.toLocaleString()} ج.م</td>
+                <td className="py-3 px-3">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">مرحل ومعتمد ✓</span>
+                </td>
+                <td className="py-3 px-3">
+                  <button
+                    onClick={() => handleOpenDetails(e)}
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px] flex items-center gap-1 mx-auto"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>فحص الأطراف</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* نافذة فحص أطراف القيد المزدوج */}
+      {isDetailsModalOpen && selectedEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 text-xs">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+              <h4 className="font-bold flex items-center gap-2">
+                <Scale className="w-4 h-4 text-amber-400" />
+                <span>تفاصيل القيد المزدوج: {selectedEntry.entryNumber}</span>
+              </h4>
+              <button onClick={() => setIsDetailsModalOpen(false)} className="text-white">×</button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-slate-50 p-3 rounded-xl border grid grid-cols-3 gap-3">
+                <div><strong>التاريخ:</strong> <span className="font-mono">{selectedEntry.entryDate}</span></div>
+                <div><strong>الفرع:</strong> {selectedEntry.branchName}</div>
+                <div><strong>المصدر:</strong> {getSourceArabic(selectedEntry.referenceType)}</div>
+                <div className="col-span-3 mt-1"><strong>البيان:</strong> {selectedEntry.description}</div>
+              </div>
+
+              <div className="border rounded-xl overflow-hidden">
+                <table className="w-full text-center">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="py-2.5 px-3">رقم الحساب</th>
+                      <th className="py-2.5 px-3 text-right">اسم الحساب في الدليل</th>
+                      <th className="py-2.5 px-3 text-emerald-700">مدين (Debit)</th>
+                      <th className="py-2.5 px-3 text-rose-700">دائن (Credit)</th>
+                      <th className="py-2.5 px-3 text-right">الشرح التحليلي</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {selectedEntry.lines.map((line, idx) => (
+                      <tr key={idx}>
+                        <td className="py-2 px-3 font-mono font-bold text-indigo-700">{line.accountCode}</td>
+                        <td className="py-2 px-3 text-right font-bold text-gray-800">{line.accountName}</td>
+                        <td className="py-2 px-3 font-mono font-bold text-emerald-700">{line.debit > 0 ? line.debit.toLocaleString() : '-'}</td>
+                        <td className="py-2 px-3 font-mono font-bold text-rose-700">{line.credit > 0 ? line.credit.toLocaleString() : '-'}</td>
+                        <td className="py-2 px-3 text-right text-gray-500 text-[11px]">{line.memo || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-100 font-bold border-t">
+                    <tr>
+                      <td colSpan={2} className="py-2 px-3 text-right">الإجمالي المتزن:</td>
+                      <td className="py-2 px-3 font-mono text-emerald-700">{selectedEntry.totalDebit.toLocaleString()} ج.م</td>
+                      <td className="py-2 px-3 font-mono text-rose-700">{selectedEntry.totalCredit.toLocaleString()} ج.م</td>
+                      <td className="py-2 px-3"><span className="text-emerald-700">متزن 100% ✓</span></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 border-t text-left">
+              <button
+                onClick={() => setIsDetailsModalOpen(false)}
+                className="px-4 py-1.5 bg-slate-800 text-white font-bold rounded-lg"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة قيد تسوية يدوي جديد */}
+      {isNewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-200 text-xs flex flex-col max-h-[90vh]">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <h4 className="font-bold flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-emerald-400" />
+                <span>إنشاء قيد تسوية محاسبي يدوي متزن</span>
+              </h4>
+              <button onClick={() => setIsNewModalOpen(false)} className="text-white">×</button>
+            </div>
+
+            <form onSubmit={handleSaveNewEntry} className="p-5 space-y-4 overflow-y-auto flex-1 bg-slate-50">
+              {errorMessage && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl font-bold">
+                  {errorMessage}
+                </div>
+              )}
+
+              <div className="bg-white p-4 rounded-xl border grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">تاريخ القيد *</label>
+                  <input
+                    type="date"
+                    required
+                    value={newEntry.entryDate}
+                    onChange={(e) => setNewEntry({ ...newEntry, entryDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-mono text-center font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">الفرع التابع</label>
+                  <select
+                    value={newEntry.branchName}
+                    onChange={(e) => setNewEntry({ ...newEntry, branchName: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold"
+                  >
+                    <option value="المركز الرئيسي (المصنع)">المركز الرئيسي (المصنع)</option>
+                    <option value="فرع دكرنس">فرع دكرنس</option>
+                    <option value="فرع شربين">فرع شربين</option>
+                    <option value="فرع منية النصر">فرع منية النصر</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">رقم المستند المرجعي</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: تسوية-جرد-01"
+                    value={newEntry.referenceNumber}
+                    onChange={(e) => setNewEntry({ ...newEntry, referenceNumber: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-mono"
+                  />
+                </div>
+                <div className="col-span-3">
+                  <label className="block text-gray-700 font-bold mb-1">البيان والشرح العام للقيد *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: تسوية فروق الجرد الدوري لمخزن الخامات..."
+                    value={newEntry.description}
+                    onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* أطراف القيد */}
+              <div className="bg-white p-4 rounded-xl border space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-gray-800">أطراف القيد (المدين والدائن):</span>
+                  <button
+                    type="button"
+                    onClick={addLine}
+                    className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-lg text-[11px]"
+                  >
+                    + إضافة طرف جديد
+                  </button>
+                </div>
+
+                <div className="border rounded-xl overflow-hidden">
+                  <table className="w-full text-center">
+                    <thead className="bg-slate-100 text-gray-700">
+                      <tr>
+                        <th className="py-2 px-2 w-28">كود الحساب</th>
+                        <th className="py-2 px-2 text-right">اسم الحساب</th>
+                        <th className="py-2 px-2 w-32">مدين (Debit)</th>
+                        <th className="py-2 px-2 w-32">دائن (Credit)</th>
+                        <th className="py-2 px-2">الشرح والبيان التحليلي</th>
+                        <th className="py-2 px-2 w-12">حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {newEntry.lines.map((line, idx) => (
+                        <tr key={idx}>
+                          <td className="p-1.5">
+                            <input
+                              type="text"
+                              placeholder="كود الحساب"
+                              value={line.accountCode}
+                              onChange={(e) => {
+                                const arr = [...newEntry.lines];
+                                arr[idx].accountCode = e.target.value;
+                                setNewEntry({ ...newEntry, lines: arr });
+                              }}
+                              className="w-full px-2 py-1 bg-slate-50 border rounded font-mono text-center font-bold"
+                            />
+                          </td>
+                          <td className="p-1.5">
+                            <input
+                              type="text"
+                              placeholder="اسم الحساب"
+                              value={line.accountName}
+                              onChange={(e) => {
+                                const arr = [...newEntry.lines];
+                                arr[idx].accountName = e.target.value;
+                                setNewEntry({ ...newEntry, lines: arr });
+                              }}
+                              className="w-full px-2 py-1 bg-slate-50 border rounded font-bold"
+                            />
+                          </td>
+                          <td className="p-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              value={line.debit || ''}
+                              onChange={(e) => {
+                                const arr = [...newEntry.lines];
+                                arr[idx].debit = Number(e.target.value);
+                                if (Number(e.target.value) > 0) arr[idx].credit = 0;
+                                setNewEntry({ ...newEntry, lines: arr });
+                              }}
+                              className="w-full px-2 py-1 bg-slate-50 border rounded font-mono text-center font-bold text-emerald-700"
+                            />
+                          </td>
+                          <td className="p-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              value={line.credit || ''}
+                              onChange={(e) => {
+                                const arr = [...newEntry.lines];
+                                arr[idx].credit = Number(e.target.value);
+                                if (Number(e.target.value) > 0) arr[idx].debit = 0;
+                                setNewEntry({ ...newEntry, lines: arr });
+                              }}
+                              className="w-full px-2 py-1 bg-slate-50 border rounded font-mono text-center font-bold text-rose-700"
+                            />
+                          </td>
+                          <td className="p-1.5">
+                            <input
+                              type="text"
+                              placeholder="ملاحظات السطر"
+                              value={line.memo || ''}
+                              onChange={(e) => {
+                                const arr = [...newEntry.lines];
+                                arr[idx].memo = e.target.value;
+                                setNewEntry({ ...newEntry, lines: arr });
+                              }}
+                              className="w-full px-2 py-1 bg-slate-50 border rounded"
+                            />
+                          </td>
+                          <td className="p-1.5">
+                            {newEntry.lines.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => removeLine(idx)}
+                                className="text-rose-600 hover:text-rose-800"
+                              >
+                                <Trash2 className="w-4 h-4 mx-auto" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-100 font-mono font-bold border-t">
+                      <tr>
+                        <td colSpan={2} className="py-2.5 px-3 text-right">الإجماليات والفارق:</td>
+                        <td className="py-2.5 px-3 text-emerald-700 text-sm">{newEntryTotalDebit.toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-rose-700 text-sm">{newEntryTotalCredit.toLocaleString()}</td>
+                        <td colSpan={2} className="py-2.5 px-3">
+                          {isBalanced ? (
+                            <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded font-sans font-bold">متزن وجاهز للاعتماد ✓</span>
+                          ) : (
+                            <span className="px-2 py-1 bg-rose-100 text-rose-800 rounded font-sans font-bold">
+                              فارق عدم اتزان: {Math.abs(newEntryTotalDebit - newEntryTotalCredit).toLocaleString()} ج.م
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={!isBalanced}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs disabled:opacity-50"
+                >
+                  💾 ترحيل واعتماد القيد
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

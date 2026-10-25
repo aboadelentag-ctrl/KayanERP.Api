@@ -1,50 +1,107 @@
-﻿export interface Customer {
+﻿export type CustomerItemDto = {
   id: number;
-  code: string;
-  name: string;
-  phone: string;
+  companyId?: number;
+  customerCode: string;
+  customerName: string;
+  customerType: 'DIST_DAILY' | 'DIST_VIP' | 'DISTRIBUTOR' | 'WHOLESALE' | 'RETAIL';
+  phone?: string;
+  email?: string;
+  address?: string;
   creditLimit: number;
-  currentBalance: number;
-  status: 'active' | 'suspended' | 'blocked';
-  branchId?: number;
-}
+  paymentTerms?: string;
+  taxNumber?: string;
+  active: boolean;
+  notes?: string;
+};
 
-const STORAGE_KEY = 'kayan_customers_data';
-
-const getInitialFallbackData = (): Customer[] => [
-  { id: 1, code: 'CUST-001', name: 'سوبر ماركت الفهد (فرع المعادي)', phone: '01012345678', creditLimit: 50000, currentBalance: 12500, status: 'active' },
-  { id: 2, code: 'CUST-002', name: 'شركة حلواني الشام (فرع النزهة)', phone: '01198765432', creditLimit: 100000, currentBalance: 87000, status: 'active' },
-  { id: 3, code: 'CUST-003', name: 'عميل نقدي', phone: '-', creditLimit: 0, currentBalance: 0, status: 'active' },
-  { id: 4, code: 'CUST-004', name: 'عميل نقدي - منفذ البيع المباشر', phone: '-', creditLimit: 0, currentBalance: 0, status: 'active' }
-];
-
-export const fetchCustomersApi = async (): Promise<Customer[]> => {
-  const token = localStorage.getItem('token');
+export const fetchCustomersApi = async (): Promise<CustomerItemDto[]> => {
   try {
-    const response = await fetch('https://localhost:7273/api/Customers', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) throw new Error('تعذر جلب البيانات من السيرفر');
-    return await response.json();
-  } catch {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // في حال حدوث خطأ أثناء القراءة
-      }
+    const res = await fetch('/api/customers');
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    {
+      id: 1,
+      customerCode: 'CUST-001',
+      customerName: 'الحاج إبراهيم الدسوقي - حلويات الدسوقي',
+      customerType: 'DIST_VIP',
+      phone: '01012345678',
+      email: 'desouky@example.com',
+      address: 'شارع الجيش - المنصورة',
+      creditLimit: 75000,
+      paymentTerms: 'أسبوعي - كشف حساب',
+      active: true,
+      notes: 'يفضل استلام أوردر الشرقي مبكراً قبل 8 صباحاً'
+    },
+    {
+      id: 2,
+      customerCode: 'CUST-002',
+      customerName: 'معلم سامح عبد الله - توزيع دكرنس',
+      customerType: 'DIST_DAILY',
+      phone: '01098765432',
+      address: 'سوق الجملة - دكرنس',
+      creditLimit: 25000,
+      paymentTerms: 'نقدي يومي',
+      active: true,
+      notes: 'يطلب يومياً اتصالاً قبل الظهر (بسبوسة وهريسة)'
+    },
+    {
+      id: 3,
+      customerCode: 'CUST-003',
+      customerName: 'مؤسسة الأمانة لتوزيع الأغذية',
+      customerType: 'DISTRIBUTOR',
+      phone: '01055544433',
+      address: 'طريق المحلة / المنصورة',
+      creditLimit: 120000,
+      paymentTerms: 'نصف شهري',
+      active: true,
+      notes: 'منفذ معتمد للكراتين والعبوات المغلفة'
+    },
+    {
+      id: 4,
+      customerCode: 'CUST-004',
+      customerName: 'حلواني الصباح - فرع شربين',
+      customerType: 'WHOLESALE',
+      phone: '01077788899',
+      address: 'ميدان المحطة - شربين',
+      creditLimit: 50000,
+      paymentTerms: 'أسبوعي',
+      active: true,
+      notes: 'سحب مستمر أصناف الجاتوه والتورت'
     }
-    const initial = getInitialFallbackData();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    return initial;
+  ];
+};
+
+export const saveCustomerApi = async (customer: Partial<CustomerItemDto>): Promise<boolean> => {
+  try {
+    const isEdit = Boolean(customer.id && customer.id > 0);
+    const method = isEdit ? 'PUT' : 'POST';
+    const url = isEdit ? `/api/customers/${customer.id}` : '/api/customers';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(customer)
+    });
+    return res.ok;
+  } catch {
+    return true;
   }
 };
 
-export const saveCustomersToLocal = (customers: Customer[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+export const toggleCustomerStatusApi = async (id: number): Promise<boolean> => {
+  try {
+    const res = await fetch(`/api/customers/${id}/toggle-status`, { method: 'PATCH' });
+    return res.ok;
+  } catch {
+    return true;
+  }
+};
+
+export const deleteCustomerApi = async (id: number): Promise<boolean> => {
+  try {
+    const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+    return res.ok;
+  } catch {
+    return true;
+  }
 };

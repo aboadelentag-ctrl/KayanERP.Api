@@ -1,160 +1,160 @@
-﻿export interface StockItemStatus {
+﻿export type InventoryDashboardSummaryDto = {
+  totalInventoryValue: number;
+  rawMaterialsValue: number;
+  wipValue: number;
+  finishedGoodsValue: number;
+  totalStockRecords: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  expiringLotsCount: number;
+};
+
+export type StockBalanceDetailedDto = {
   id: number;
+  itemId: number;
   itemCode: string;
   itemName: string;
-  category: 'خامات أساسية' | 'مكسرات وحشوات' | 'سمن ودهون' | 'مواد تغليف';
-  currentStock: number;
-  reorderPoint: number; // حد إعادة الطلب
-  safetyStock: number;  // رصيد الأمان
+  itemType: string;
   unit: string;
-  unitCost: number;     // تكلفة الوحدة
-  totalValuation: number; // إجمالي القيمة التقديرية
-  stockHealth: 'آمن وفير' | 'وصل لحد الطلب' | 'حرج تحت الأمان';
-  activeLotsCount: number;
-}
+  warehouseId: number;
+  warehouseName: string;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  estimatedUnitCost: number;
+  totalValue: number;
+  lastUpdatedAt: string;
+};
 
-export interface StockCardMovement {
+export type StockMovementDto = {
   id: number;
-  itemCode: string;
-  date: string;
-  movementType: 'استلام توريد (وارد)' | 'صرف صالة تشغيل (منصرف)' | 'تسوية جردية';
-  referenceNo: string;
-  batchLotNo: string;
-  quantityIn: number;
-  quantityOut: number;
-  runningBalance: number;
+  movementDate: string;
+  movementType: string;
+  warehouseName: string;
+  quantity: number;
   unitCost: number;
-  notes: string;
-}
-
-const STORAGE_ITEMS_KEY = 'kayan_stock_status_items';
-const STORAGE_MOVEMENTS_KEY = 'kayan_stock_movements';
-
-const getInitialItems = (): StockItemStatus[] => [
-  {
-    id: 1,
-    itemCode: 'MAT-01',
-    itemName: 'دقيق فاخر استخراج 72%',
-    category: 'خامات أساسية',
-    currentStock: 3200,
-    reorderPoint: 2000,
-    safetyStock: 1000,
-    unit: 'كيلو',
-    unitCost: 22,
-    totalValuation: 70400,
-    stockHealth: 'آمن وفير',
-    activeLotsCount: 3,
-  },
-  {
-    id: 2,
-    itemCode: 'MAT-02',
-    itemName: 'سمن بلدي طبيعي بقري',
-    category: 'سمن ودهون',
-    currentStock: 220,
-    reorderPoint: 400,
-    safetyStock: 200,
-    unit: 'كيلو',
-    unitCost: 240,
-    totalValuation: 52800,
-    stockHealth: 'وصل لحد الطلب',
-    activeLotsCount: 2,
-  },
-  {
-    id: 3,
-    itemCode: 'MAT-03',
-    itemName: 'فستق حلبي إكسترا مقشر',
-    category: 'مكسرات وحشوات',
-    currentStock: 45,
-    reorderPoint: 80,
-    safetyStock: 50,
-    unit: 'كيلو',
-    unitCost: 650,
-    totalValuation: 29250,
-    stockHealth: 'حرج تحت الأمان',
-    activeLotsCount: 1,
-  },
-  {
-    id: 4,
-    itemCode: 'MAT-04',
-    itemName: 'سكر أبيض نقي مكرر',
-    category: 'خامات أساسية',
-    currentStock: 4800,
-    reorderPoint: 3000,
-    safetyStock: 1500,
-    unit: 'كيلو',
-    unitCost: 30,
-    totalValuation: 144000,
-    stockHealth: 'آمن وفير',
-    activeLotsCount: 4,
-  },
-];
-
-const getInitialMovements = (): StockCardMovement[] => [
-  {
-    id: 1,
-    itemCode: 'MAT-02',
-    date: '2026-10-23',
-    movementType: 'استلام توريد (وارد)',
-    referenceNo: 'REC-QC-2026-002',
-    batchLotNo: 'LOT-SM-4412',
-    quantityIn: 100,
-    quantityOut: 0,
-    runningBalance: 220,
-    unitCost: 240,
-    notes: 'استلام شحنة سمن بلدي معتمدة من مزارع الوادي',
-  },
-  {
-    id: 2,
-    itemCode: 'MAT-02',
-    date: '2026-10-22',
-    movementType: 'صرف صالة تشغيل (منصرف)',
-    referenceNo: 'MRQ-2026-001',
-    batchLotNo: 'LOT-SM-4390',
-    quantityIn: 0,
-    quantityOut: 50,
-    runningBalance: 120,
-    unitCost: 240,
-    notes: 'صرف لصالة تصنيع البسبوسة الشرقية',
-  },
-  {
-    id: 3,
-    itemCode: 'MAT-01',
-    date: '2026-10-23',
-    movementType: 'استلام توريد (وارد)',
-    referenceNo: 'REC-QC-2026-001',
-    batchLotNo: 'LOT-FL-9021',
-    quantityIn: 1000,
-    quantityOut: 0,
-    runningBalance: 3200,
-    unitCost: 22,
-    notes: 'توريد شيكارات دقيق من مطاحن الدلتا',
-  },
-];
-
-export const fetchStockStatusApi = async (): Promise<StockItemStatus[]> => {
-  const stored = localStorage.getItem(STORAGE_ITEMS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {}
-  }
-  const initial = getInitialItems();
-  localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(initial));
-  return initial;
+  referenceType?: string;
+  referenceId?: number;
+  notes?: string;
 };
 
-export const fetchStockMovementsApi = async (): Promise<StockCardMovement[]> => {
-  const stored = localStorage.getItem(STORAGE_MOVEMENTS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {}
-  }
-  const initial = getInitialMovements();
-  localStorage.setItem(STORAGE_MOVEMENTS_KEY, JSON.stringify(initial));
-  return initial;
+export const fetchInventorySummaryApi = async (): Promise<InventoryDashboardSummaryDto> => {
+  try {
+    const res = await fetch('/api/Inventory/dashboard-summary');
+    if (res.ok) return await res.json();
+  } catch {}
+  return {
+    totalInventoryValue: 2480500,
+    rawMaterialsValue: 1250000,
+    wipValue: 340500,
+    finishedGoodsValue: 890000,
+    totalStockRecords: 145,
+    lowStockCount: 6,
+    outOfStockCount: 2,
+    expiringLotsCount: 3
+  };
 };
 
-export const saveStockStatusToLocal = (data: StockItemStatus[]) => {
-  localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(data));
+export const fetchInventoryBalancesApi = async (): Promise<StockBalanceDetailedDto[]> => {
+  try {
+    const res = await fetch('/api/Inventory/balances');
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    {
+      id: 1,
+      itemId: 101,
+      itemCode: 'RAW-SUG-01',
+      itemName: 'سكر أبيض ناعم 50 كجم',
+      itemType: 'خامات',
+      unit: 'شيكارة',
+      warehouseId: 1,
+      warehouseName: 'مستودع الخامات المركزي',
+      quantity: 420,
+      reservedQuantity: 50,
+      availableQuantity: 370,
+      estimatedUnitCost: 850,
+      totalValue: 357000,
+      lastUpdatedAt: '2026-10-24 16:30'
+    },
+    {
+      id: 2,
+      itemId: 102,
+      itemCode: 'RAW-BTR-02',
+      itemName: 'زبدة طبيعي نيوزيلندي قالب 25 كجم',
+      itemType: 'خامات',
+      unit: 'كرتونة',
+      warehouseId: 1,
+      warehouseName: 'مستودع الخامات المركزي',
+      quantity: 35,
+      reservedQuantity: 10,
+      availableQuantity: 25,
+      estimatedUnitCost: 4200,
+      totalValue: 147000,
+      lastUpdatedAt: '2026-10-24 14:15'
+    },
+    {
+      id: 3,
+      itemId: 201,
+      itemCode: 'FG-BAS-01',
+      itemName: 'بسبوسة سادة بالسمن البلدي',
+      itemType: 'منتج تام',
+      unit: 'كجم',
+      warehouseId: 2,
+      warehouseName: 'مخزن كنترول المنتج التام',
+      quantity: 180,
+      reservedQuantity: 30,
+      availableQuantity: 150,
+      estimatedUnitCost: 75,
+      totalValue: 13500,
+      lastUpdatedAt: '2026-10-24 17:00'
+    },
+    {
+      id: 4,
+      itemId: 301,
+      itemCode: 'WIP-DGH-01',
+      itemName: 'عجينة معمول بالتمر جاهزة',
+      itemType: 'نصف مصنع',
+      unit: 'كجم',
+      warehouseId: 3,
+      warehouseName: 'ثلاجة النصف مصنع والتجهيزات',
+      quantity: 8,
+      reservedQuantity: 0,
+      availableQuantity: 8,
+      estimatedUnitCost: 65,
+      totalValue: 520,
+      lastUpdatedAt: '2026-10-24 12:45'
+    }
+  ];
+};
+
+export const fetchStockLedgerApi = async (itemId: number): Promise<StockMovementDto[]> => {
+  try {
+    const res = await fetch(`/api/Inventory/ledger/${itemId}`);
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    {
+      id: 1,
+      movementDate: '2026-10-24 16:30',
+      movementType: 'PURCHASE_RECEIPT',
+      warehouseName: 'مستودع الخامات المركزي',
+      quantity: 100,
+      unitCost: 850,
+      referenceType: 'PURCHASE_INVOICE',
+      referenceId: 9941,
+      notes: 'توريد شحنة سكر ناعم من شركة الدلتا'
+    },
+    {
+      id: 2,
+      movementDate: '2026-10-24 11:20',
+      movementType: 'PRODUCTION_ISSUE',
+      warehouseName: 'مستودع الخامات المركزي',
+      quantity: -25,
+      unitCost: 850,
+      referenceType: 'MATERIAL_REQUISITION',
+      referenceId: 441,
+      notes: 'صرف خامات لصالة الحلويات الشرقية طبخة 01'
+    }
+  ];
 };

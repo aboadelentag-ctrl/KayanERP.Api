@@ -1,330 +1,448 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { fetchAccountsApi } from '../accounts/accountsApi';
-import type { AccountItem } from '../accounts/accountsApi';
-import { calculateFinancialReports } from './financeApi';
-import type { TrialBalanceRow, IncomeStatementData, BalanceSheetData } from './financeApi';
 import {
-  PieChart,
-  Scale,
   TrendingUp,
-  FileSpreadsheet,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowUpRight,
+  Landmark,
+  Scale,
+  Printer,
+  RotateCw,
   ArrowDownRight,
-  DollarSign
+  ArrowUpRight
 } from 'lucide-react';
+import {
+  fetchFinancialReportsApi
+} from './financeApi';
+import type {
+  IncomeStatementDto,
+  BalanceSheetDto,
+  TrialBalanceItemDto
+} from './financeApi';
 
-export const FinancialStatementsPage: React.FC = () => {
-  const [activeReportTab, setActiveReportTab] = useState<'trial_balance' | 'income_statement' | 'balance_sheet'>('trial_balance');
-  const [accounts, setAccounts] = useState<AccountItem[]>([]);
+interface FinancialStatementsPageProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const FinancialStatementsPage: React.FC<FinancialStatementsPageProps> = () => {
+  const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1); // 1: P&L, 2: Balance Sheet, 3: Trial Balance
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const [incomeData, setIncomeData] = useState<IncomeStatementDto | null>(null);
+  const [balanceSheetData, setBalanceSheetData] = useState<BalanceSheetDto | null>(null);
+  const [trialBalanceList, setTrialBalanceList] = useState<TrialBalanceItemDto[]>([]);
+
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      const data = await fetchAccountsApi();
-      setAccounts(data);
-      setIsLoading(false);
-    };
-    load();
+    loadAllReports();
   }, []);
 
-  const reports = calculateFinancialReports(accounts);
+  const loadAllReports = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchFinancialReportsApi();
+      setIncomeData(data.income);
+      setBalanceSheetData(data.balance);
+      setTrialBalanceList(data.trial);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center text-gray-500" dir="rtl">
-        جاري تجميع وحساب البيانات المحاسبية من دفتر الأستاذ...
-      </div>
-    );
-  }
+  const handlePrint = () => {
+    window.print();
+  };
 
-  const { trialBalance, totalDebit, totalCredit, incomeStatement, balanceSheet } = reports;
-  const isTrialBalanced = Math.abs(totalDebit - totalCredit) < 1;
+  const trialTotalDebit = trialBalanceList.reduce((sum, t) => sum + t.debit, 0);
+  const trialTotalCredit = trialBalanceList.reduce((sum, t) => sum + t.credit, 0);
+  const isTrialBalanced = trialTotalDebit === trialTotalCredit;
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen" dir="rtl">
-      {/* الترويسة وبطاقات المؤشرات الرئيسية */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
+      {/* رأس الشاشة المالي الختامي */}
+      <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-xs border border-slate-800 mb-6 flex flex-wrap justify-between items-center gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <PieChart className="w-7 h-7 text-indigo-600" />
-            <span>القوائم المالية والختامية (Financial Statements)</span>
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            ميزان المراجعة بالأرصدة، قائمة الدخل والأرباح التشغيلية، والميزانية العمومية المركزية
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-amber-400" />
+              <span>القوائم والتقارير المالية الختامية والمركز المالي (Financial Statements Hub)</span>
+            </h1>
+            <span className="bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-md text-[10px] font-black">
+              الحسابات الختامية والأرباح
+            </span>
+          </div>
+          <p className="text-xs text-slate-400">
+            عرض ميزان المراجعة، قائمة الدخل والأرباح والخسائر، والميزانية العمومية لمصانع ومنافذ أبو عادل.
           </p>
         </div>
 
-        {/* أزرار التبديل بين القوائم الثلاث */}
-        <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-xs flex gap-1">
+        <div className="flex gap-2">
           <button
-            onClick={() => setActiveReportTab('trial_balance')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${
-              activeReportTab === 'trial_balance'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            onClick={loadAllReports}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs border border-slate-700 shadow-xs transition-colors"
           >
-            <Scale className="w-4 h-4" />
-            <span>ميزان المراجعة</span>
+            <RotateCw className="w-4 h-4 text-emerald-400" />
+            <span>تحديث القوائم</span>
           </button>
-
           <button
-            onClick={() => setActiveReportTab('income_statement')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${
-              activeReportTab === 'income_statement'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors"
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>قائمة الدخل (P&L)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveReportTab('balance_sheet')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${
-              activeReportTab === 'balance_sheet'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>الميزانية العمومية</span>
+            <Printer className="w-4 h-4" />
+            <span>طباعة التقرير</span>
           </button>
         </div>
       </div>
 
-      {/* 1. ميزان المراجعة بالأرصدة */}
-      {activeReportTab === 'trial_balance' && (
-        <div className="space-y-4 animate-fadeIn">
-          <div className={`p-4 rounded-2xl border flex items-center justify-between gap-4 text-xs ${
-            isTrialBalanced ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-rose-50/70 border-rose-200 text-rose-900'
-          }`}>
-            <div className="flex items-center gap-2">
-              {isTrialBalanced ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-rose-600" />}
-              <div>
-                <span className="font-bold text-sm block">
-                  {isTrialBalanced ? 'ميزان المراجعة متوازن ومطابق محاسبياً' : 'تنبيه: ميزان المراجعة غير متطابق'}
-                </span>
-                <span className="text-[11px] text-gray-500 block mt-0.5">
-                  جميع أرصدة الحسابات الفرعية مطابقة لدفتر اليومية العامة
-                </span>
-              </div>
-            </div>
+      {/* أزرار التبديل بين القوائم المالية الثلاث */}
+      <div className="flex bg-slate-200/70 p-1.5 rounded-2xl w-fit gap-1 mb-6 text-xs font-bold flex-wrap print:hidden">
+        <button
+          onClick={() => setActiveTab(1)}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+            activeTab === 1
+              ? 'bg-white text-indigo-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>📈 قائمة الدخل والأرباح والخسائر (P&L)</span>
+        </button>
 
-            <div className="flex items-center gap-6 font-mono font-bold text-sm">
-              <div>
-                <span className="text-[11px] text-gray-500 block">مجموع الأرصدة المدينة:</span>
-                <span className="text-emerald-700">{totalDebit.toLocaleString()} ج.م</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-gray-500 block">مجموع الأرصدة الدائنة:</span>
-                <span className="text-amber-700">{totalCredit.toLocaleString()} ج.م</span>
-              </div>
-            </div>
-          </div>
+        <button
+          onClick={() => setActiveTab(2)}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+            activeTab === 2
+              ? 'bg-white text-indigo-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          <span>🏛️ قائمة المركز المالي (الميزانية العمومية)</span>
+        </button>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 border-b border-gray-200 text-gray-600 font-bold">
-                <tr>
-                  <th className="py-3 px-4">كود الحساب</th>
-                  <th className="py-3 px-4">اسم الحساب المالي</th>
-                  <th className="py-3 px-4 text-center">التبويب</th>
-                  <th className="py-3 px-4 text-center">رصيد مدين</th>
-                  <th className="py-3 px-4 text-center">رصيد دائن</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {trialBalance.map((row) => (
-                  <tr key={row.accountCode} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2.5 px-4 font-mono font-bold text-indigo-700">{row.accountCode}</td>
-                    <td className="py-2.5 px-4 font-semibold text-gray-900">{row.accountName}</td>
-                    <td className="py-2.5 px-4 text-center text-gray-500">{row.category}</td>
-                    <td className="py-2.5 px-4 text-center font-mono font-bold text-emerald-700">
-                      {row.debitBalance > 0 ? `${row.debitBalance.toLocaleString()} ج.م` : '-'}
-                    </td>
-                    <td className="py-2.5 px-4 text-center font-mono font-bold text-amber-700">
-                      {row.creditBalance > 0 ? `${row.creditBalance.toLocaleString()} ج.م` : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-slate-100/80 font-bold border-t border-gray-200 text-gray-900">
-                <tr>
-                  <td colSpan={3} className="py-3 px-4 text-sm">المجموع الإجمالي العام</td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-emerald-800">{totalDebit.toLocaleString()} ج.م</td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-amber-800">{totalCredit.toLocaleString()} ج.م</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+        <button
+          onClick={() => setActiveTab(3)}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+            activeTab === 3
+              ? 'bg-white text-indigo-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Scale className="w-4 h-4" />
+          <span>⚖️ ميزان المراجعة بالمجاميع والأرصدة</span>
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="bg-white p-16 text-center rounded-2xl border text-indigo-600 font-bold text-xs">
+          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <span>جاري احتساب المؤشرات المالية وتدقيق التوازن المحاسبي...</span>
         </div>
-      )}
-
-      {/* 2. قائمة الدخل (P&L) */}
-      {activeReportTab === 'income_statement' && (
-        <div className="space-y-4 animate-fadeIn">
-          {/* بطاقات تلخيص الدخل */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-              <span className="text-xs text-gray-500 block">إجمالي إيرادات المبيعات</span>
-              <span className="text-lg font-bold font-mono text-indigo-900 mt-1 block">
-                {incomeStatement.totalRevenue.toLocaleString()} ج.م
-              </span>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-              <span className="text-xs text-gray-500 block">تكلفة الخامات المستخدمة (COGS)</span>
-              <span className="text-lg font-bold font-mono text-rose-700 mt-1 block">
-                {incomeStatement.totalCOGS.toLocaleString()} ج.م
-              </span>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-              <span className="text-xs text-gray-500 block">مجمل الربح التجاري</span>
-              <span className="text-lg font-bold font-mono text-emerald-700 mt-1 block">
-                {incomeStatement.grossProfit.toLocaleString()} ج.م
-              </span>
-            </div>
-
-            <div className="bg-emerald-900 text-white p-4 rounded-2xl shadow-xs">
-              <span className="text-xs text-emerald-200 block">صافي الأرباح التشغيلية</span>
-              <span className="text-xl font-black font-mono mt-1 block">
-                {incomeStatement.netProfit.toLocaleString()} ج.م
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs space-y-6">
-            {/* 1. الإيرادات */}
-            <div>
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200 text-sm font-bold text-indigo-900">
-                <span className="flex items-center gap-1.5"><ArrowUpRight className="w-4 h-4 text-emerald-600" /> الإيرادات والمبيعات</span>
-                <span className="font-mono">{incomeStatement.totalRevenue.toLocaleString()} ج.م</span>
+      ) : (
+        <>
+          {/* TAB 1: قائمة الدخل والأرباح والخسائر */}
+          {activeTab === 1 && incomeData && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
+              <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+                <span className="font-bold text-sm">📈 قائمة الأرباح والخسائر التشغيلية - حلواني ومصانع أبو عادل</span>
+                <span className="bg-emerald-500 text-slate-950 font-mono font-black text-xs px-3 py-1 rounded-lg">
+                  صافي ربح الفترة: {incomeData.netProfit.toLocaleString()} ج.م
+                </span>
               </div>
-              <div className="divide-y divide-gray-100 text-xs">
-                {incomeStatement.revenues.map((item) => (
-                  <div key={item.code} className="py-2 flex justify-between text-gray-700">
-                    <span>{item.code} - {item.name}</span>
-                    <span className="font-mono font-semibold">{item.amount.toLocaleString()} ج.م</span>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* 2. تكلفة الإنتاج */}
-            <div>
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200 text-sm font-bold text-rose-900">
-                <span className="flex items-center gap-1.5"><ArrowDownRight className="w-4 h-4 text-rose-600" /> تكلفة الخامات المباعة والتشغيل (COGS)</span>
-                <span className="font-mono">({incomeStatement.totalCOGS.toLocaleString()}) ج.م</span>
-              </div>
-              <div className="divide-y divide-gray-100 text-xs">
-                {incomeStatement.costOfGoodsSold.map((item) => (
-                  <div key={item.code} className="py-2 flex justify-between text-gray-700">
-                    <span>{item.code} - {item.name}</span>
-                    <span className="font-mono font-semibold">({item.amount.toLocaleString()}) ج.م</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. المصروفات التشغيلية */}
-            <div>
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200 text-sm font-bold text-amber-900">
-                <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-amber-600" /> المصروفات العمومية والتشغيلية والأجور</span>
-                <span className="font-mono">({incomeStatement.totalExpenses.toLocaleString()}) ج.م</span>
-              </div>
-              <div className="divide-y divide-gray-100 text-xs">
-                {incomeStatement.operatingExpenses.map((item) => (
-                  <div key={item.code} className="py-2 flex justify-between text-gray-700">
-                    <span>{item.code} - {item.name}</span>
-                    <span className="font-mono font-semibold">({item.amount.toLocaleString()}) ج.م</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* الإجمالي الصافي */}
-            <div className="pt-4 border-t-2 border-gray-900 flex justify-between items-center">
-              <span className="text-base font-bold text-gray-900">صافي ربح النشاط النهائي للفترة:</span>
-              <span className="text-2xl font-black font-mono text-emerald-700">{incomeStatement.netProfit.toLocaleString()} ج.م</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. الميزانية العمومية (Balance Sheet) */}
-      {activeReportTab === 'balance_sheet' && (
-        <div className="space-y-4 animate-fadeIn">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* جانب الأصول */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs">
-              <div className="flex justify-between items-center pb-3 border-b-2 border-indigo-600 text-base font-bold text-indigo-950">
-                <span>جانب الأصول (Assets)</span>
-                <span className="font-mono">{balanceSheet.totalAssets.toLocaleString()} ج.م</span>
-              </div>
-              <div className="divide-y divide-gray-100 text-xs mt-2">
-                {balanceSheet.assets.map((item) => (
-                  <div key={item.code} className="py-2.5 flex justify-between text-gray-700">
-                    <span>{item.code} - {item.name}</span>
-                    <span className="font-mono font-bold text-gray-900">{item.amount.toLocaleString()} ج.م</span>
-                  </div>
-                ))}
-              </div>
-              <div className="pt-4 border-t border-gray-200 mt-4 flex justify-between text-sm font-bold text-indigo-900">
-                <span>إجمالي الأصول:</span>
-                <span className="font-mono text-base">{balanceSheet.totalAssets.toLocaleString()} ج.م</span>
-              </div>
-            </div>
-
-            {/* جانب الالتزامات وحقوق الملكية */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center pb-3 border-b-2 border-slate-800 text-base font-bold text-gray-900">
-                  <span>الالتزامات وحقوق الملكية (Liabilities & Equity)</span>
-                  <span className="font-mono">{balanceSheet.totalLiabilitiesAndEquity.toLocaleString()} ج.م</span>
+              <div className="p-6 space-y-6">
+                {/* 1. إيرادات النشاط والمبيعات */}
+                <div>
+                  <h6 className="font-bold text-emerald-700 text-xs border-b border-emerald-100 pb-2 mb-3 flex items-center gap-1.5">
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>1. إيرادات النشاط والمبيعات</span>
+                  </h6>
+                  <table className="w-full text-right">
+                    <tbody className="divide-y divide-gray-100">
+                      {incomeData.revenues.map(item => (
+                        <tr key={item.code} className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono text-gray-400 w-24">{item.code}</td>
+                          <td className="py-2 px-3 font-bold text-gray-800">{item.name}</td>
+                          <td className="py-2 px-3 font-mono font-bold text-emerald-700 text-left w-48">
+                            {item.amount.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-emerald-50/70 font-black text-emerald-900">
+                        <td colSpan={2} className="py-2.5 px-3">إجمالي إيرادات المبيعات</td>
+                        <td className="py-2.5 px-3 font-mono text-left text-sm">
+                          {incomeData.totalRevenues.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="mt-3">
-                  <span className="text-xs font-bold text-amber-800 block mb-1">1. الخصوم والذمم الدائنة:</span>
-                  <div className="divide-y divide-gray-100 text-xs">
-                    {balanceSheet.liabilities.map((item) => (
-                      <div key={item.code} className="py-1.5 flex justify-between text-gray-700">
-                        <span>{item.code} - {item.name}</span>
-                        <span className="font-mono font-bold">{item.amount.toLocaleString()} ج.م</span>
-                      </div>
-                    ))}
-                  </div>
+                {/* 2. تكلفة الإنتاج والخامات */}
+                <div>
+                  <h6 className="font-bold text-rose-700 text-xs border-b border-rose-100 pb-2 mb-3 flex items-center gap-1.5">
+                    <ArrowDownRight className="w-4 h-4" />
+                    <span>2. تكلفة البضاعة المباعة والإنتاج المباشر (COGS)</span>
+                  </h6>
+                  <table className="w-full text-right">
+                    <tbody className="divide-y divide-gray-100">
+                      {incomeData.costOfGoodsSold.map(item => (
+                        <tr key={item.code} className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono text-gray-400 w-24">{item.code}</td>
+                          <td className="py-2 px-3 font-bold text-gray-800">{item.name}</td>
+                          <td className="py-2 px-3 font-mono font-bold text-rose-600 text-left w-48">
+                            {item.amount.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-rose-50/60 font-black text-rose-900">
+                        <td colSpan={2} className="py-2.5 px-3">إجمالي تكاليف الإنتاج والخامات المباشرة</td>
+                        <td className="py-2.5 px-3 font-mono text-left text-sm">
+                          {incomeData.totalCOGS.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="mt-4">
-                  <span className="text-xs font-bold text-blue-800 block mb-1">2. حقوق الملكية ورأس المال:</span>
-                  <div className="divide-y divide-gray-100 text-xs">
-                    {balanceSheet.equity.map((item) => (
-                      <div key={item.code} className="py-1.5 flex justify-between text-gray-700">
-                        <span>{item.code} - {item.name}</span>
-                        <span className="font-mono font-bold">{item.amount.toLocaleString()} ج.م</span>
+                {/* مجمل الربح */}
+                <div className="p-4 bg-indigo-50/70 rounded-xl border border-indigo-200 flex justify-between items-center">
+                  <span className="font-bold text-indigo-900 text-sm">مجمل ربح التصنيع (Gross Profit):</span>
+                  <span className="font-mono font-black text-indigo-700 text-xl">
+                    {incomeData.grossProfit.toLocaleString()} ج.م
+                  </span>
+                </div>
+
+                {/* 3. مصاريف التشغيل والطاقة والإيجارات */}
+                <div>
+                  <h6 className="font-bold text-amber-800 text-xs border-b border-amber-100 pb-2 mb-3 flex items-center gap-1.5">
+                    <ArrowDownRight className="w-4 h-4 text-amber-600" />
+                    <span>3. مصاريف التشغيل، الطاقة، وأجور الخدمات (OPEX)</span>
+                  </h6>
+                  <table className="w-full text-right">
+                    <tbody className="divide-y divide-gray-100">
+                      {incomeData.operatingExpenses.map(item => (
+                        <tr key={item.code} className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono text-gray-400 w-24">{item.code}</td>
+                          <td className="py-2 px-3 font-bold text-gray-800">{item.name}</td>
+                          <td className="py-2 px-3 font-mono font-bold text-slate-700 text-left w-48">
+                            {item.amount.toLocaleString()} ج.م
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-slate-100 font-black text-slate-900">
+                        <td colSpan={2} className="py-2.5 px-3">إجمالي مصاريف التشغيل والطاقة والإيجار</td>
+                        <td className="py-2.5 px-3 font-mono text-left text-sm">
+                          {incomeData.totalOperatingExpenses.toLocaleString()} ج.م
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* صافي الربح النهائي */}
+                <div className="p-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl shadow-md flex justify-between items-center">
+                  <div>
+                    <h4 className="font-black text-base m-0">🏆 صافي الأرباح التشغيلية النهائية (Net Profit):</h4>
+                    <p className="text-emerald-100 text-xs mt-1 mb-0">
+                      بعد خصم كافة الخامات، أجور العمال، فواتير الغاز والكهرباء، والإيجارات.
+                    </p>
+                  </div>
+                  <div className="font-mono font-black text-3xl">
+                    {incomeData.netProfit.toLocaleString()} ج.م
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: قائمة المركز المالي */}
+          {activeTab === 2 && balanceSheetData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* جانب الأصول */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs flex flex-col justify-between">
+                  <div>
+                    <div className="p-3 bg-indigo-600 text-white font-bold flex items-center gap-1.5">
+                      <Landmark className="w-4 h-4 text-amber-300" />
+                      <span>🏦 الأصول وممتلكات المصنع (Assets)</span>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <span className="font-bold text-gray-500 block border-b pb-1 mb-2 text-[11px]">
+                          الأصول الثابتة (Fixed Assets)
+                        </span>
+                        <table className="w-full text-right border">
+                          <tbody className="divide-y">
+                            {balanceSheetData.fixedAssets.map(item => (
+                              <tr key={item.code} className="hover:bg-slate-50">
+                                <td className="py-2 px-2.5 text-gray-800 font-medium">{item.name}</td>
+                                <td className="py-2 px-2.5 font-mono font-bold text-left w-36">
+                                  {item.amount.toLocaleString()} ج.م
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    ))}
-                    <div className="py-1.5 flex justify-between text-emerald-800 font-bold bg-emerald-50 px-2 rounded">
-                      <span>أرباح النشاط المرحلة للفترة الحالية</span>
-                      <span className="font-mono">{balanceSheet.netProfitPeriod.toLocaleString()} ج.م</span>
+
+                      <div>
+                        <span className="font-bold text-gray-500 block border-b pb-1 mb-2 text-[11px]">
+                          الأصول المتداولة (Current Assets)
+                        </span>
+                        <table className="w-full text-right border">
+                          <tbody className="divide-y">
+                            {balanceSheetData.currentAssets.map(item => (
+                              <tr key={item.code} className="hover:bg-slate-50">
+                                <td className="py-2 px-2.5 text-gray-800 font-medium">{item.name}</td>
+                                <td className="py-2 px-2.5 font-mono font-bold text-indigo-700 text-left w-36">
+                                  {item.amount.toLocaleString()} ج.م
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
+
+                  <div className="p-4 bg-indigo-50 border-t border-indigo-200 flex justify-between items-center m-4 rounded-xl">
+                    <span className="font-black text-indigo-900 text-sm">إجمالي الأصول (Total Assets):</span>
+                    <span className="font-mono font-black text-indigo-700 text-lg">
+                      {balanceSheetData.totalAssets.toLocaleString()} ج.م
+                    </span>
+                  </div>
+                </div>
+
+                {/* جانب الالتزامات وحقوق الملكية */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs flex flex-col justify-between">
+                  <div>
+                    <div className="p-3 bg-slate-900 text-white font-bold flex items-center gap-1.5">
+                      <Scale className="w-4 h-4 text-emerald-400" />
+                      <span>📑 الالتزامات وحقوق الملكية (Liabilities & Equity)</span>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <span className="font-bold text-gray-500 block border-b pb-1 mb-2 text-[11px]">
+                          الالتزامات المتداولة (Liabilities)
+                        </span>
+                        <table className="w-full text-right border">
+                          <tbody className="divide-y">
+                            {balanceSheetData.currentLiabilities.map(item => (
+                              <tr key={item.code} className="hover:bg-slate-50">
+                                <td className="py-2 px-2.5 text-gray-800 font-medium">{item.name}</td>
+                                <td className="py-2 px-2.5 font-mono font-bold text-rose-600 text-left w-36">
+                                  {item.amount.toLocaleString()} ج.م
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-gray-500 block border-b pb-1 mb-2 text-[11px]">
+                          حقوق الملكية ورأس المال (Equity)
+                        </span>
+                        <table className="w-full text-right border">
+                          <tbody className="divide-y">
+                            {balanceSheetData.equity.map(item => (
+                              <tr key={item.code} className="hover:bg-slate-50">
+                                <td className="py-2 px-2.5 text-gray-800 font-medium">{item.name}</td>
+                                <td className="py-2 px-2.5 font-mono font-bold text-left w-36">
+                                  {item.amount.toLocaleString()} ج.م
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="bg-emerald-50/70 font-bold text-emerald-900">
+                              <td className="py-2 px-2.5">صافي أرباح تشغيل الفترة الحالية</td>
+                              <td className="py-2 px-2.5 font-mono font-bold text-emerald-700 text-left">
+                                {balanceSheetData.currentYearNetProfit.toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-100 border-t border-slate-300 flex justify-between items-center m-4 rounded-xl">
+                    <span className="font-black text-slate-900 text-sm">إجمالي الالتزامات وحقوق الملكية:</span>
+                    <span className="font-mono font-black text-slate-900 text-lg">
+                      {balanceSheetData.totalLiabilitiesAndEquity.toLocaleString()} ج.م
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-200 mt-6 flex justify-between text-sm font-bold text-gray-900">
-                <span>إجمالي الخصوم وحقوق الملكية:</span>
-                <span className="font-mono text-base">{balanceSheet.totalLiabilitiesAndEquity.toLocaleString()} ج.م</span>
+              {/* مؤشر توازن المركز المالي */}
+              <div
+                className={`p-4 rounded-2xl text-center font-bold text-xs border ${
+                  balanceSheetData.isBalanced
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}
+              >
+                {balanceSheetData.isBalanced ? (
+                  <span>
+                    ⚖️ الميزانية العمومية متزنة تماماً: الأصول ({balanceSheetData.totalAssets.toLocaleString()} ج.م) = الالتزامات وحقوق الملكية ({balanceSheetData.totalLiabilitiesAndEquity.toLocaleString()} ج.م) ✓
+                  </span>
+                ) : (
+                  <span>
+                    ⚠️ يوجد فارق عدم اتزان في الميزانية بمقدار: {Math.abs(balanceSheetData.totalAssets - balanceSheetData.totalLiabilitiesAndEquity).toLocaleString()} ج.م
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {/* TAB 3: ميزان المراجعة بالمجاميع والأرصدة */}
+          {activeTab === 3 && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
+              <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+                <span className="font-bold text-sm">⚖️ ميزان المراجعة بالأرصدة لمصانع ومنافذ أبو عادل</span>
+                <span className={`px-2.5 py-0.5 rounded font-mono text-xs font-bold ${isTrialBalanced ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'}`}>
+                  {isTrialBalanced ? 'كافة الحسابات متزنة 100% ✓' : '⚠️ تنبيه: ميزان المراجعة غير متزن'}
+                </span>
+              </div>
+
+              <table className="w-full text-center">
+                <thead className="bg-slate-100 text-gray-700">
+                  <tr>
+                    <th className="py-2.5 px-3 w-32">كود الحساب</th>
+                    <th className="py-2.5 px-3 text-right">اسم الحساب المالي</th>
+                    <th className="py-2.5 px-3 w-48 text-left">أرصدة مدينة (Debit)</th>
+                    <th className="py-2.5 px-3 w-48 text-left">أرصدة دائنة (Credit)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {trialBalanceList.map(item => (
+                    <tr key={item.accountCode} className="hover:bg-slate-50">
+                      <td className="py-2.5 px-3 font-mono font-bold text-indigo-700">{item.accountCode}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-gray-800">{item.accountName}</td>
+                      <td className={`py-2.5 px-3 font-mono font-bold text-left ${item.debit > 0 ? 'text-emerald-700' : 'text-gray-300'}`}>
+                        {item.debit > 0 ? `${item.debit.toLocaleString()} ج.م` : '-'}
+                      </td>
+                      <td className={`py-2.5 px-3 font-mono font-bold text-left ${item.credit > 0 ? 'text-rose-600' : 'text-gray-300'}`}>
+                        {item.credit > 0 ? `${item.credit.toLocaleString()} ج.م` : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100 font-black text-sm">
+                  <tr>
+                    <td colSpan={2} className="py-3 px-3 text-right text-gray-900">إجمالي ميزان المراجعة:</td>
+                    <td className="py-3 px-3 font-mono text-emerald-700 text-left">
+                      {trialTotalDebit.toLocaleString()} ج.م
+                    </td>
+                    <td className="py-3 px-3 font-mono text-rose-700 text-left">
+                      {trialTotalCredit.toLocaleString()} ج.م
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

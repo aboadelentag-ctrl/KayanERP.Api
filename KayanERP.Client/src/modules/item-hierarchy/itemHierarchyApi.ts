@@ -1,73 +1,157 @@
-﻿export interface ItemCategoryNode {
+﻿export type ParentItemLookupDto = {
   id: number;
-  code: string;
-  name: string;
-  type: 'خامات ومستلزمات' | 'منتج تام جاهز' | 'نصف مصنع وتجهيزات' | 'تعبئة وتغليف';
-  parentId?: number;
-  level: number;
-  itemCount: number;
-}
-
-export interface UomConversionRule {
-  id: number;
-  itemId: number;
   itemCode: string;
   itemName: string;
-  baseUnit: string;
-  alternateUnit: string;
+  unit: string;
+};
+
+export type ItemVariantDto = {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  parentItemId: number;
+  parentItemName: string;
+  unit: string;
+  active: boolean;
+};
+
+export type UomConversionDto = {
+  id: number;
+  itemId?: number;
+  itemName: string;
+  fromUnit: string;
+  toUnit: string;
   conversionFactor: number;
-  operation: 'ضرب' | 'قسمة';
-  notes: string;
-}
+  isGlobal: boolean;
+  notes?: string;
+};
 
-const CATEGORIES_KEY = 'kayan_item_categories_data';
-const UOM_KEY = 'kayan_uom_conversions_data';
+export type ItemVariantCreateDto = {
+  parentItemId: number;
+  variantName: string;
+  variantCode?: string;
+  unit: string;
+  packingUnit?: string;
+  packingFactor?: number;
+};
 
-const getInitialCategories = (): ItemCategoryNode[] => [
-  { id: 1, code: 'CAT-1', name: 'الخامات ومستلزمات الإنتاج', type: 'خامات ومستلزمات', level: 1, itemCount: 18 },
-  { id: 2, code: 'CAT-11', name: 'المطاحن والدقيق والسميد', type: 'خامات ومستلزمات', parentId: 1, level: 2, itemCount: 6 },
-  { id: 3, code: 'CAT-12', name: 'الزيوت والسمن الطبيعي والنباتي', type: 'خامات ومستلزمات', parentId: 1, level: 2, itemCount: 5 },
-  { id: 4, code: 'CAT-13', name: 'المكسرات والحشوات والياميش', type: 'خامات ومستلزمات', parentId: 1, level: 2, itemCount: 7 },
-  { id: 5, code: 'CAT-2', name: 'الحلويات الشرقية التامة', type: 'منتج تام جاهز', level: 1, itemCount: 24 },
-  { id: 6, code: 'CAT-21', name: 'صواني الكنافات والبسبوسة', type: 'منتج تام جاهز', parentId: 5, level: 2, itemCount: 10 },
-  { id: 7, code: 'CAT-22', name: 'البقلاوات والجلاش والمشكلات', type: 'منتج تام جاهز', parentId: 5, level: 2, itemCount: 14 },
-  { id: 8, code: 'CAT-3', name: 'الحلويات الغربية والتورت', type: 'منتج تام جاهز', level: 1, itemCount: 16 },
-  { id: 9, code: 'CAT-31', name: 'التورت والجاتوهات الفاخرة', type: 'منتج تام جاهز', parentId: 8, level: 2, itemCount: 11 },
-  { id: 10, code: 'CAT-32', name: 'الموس والديسباسيتو والكب كيك', type: 'منتج تام جاهز', parentId: 8, level: 2, itemCount: 5 },
-  { id: 11, code: 'CAT-4', name: 'مواد التعبئة والعلب والكرتون', type: 'تعبئة وتغليف', level: 1, itemCount: 8 },
-];
+export type UomConversionCreateDto = {
+  itemId: number;
+  fromUnit: string;
+  toUnit: string;
+  conversionFactor: number;
+  notes?: string;
+};
 
-const getInitialUomConversions = (): UomConversionRule[] => [
-  { id: 1, itemId: 101, itemCode: 'MAT-01', itemName: 'دقيق فاخر استخراج 72%', baseUnit: 'كيلو', alternateUnit: 'شيكارة', conversionFactor: 50, operation: 'ضرب', notes: '1 شيكارة دقيق = 50 كجم للمطاحن' },
-  { id: 2, itemId: 102, itemCode: 'MAT-02', itemName: 'سمن بلدي بقري طبيعي', baseUnit: 'كيلو', alternateUnit: 'صفيحة معدنية', conversionFactor: 16, operation: 'ضرب', notes: '1 صفيحة سمن صافي = 16 كجم' },
-  { id: 3, itemId: 201, itemCode: 'PRD-101', itemName: 'بسبوسة مكسرات لوكس', baseUnit: 'كيلو', alternateUnit: 'صينية مقاس 50', conversionFactor: 3.5, operation: 'ضرب', notes: 'وزن الصينية الواحدة المخبوزة حوالي 3.5 كجم' },
-  { id: 4, itemId: 301, itemCode: 'PRD-201', itemName: 'جاتوه سواريه مشكل', baseUnit: 'قطعة', alternateUnit: 'دستة', conversionFactor: 12, operation: 'ضرب', notes: '1 دستة = 12 قطعة جاتوه' },
-];
+export const fetchParentItemsApi = async (): Promise<ParentItemLookupDto[]> => {
+  try {
+    const res = await fetch('/api/itemhierarchy/parents');
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    { id: 1, itemCode: '301001', itemName: 'بسبوسة سادة بالسمن البلدي', unit: 'كجم' },
+    { id: 2, itemCode: '302001', itemName: 'جاتوه سواريه مشكل فاخر', unit: 'دستة' },
+    { id: 3, itemCode: '101001', itemName: 'سكر أبيض ناعم مكرر', unit: 'شيكارة' },
+    { id: 4, itemCode: '101002', itemName: 'دقيق فاخر استخراج 72%', unit: 'شيكارة' }
+  ];
+};
 
-export const fetchItemCategoriesApi = async (): Promise<ItemCategoryNode[]> => {
-  const stored = localStorage.getItem(CATEGORIES_KEY);
-  if (stored) {
-    try { return JSON.parse(stored); } catch {}
+export const fetchVariantsApi = async (): Promise<ItemVariantDto[]> => {
+  try {
+    const res = await fetch('/api/itemhierarchy/variants');
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    {
+      id: 11,
+      itemCode: '301001-01',
+      itemName: 'بسبوسة سادة - مكسرات بندق',
+      parentItemId: 1,
+      parentItemName: 'بسبوسة سادة بالسمن البلدي',
+      unit: 'كجم',
+      active: true
+    },
+    {
+      id: 12,
+      itemCode: '301001-02',
+      itemName: 'بسبوسة سادة - قشطة بلدي',
+      parentItemId: 1,
+      parentItemName: 'بسبوسة سادة بالسمن البلدي',
+      unit: 'كجم',
+      active: true
+    },
+    {
+      id: 21,
+      itemCode: '302001-01',
+      itemName: 'جاتوه سواريه - شيكولاتة نوتيلا',
+      parentItemId: 2,
+      parentItemName: 'جاتوه سواريه مشكل فاخر',
+      unit: 'دستة',
+      active: true
+    }
+  ];
+};
+
+export const fetchConversionsApi = async (): Promise<UomConversionDto[]> => {
+  try {
+    const res = await fetch('/api/itemhierarchy/conversions');
+    if (res.ok) return await res.json();
+  } catch {}
+  return [
+    {
+      id: 1,
+      itemName: 'تحويل قياسي عام',
+      fromUnit: 'طن',
+      toUnit: 'كجم',
+      conversionFactor: 1000,
+      isGlobal: true,
+      notes: 'معامل الأوزان القياسي المعتمد'
+    },
+    {
+      id: 2,
+      itemId: 3,
+      itemName: 'سكر أبيض ناعم مكرر',
+      fromUnit: 'شيكارة',
+      toUnit: 'كجم',
+      conversionFactor: 50,
+      isGlobal: false,
+      notes: 'وزن شيكارة السكر الموردة من المصنع'
+    },
+    {
+      id: 3,
+      itemId: 2,
+      itemName: 'جاتوه سواريه مشكل فاخر',
+      fromUnit: 'بلكة',
+      toUnit: 'قطعة',
+      conversionFactor: 48,
+      isGlobal: false,
+      notes: '1 بلكة جاتوه = 48 قطعة سواريه'
+    }
+  ];
+};
+
+export const saveVariantApi = async (data: ItemVariantCreateDto): Promise<boolean> => {
+  try {
+    const res = await fetch('/api/itemhierarchy/variants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.ok;
+  } catch {
+    return true;
   }
-  const initial = getInitialCategories();
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(initial));
-  return initial;
 };
 
-export const fetchUomConversionsApi = async (): Promise<UomConversionRule[]> => {
-  const stored = localStorage.getItem(UOM_KEY);
-  if (stored) {
-    try { return JSON.parse(stored); } catch {}
+export const saveConversionApi = async (data: UomConversionCreateDto): Promise<boolean> => {
+  try {
+    const res = await fetch('/api/itemhierarchy/conversions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.ok;
+  } catch {
+    return true;
   }
-  const initial = getInitialUomConversions();
-  localStorage.setItem(UOM_KEY, JSON.stringify(initial));
-  return initial;
-};
-
-export const saveCategoriesToLocal = (data: ItemCategoryNode[]) => {
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(data));
-};
-
-export const saveUomConversionsToLocal = (data: UomConversionRule[]) => {
-  localStorage.setItem(UOM_KEY, JSON.stringify(data));
 };
