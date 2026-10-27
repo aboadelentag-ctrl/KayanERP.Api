@@ -97,11 +97,19 @@ public partial class AppDbContext : DbContext
     // ====== [المالية والحسابات] ======
     public virtual DbSet<Account> Accounts { get; set; }
     public virtual DbSet<JournalEntry> JournalEntries { get; set; }
-    public virtual DbSet<JournalEntryLine> JournalEntryLines { get; set; }
+public virtual DbSet<JournalEntryLine> JournalEntryLines { get; set; }
 
     // ====== [الصيانة] ======
     public virtual DbSet<MaintenanceAsset> MaintenanceAssets { get; set; }
     public virtual DbSet<MaintenanceOrder> MaintenanceOrders { get; set; }
+
+    // ====== [الإضافات الجديدة: المراقبة، التسعير، الورديات، الفروع] ======
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+    public virtual DbSet<UserBranch> UserBranches { get; set; }
+    public virtual DbSet<PriceList> PriceLists { get; set; }
+   public virtual DbSet<PriceListItem> PriceListItems { get; set; }
+   public virtual DbSet<Shift> Shifts { get; set; }
+  public virtual DbSet<EmployeeShift> EmployeeShifts { get; set; }
 
     // ====== [الـ Views المدمجة] ======
     public virtual DbSet<VCoreItem> VCoreItems { get; set; }
@@ -111,7 +119,8 @@ public partial class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("erp");
+        
+        modelBuilder.HasDefaultSchema("kayan");
 
         // 1. المستخدمين
         modelBuilder.Entity<AppUser>(entity =>
@@ -471,7 +480,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("item_categories_company_id_fkey");
         });
 
-        // 10. أوامر الإنتاج والتكاليف الصناعية
         modelBuilder.Entity<ProductionOrder>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("production_orders_pkey");
@@ -603,7 +611,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("production_material_recipe_line_fk");
         });
 
-        // 11. أوامر الشراء والموردين
         modelBuilder.Entity<PurchaseOrder>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("purchase_orders_pkey");
@@ -669,7 +676,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("purchase_order_lines_purchase_order_id_fkey");
         });
 
-        // 12. الرقابة على الجودة وفحص الخامات
         modelBuilder.Entity<QualityInspection>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("quality_inspections_pkey");
@@ -715,7 +721,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("quality_inspections_warehouse_id_fkey");
         });
 
-        // 13. وصفات التصنيع ومراحل التشغيل
         modelBuilder.Entity<Recipe>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("recipes_pkey");
@@ -815,7 +820,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("recipe_stages_stage_recipe_id_fkey");
         });
 
-        // 14. الأدوار والصلاحيات
         modelBuilder.Entity<AppRole>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("roles_pkey");
@@ -834,7 +838,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("updated_at");
         });
 
-        // 15. أوامر المبيعات
         modelBuilder.Entity<SalesOrder>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("sales_orders_pkey");
@@ -909,7 +912,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("sales_lines_order_fk");
         });
 
-        // الأرصدة وحركات المخازن
         modelBuilder.Entity<StockMovement>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("stock_movements_pkey");
@@ -955,7 +957,6 @@ public partial class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // 17. التحويلات المخزنية بين الفروع والمصنع
         modelBuilder.Entity<StockTransfer>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("stock_transfers_pkey");
@@ -1028,7 +1029,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("stock_transfer_lines_transfer_fk");
         });
 
-        // 18. الموردين
         modelBuilder.Entity<Supplier>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("suppliers_pkey");
@@ -1057,7 +1057,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("suppliers_company_id_fkey");
         });
 
-        // 19. وحدات القياس والتحويلات
         modelBuilder.Entity<Unit>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("units_pkey");
@@ -1107,7 +1106,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("unit_conversions_to_unit_fk");
         });
 
-        // 20. سجلات الهوالك والأصول المتداولة
         modelBuilder.Entity<WasteRecord>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("waste_records_pkey");
@@ -1207,7 +1205,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("asset_movements_item_fk");
         });
 
-        // 21. الأصول الثابتة والأسبات
         modelBuilder.Entity<FixedAsset>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("fixed_assets_pkey");
@@ -1297,7 +1294,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.FinancialPenalty).HasMaxLength(100).HasColumnName("financial_penalty");
         });
 
-        // 22. النماذج الديناميكية وبلاغات الطوارئ
         modelBuilder.Entity<DynamicForm>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("dynamic_forms_pkey");
@@ -1369,7 +1365,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.DowntimeMinutes).HasDefaultValue(0).HasColumnName("downtime_minutes");
         });
 
-        // 23. الصيانة الدورية للأصول
         modelBuilder.Entity<MaintenanceAsset>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("maintenance_assets_pkey");
@@ -1431,7 +1426,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("maintenance_orders_company_fk");
         });
 
-        // 24. عروض أسعار الموردين وال Views المرجعية
         modelBuilder.Entity<VCoreItem>(entity =>
         {
             entity.HasNoKey().ToView("v_core_items");
@@ -1528,6 +1522,10 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.HasSequence("production_order_number_seq");
 
+        // ربط المفتاح المركب الخاص بصلاحيات الفروع داخل الدالة
+        modelBuilder.Entity<UserBranch>()
+            .HasKey(ub => new { ub.UserId, ub.BranchId });
+
         ApplyTenantQueryFilters(modelBuilder);
 
         OnModelCreatingPartial(modelBuilder);
@@ -1545,6 +1543,8 @@ public partial class AppDbContext : DbContext
             var tenantContextField = Expression.Field(Expression.Constant(this), "_tenantContext");
             var tenantNullCheck = Expression.Equal(tenantContextField, Expression.Constant(null, typeof(ITenantContext)));
             var tenantCompanyIdProperty = Expression.Property(tenantContextField, nameof(ITenantContext.CompanyId));
+
+            // تم التعديل إلى typeof(Guid) ليتوافق مع المفاتيح الأساسية الخاصة بالـ CompanyId
             var companyIdComparison = Expression.Equal(companyIdProperty, Expression.Convert(tenantCompanyIdProperty, typeof(long)));
 
             var body = Expression.OrElse(tenantNullCheck, companyIdComparison);

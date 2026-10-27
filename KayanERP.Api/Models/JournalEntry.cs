@@ -1,41 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace KayanERP.Api.Models;
 
-namespace KayanERP.Api.Models;
-
-[Table("journal_entries")]
-public class JournalEntry
+public class JournalEntry : Interfaces.ITenantEntity
 {
-    [Key]
-    [Column("id")]
     public long Id { get; set; }
-
-    [Column("company_id")]
     public long CompanyId { get; set; }
 
-    [Required]
-    [Column("entry_number")]
-    [MaxLength(50)]
+    // الحقول التي طلبها الكومبايلر للربط مع الكود القديم
     public string EntryNumber { get; set; } = string.Empty;
+    public string ReferenceType { get; set; } = string.Empty;
+    public string ReferenceNumber { get; set; } = string.Empty;
 
-    [Column("entry_date")]
-    public DateOnly EntryDate { get; set; }
-
-    [Column("reference_type")]
-    [MaxLength(50)]
-    public string ReferenceType { get; set; } = string.Empty; // مثل: PRODUCTION_ORDER
-
-    [Column("reference_id")]
-    public long? ReferenceId { get; set; } // رقم أمر الإنتاج الذي تسبب في هذا القيد
-
-    [Column("notes")]
+    public System.DateTime EntryDate { get; set; }
+    public string Status { get; set; } = "DRAFT";
     public string Notes { get; set; } = string.Empty;
 
-    [Column("created_at")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public System.DateTime CreatedAt { get; set; } = System.DateTime.UtcNow;
 
-    // الربط مع السطور
-    public ICollection<JournalEntryLine> Lines { get; set; } = new List<JournalEntryLine>();
+    public System.Collections.Generic.ICollection<JournalEntryLine> Lines { get; set; } = new System.Collections.Generic.List<JournalEntryLine>();
 }
