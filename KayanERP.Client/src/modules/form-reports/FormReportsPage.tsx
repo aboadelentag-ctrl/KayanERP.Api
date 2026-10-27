@@ -222,7 +222,7 @@ export const FormReportsPage: React.FC = () => {
           <h3 className="text-3xl font-black font-mono mt-1">3</h3>
         </div>
 
-        <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-sm border border-zinc-800">
+        <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
           <span className="text-xs text-gray-400 block">إجمالي الكميات / الهالك المسجل</span>
           <h3 className="text-3xl font-black font-mono text-amber-400 mt-1">142.5 <span className="text-sm font-normal text-gray-400">صينية/كجم</span></h3>
         </div>
@@ -369,3 +369,4 @@ export const FormReportsPage: React.FC = () => {
     </div>
   );
 };
+

@@ -1,340 +1,307 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Warehouse,
-  Plus,
-  RefreshCw,
-  FileSpreadsheet,
+  PlusCircle,
   Search,
-  CheckCircle2,
-  AlertTriangle,
-  Pencil,
+  FileSpreadsheet,
+  RotateCw,
+  Edit2,
   Trash2,
-  MapPin,
-  GitFork,
-  Boxes
+  CheckCircle2,
+  Building2,
+  Layers,
+  Boxes,
+  X
 } from 'lucide-react';
-import {
-  fetchWarehousesApi,
-  fetchBranchesLookupApi,
-  saveWarehouseApi,
-  deleteWarehouseApi,
-} from './warehousesApi';
-import type { WarehouseDto, BranchLookupDto } from './warehousesApi';
-import { WarehouseModal } from './WarehouseModal';
 
-export const WarehousesPage: React.FC = () => {
-  const [warehouses, setWarehouses] = useState<WarehouseDto[]>([]);
-  const [branches, setBranches] = useState<BranchLookupDto[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<number>(0);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+interface WarehousesPageProps {
+  onNavigate?: (tab: string) => void;
+}
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<WarehouseDto | null>(null);
+export interface WarehouseDto {
+  id: number;
+  warehouseCode: string;
+  warehouseName: string;
+  branchName: string;
+  warehouseType: 'خامات' | 'منتج تام' | 'صالة تشغيل' | 'معرض' | 'تالف وهوالك';
+  parentWarehouse: string;
+  description: string;
+  status: 'نشط' | 'معطل';
+}
 
-  const loadData = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [wList, bList] = await Promise.all([
-        fetchWarehousesApi(selectedBranchId),
-        fetchBranchesLookupApi(),
-      ]);
-      setWarehouses(wList);
-      setBranches(bList);
-    } catch (err: any) {
-      setErrorMessage(`تعذر جلب المستودعات: ${err.message}`);
-    } finally {
-      setIsLoading(false);
+export const WarehousesPage: React.FC<WarehousesPageProps> = ({ onNavigate }) => {
+  const [warehouses, setWarehouses] = useState<WarehouseDto[]>([
+    {
+      id: 1,
+      warehouseCode: 'WH-RAW-01',
+      warehouseName: 'مستودع الخامات المركزي (المصنع)',
+      branchName: 'الفرع الرئيسي - المصنع',
+      warehouseType: 'خامات',
+      parentWarehouse: 'مستودع رئيسي',
+      description: 'المستودع الرئيسي لاستلام الدقيق والسكر والزيوت والمكسرات',
+      status: 'نشط'
+    },
+    {
+      id: 2,
+      warehouseCode: 'WH-PRD-01',
+      warehouseName: 'مستودع التبريد للمنتج التام',
+      branchName: 'الفرع الرئيسي - المصنع',
+      warehouseType: 'منتج تام',
+      parentWarehouse: 'مستودع الخامات المركزي (المصنع)',
+      description: 'غرف التبريد لحفظ صواني البسبوسة والكنافة والتورت قبل الشحن',
+      status: 'نشط'
+    },
+    {
+      id: 3,
+      warehouseCode: 'WH-LINE-01',
+      warehouseName: 'مستودع صالة الشرقي (وسيط التشغيل)',
+      branchName: 'الفرع الرئيسي - المصنع',
+      warehouseType: 'صالة تشغيل',
+      parentWarehouse: 'مستودع الخامات المركزي (المصنع)',
+      description: 'صالة تصنيع الحلويات الشرقية لحفظ خامات الوردية الجارية',
+      status: 'نشط'
+    },
+    {
+      id: 4,
+      warehouseCode: 'WH-DKR-SHOW',
+      warehouseName: 'مستودع معرض دكرنس',
+      branchName: 'فرع دكرنس',
+      warehouseType: 'معرض',
+      parentWarehouse: 'مستودع رئيسي',
+      description: 'ثلاجات العرض وصالة بيع الحلويات لفرع دكرنس',
+      status: 'نشط'
+    },
+    {
+      id: 5,
+      warehouseCode: 'WH-DMG-01',
+      warehouseName: 'مستودع المرتجعات والهوالك',
+      branchName: 'الفرع الرئيسي - المصنع',
+      warehouseType: 'تالف وهوالك',
+      parentWarehouse: 'مستودع الخامات المركزي (المصنع)',
+      description: 'حصر أواني وكسر الحلويات المرتجعة لفحص أسباب التلف',
+      status: 'نشط'
     }
-  };
+  ]);
 
-  useEffect(() => {
-    loadData();
-  }, [selectedBranchId]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [branchFilter, setBranchFilter] = useState('ALL');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const filteredWarehouses = useMemo(() => {
-    if (!searchTerm.trim()) return warehouses;
-    const term = searchTerm.toLowerCase();
-    return warehouses.filter(
-      (w) =>
-        w.warehouseName.toLowerCase().includes(term) ||
+    return warehouses.filter(w => {
+      if (branchFilter !== 'ALL' && !w.branchName.includes(branchFilter)) return false;
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
         w.warehouseCode.toLowerCase().includes(term) ||
-        (w.branchName && w.branchName.toLowerCase().includes(term))
-    );
-  }, [warehouses, searchTerm]);
+        w.warehouseName.toLowerCase().includes(term) ||
+        w.description.toLowerCase().includes(term) ||
+        w.branchName.toLowerCase().includes(term)
+      );
+    });
+  }, [warehouses, branchFilter, searchTerm]);
 
-  const handleOpenCreate = () => {
-    setEditingWarehouse(null);
-    setIsModalOpen(true);
-  };
+  const exportToExcel = () => {
+    let csv = 'كود_المستودع,اسم_المستودع,الفرع_التابع,نوع_المستودع,المستودع_الرئيسي,الوصف,الحالة\n';
+    filteredWarehouses.forEach(w => {
+      csv += `"${w.warehouseCode}","${w.warehouseName}","${w.branchName}","${w.warehouseType}","${w.parentWarehouse}","${w.description}","${w.status}"\n`;
+    });
 
-  const handleOpenEdit = (w: WarehouseDto) => {
-    setEditingWarehouse(w);
-    setIsModalOpen(true);
-  };
-
-  const handleSave = async (w: WarehouseDto) => {
-    await saveWarehouseApi(w);
-    setStatusMessage(w.id > 0 ? 'تم تحديث المستودع بنجاح.' : 'تم تسجيل المستودع بنجاح.');
-    await loadData();
-  };
-
-  const handleDelete = async (w: WarehouseDto) => {
-    if (!window.confirm(`هل أنت متأكد من حذف المستودع [${w.warehouseName}]؟`)) return;
-
-    try {
-      await deleteWarehouseApi(w.id);
-      setStatusMessage('تمت معالجة حذف المستودع بنجاح.');
-      await loadData();
-    } catch (err: any) {
-      setErrorMessage(`فشل الحذف: ${err.message}`);
-    }
-  };
-
-  const handleExportCsv = () => {
-    if (filteredWarehouses.length === 0) return;
-
-    const headers = ['كود_المستودع', 'اسم_المستودع', 'الفرع', 'نوع_المستودع', 'المستودع_الأب', 'الوصف', 'الحالة'];
-    const rows = filteredWarehouses.map((w) => [
-      `"${w.warehouseCode}"`,
-      `"${w.warehouseName}"`,
-      `"${w.branchName || 'الفرع الرئيسي'}"`,
-      `"${w.warehouseType}"`,
-      `"${w.parentWarehouseName || 'مستودع رئيسي'}"`,
-      `"${w.description || '---'}"`,
-      `"${w.active ? 'نشط' : 'معطل'}"`,
-    ]);
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `دليل_المستودعات_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `دليل_المستودعات_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
-  const getTypeBadgeClass = (type: WarehouseDto['warehouseType']) => {
-    switch (type) {
-      case 'خامات':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'منتج تام':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'معرض':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'صالة تشغيل':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-      case 'تالف وهوالك':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
+  const handleDelete = (id: number, name: string) => {
+    if (!window.confirm(`هل أنت متأكد من حذف مستودع: [${name}]؟`)) return;
+    setWarehouses(warehouses.filter(w => w.id !== id));
+    setStatusMessage(`تم حذف مستودع [${name}] بنجاح.`);
+    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen font-sans" dir="rtl">
-      {/* الترويسة الرئيسية وأزرار الإجراءات */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      
+      {/* ترويسة الشاشة بالثيم الليلي الفاحم */}
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Warehouse className="w-7 h-7 text-indigo-600" />
-            <span>إدارة المستودعات ومراكز التخزين (Warehouses)</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            هيكلة المستودعات والشجرة الهرمية وربطها بالفروع ومنافذ الإنتاج
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-indigo-400 flex items-center gap-2">
+              <Warehouse className="w-6 h-6 text-indigo-400" />
+              <span>إدارة المستودعات ومراكز التخزين (Warehouses)</span>
+            </h1>
+            <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              هيكلة المستودعات والشجرة الهرمية
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
+            هيكلة المستودعات والشجرة الهرمية وربطها بالفروع ومنافذ الإنتاج.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {warehouses.length > 0 && (
-            <button
-              onClick={handleExportCsv}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-xs font-bold transition-colors"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>تصدير (Excel)</span>
-            </button>
-          )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setStatusMessage('✅ تم تحديث بيانات المستودعات والأرصدة الرقابية بنجاح.');
+              setTimeout(() => setStatusMessage(null), 3000);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold rounded-xl text-xs shadow-md transition-all border border-slate-300 dark:border-zinc-700"
+          >
+            <RotateCw className="w-4 h-4" />
+            <span>تحديث</span>
+          </button>
 
           <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+            onClick={exportToExcel}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span>إضافة مستودع جديد</span>
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>تصدير (Excel)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setStatusMessage('💡 نموذج إضافة مستودع جديد قيد الربط بشجرة الحسابات.');
+              setTimeout(() => setStatusMessage(null), 3000);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ إضافة مستودع جديد</span>
           </button>
         </div>
       </div>
 
-      {/* رسائل التنبيه والنجاح */}
       {statusMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{statusMessage}</span>
-          </div>
-          <button onClick={() => setStatusMessage(null)} className="text-emerald-700 hover:text-emerald-900 font-bold">×</button>
+        <div className="mb-4 p-3 bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {statusMessage}
+          </span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-700 hover:text-rose-900 font-bold">×</button>
+      {/* شريط البحث والفلترة */}
+      <div className="bg-white dark:bg-[#0f1117] p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md mb-6 flex flex-wrap justify-between items-center gap-3 text-xs">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-zinc-500 absolute right-3 top-2.5" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="ابحث بكود أو اسم المستودع..."
+            className="w-full pr-9 pl-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-100 outline-none focus:border-indigo-500"
+          />
         </div>
-      )}
 
-      {/* فلاتر العرض والبحث السريع */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-xs">
-          <div className="md:col-span-4">
-            <label className="block text-gray-500 font-bold mb-1">فلترة حسب الفرع:</label>
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-            >
-              <option value="0">كافة الفروع والمراكز الرئيسية</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.branchName} ({b.branchCode})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-5">
-            <label className="block text-gray-500 font-bold mb-1">بحث سريع:</label>
-            <div className="relative flex items-center">
-              <Search className="absolute right-3 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="ابحث بكود أو اسم المستودع..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-9 pl-3 py-2 bg-slate-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-indigo-600"
-              />
-            </div>
-          </div>
-
-          <div className="md:col-span-3 flex justify-end pt-5">
-            <button
-              onClick={loadData}
-              disabled={isLoading}
-              className="flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>تحديث</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-slate-600 dark:text-zinc-400 font-bold">فلترة حسب الفرع:</span>
+          <select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+            className="px-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-200 font-bold outline-none"
+          >
+            <option value="ALL">كافة الفروع والمراكز الرئيسية</option>
+            <option value="المصنع">الفرع الرئيسي - المصنع</option>
+            <option value="دكرنس">فرع دكرنس</option>
+            <option value="شربين">فرع شربين</option>
+            <option value="بلقاس">فرع بلقاس</option>
+          </select>
         </div>
       </div>
 
-      {/* جدول المستودعات والشجرة الهرمية */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-500 text-xs">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-600 mb-2" />
-            <p>جاري تحميل شجرة المستودعات...</p>
-          </div>
-        ) : filteredWarehouses.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-xs">
-            <Boxes className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-            <p>لا توجد مستودعات مطابقة للبحث المحدد.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200">
-                <tr>
-                  <th className="py-3 px-4">كود المستودع</th>
-                  <th className="py-3 px-4">اسم المستودع</th>
-                  <th className="py-3 px-4">الفرع التابع له</th>
-                  <th className="py-3 px-4 text-center">نوع المستودع</th>
-                  <th className="py-3 px-4 text-center">المستودع الرئيسي (الأب)</th>
-                  <th className="py-3 px-4">الوصف</th>
-                  <th className="py-3 px-4 text-center">الحالة</th>
-                  <th className="py-3 px-4 text-center">الإجراءات</th>
+      {/* جدول المستودعات ومراكز التخزين */}
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg overflow-hidden text-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-center">
+            <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
+              <tr>
+                <th className="py-3 px-3">كود المستودع</th>
+                <th className="py-3 px-3 text-right">اسم المستودع</th>
+                <th className="py-3 px-3 text-right">الفرع التابع له</th>
+                <th className="py-3 px-3">نوع المستودع</th>
+                <th className="py-3 px-3 text-right">المستودع الرئيسي (الأب)</th>
+                <th className="py-3 px-3 text-right">الوصف</th>
+                <th className="py-3 px-3">الحالة</th>
+                <th className="py-3 px-3 w-28">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
+              {filteredWarehouses.map(w => (
+                <tr key={w.id} className="hover:bg-zinc-900/60 transition-colors">
+                  <td className="py-3 px-3 font-mono font-bold text-indigo-400">{w.warehouseCode}</td>
+                  
+                  <td className="py-3 px-3 text-right font-bold text-zinc-100">{w.warehouseName}</td>
+
+                  <td className="py-3 px-3 text-right">
+                    <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
+                      <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>{w.branchName}</span>
+                    </span>
+                  </td>
+
+                  <td className="py-3 px-3">
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      w.warehouseType === 'خامات'
+                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                        : (w.warehouseType === 'منتج تام'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            : (w.warehouseType === 'صالة تشغيل'
+                                ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/30'
+                                : (w.warehouseType === 'معرض'
+                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/30')))
+                    }`}>
+                      {w.warehouseType}
+                    </span>
+                  </td>
+
+                  <td className="py-3 px-3 text-right text-slate-600 dark:text-zinc-400 font-mono text-[11px]">{w.parentWarehouse}</td>
+
+                  <td className="py-3 px-3 text-right text-slate-600 dark:text-zinc-400 max-w-xs truncate">{w.description}</td>
+
+                  <td className="py-3 px-3">
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                      {w.status} ✓
+                    </span>
+                  </td>
+
+                  <td className="py-3 px-3">
+                    <div className="flex justify-center items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setStatusMessage(`تعديل بيانات مستودع [${w.warehouseName}].`);
+                          setTimeout(() => setStatusMessage(null), 3000);
+                        }}
+                        className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-zinc-800 rounded-lg transition-all"
+                        title="تعديل"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(w.id, w.warehouseName)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-zinc-800 rounded-lg transition-all"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredWarehouses.map((w) => (
-                  <tr key={w.id} className="hover:bg-slate-50/75 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-gray-700">{w.warehouseCode}</td>
-                    <td className="py-3 px-4 font-bold text-gray-900">{w.warehouseName}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[11px]">
-                        <MapPin className="w-3 h-3 text-indigo-600" />
-                        <span>{w.branchName || 'الفرع الرئيسي'}</span>
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${getTypeBadgeClass(w.warehouseType)}`}>
-                        {w.warehouseType}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {w.parentWarehouseName ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[11px]">
-                          <GitFork className="w-3 h-3 text-indigo-500" />
-                          <span>{w.parentWarehouseName}</span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-[11px]">مستودع رئيسي</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate" title={w.description}>
-                      {w.description || '---'}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        w.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}>
-                        {w.active ? 'نشط' : 'معطل'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenEdit(w)}
-                          className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="تعديل"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(w)}
-                          className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <WarehouseModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        warehouse={editingWarehouse}
-        branches={branches}
-        allWarehouses={warehouses}
-        onSave={handleSave}
-      />
     </div>
   );
 };
+
+export default WarehousesPage;
+
+

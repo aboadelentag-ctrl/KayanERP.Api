@@ -69,9 +69,28 @@ import type { UserLoginResult } from './modules/auth/authApi';
 const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [currentTab, setCurrentTab] = useState<string>('workspace');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('kayan_theme') === 'dark';
-  });
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => localStorage.getItem('kayan_theme') === 'dark');
+  const toggleTheme = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      if (next) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('kayan_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('kayan_theme', 'light');
+      }
+      return next;
+    });
+  };
+
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const { user, switchRole } = useAuth();
   const { activeBranchName } = useBranchContext();
@@ -96,10 +115,20 @@ const AppContent: React.FC = () => {
   };
 
   const handleLogout = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      localStorage.setItem('kayan_logged_out', 'true');
+    } catch (e) {}
     setIsAuthenticated(false);
+    setCurrentTab('login');
   };
 
   const isMainWorkspace = currentTab === 'workspace';
+
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const renderCurrentTab = () => {
     switch (currentTab) {
@@ -155,7 +184,7 @@ const AppContent: React.FC = () => {
       case 'production': return <ProductionOperationsHubPage />;
       case 'branches': return <BranchesPage />;
       case 'customers': return <CustomersPage />;
-      default: return <NotFoundPage onNavigate={setCurrentTab} />;
+      default: return <WorkspacePage onNavigate={setCurrentTab} />;
     }
   };
 
@@ -277,3 +306,9 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+
+
+
+
+

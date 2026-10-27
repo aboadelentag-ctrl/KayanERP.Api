@@ -270,8 +270,8 @@ export const PurchasingPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 pt-10 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
-      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800/80 mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800/80 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
@@ -282,7 +282,7 @@ export const PurchasingPage: React.FC = () => {
               طلبات الأقسام ⟵ تفكيك وتوزيع الموردين
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
             تقديم طلبات الأصناف والكميات بالصالات، وتخصيص كل صنف لمورده المعتمد وتحويله لأمر توريد مستقل.
           </p>
         </div>
@@ -307,9 +307,9 @@ export const PurchasingPage: React.FC = () => {
       )}
 
       {/* جدول الطلبات */}
-      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800/80 shadow-lg overflow-hidden text-xs">
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-lg overflow-hidden text-xs">
         <table className="w-full text-center">
-          <thead className="bg-[#151822] text-zinc-400 border-b border-zinc-800">
+          <thead className="bg-slate-100 dark:bg-[#151822] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
             <tr>
               <th className="py-3 px-3">رقم الطلب</th>
               <th className="py-3 px-3">التاريخ</th>
@@ -319,19 +319,19 @@ export const PurchasingPage: React.FC = () => {
               <th className="py-3 px-3">الإجراءات</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/60">
+          <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/60">
             {filteredRequests.map(r => {
               const isConverted = r.status === 'CONVERTED_TO_PO';
               return (
                 <tr key={r.id} className="hover:bg-zinc-900/60 transition-colors">
                   <td className="py-3 px-3 font-mono font-bold text-amber-400">{r.orderNumber}</td>
-                  <td className="py-3 px-3 font-mono text-zinc-400">{r.orderDate}</td>
+                  <td className="py-3 px-3 font-mono text-slate-600 dark:text-zinc-400">{r.orderDate}</td>
                   <td className="py-3 px-3 text-right font-bold text-zinc-100">
                     <span>{r.requestingDepartment}</span>
                     <small className="block text-zinc-500 font-normal">بطلب من: {r.requestedBy}</small>
                   </td>
                   <td className="py-3 px-3 font-mono">
-                    <span className="bg-zinc-800 px-2 py-0.5 rounded font-bold text-[10px] text-zinc-300">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded font-bold text-[10px] text-slate-700 dark:text-zinc-300">
                       {r.lines.length} أصناف
                     </span>
                   </td>
@@ -369,25 +369,25 @@ export const PurchasingPage: React.FC = () => {
       {/* Modal 1: إنشاء طلب شراء جديد */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
-          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-[#151822] text-white flex items-center justify-between border-b border-zinc-800">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-slate-100 dark:bg-[#151822] text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <ShoppingCart className="w-4 h-4" />
                 <span>طلب شراء واحتياج أصناف جديد (للصالات والمخازن)</span>
               </h4>
-              <button onClick={() => setShowCreateModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-600 dark:text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveRequest} className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-3 p-3 bg-black/40 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-black/40 rounded-xl border border-slate-200 dark:border-zinc-800">
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">الإدارة / الصالة الطالبة *</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">الإدارة / الصالة الطالبة *</label>
                   <select
                     value={modalRequestDept}
                     onChange={(e) => setModalRequestDept(e.target.value)}
-                    className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-lg font-bold text-zinc-100"
+                    className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-amber-500/40 rounded-lg font-bold text-zinc-100"
                   >
                     {departmentsList.map(d => (
                       <option key={d} value={d}>{d}</option>
@@ -395,18 +395,18 @@ export const PurchasingPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">تاريخ الطلب</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">تاريخ الطلب</label>
                   <input
                     type="date"
                     value={modalOrderDate}
                     onChange={(e) => setModalOrderDate(e.target.value)}
-                    className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-zinc-100"
+                    className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-zinc-100"
                   />
                 </div>
               </div>
 
-              <div className="border border-zinc-800 rounded-xl overflow-visible bg-[#0a0c10]">
-                <div className="p-3 bg-[#13161f] border-b border-zinc-800 flex justify-between items-center">
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-visible bg-[#0a0c10]">
+                <div className="p-3 bg-[#13161f] border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center">
                   <span className="font-bold text-zinc-200">📋 قائمة الأصناف والكميات المطلوبة:</span>
                   <button
                     type="button"
@@ -418,7 +418,7 @@ export const PurchasingPage: React.FC = () => {
                 </div>
 
                 <table className="w-full text-center">
-                  <thead className="bg-[#171a24] text-zinc-400 border-b border-zinc-800">
+                  <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
                     <tr>
                       <th className="py-2.5 px-3 text-right" style={{ width: '40%' }}>الصنف (بحث بالاسم أو الكود) *</th>
                       <th className="py-2.5 px-3 w-48">الكمية والوحدة *</th>
@@ -426,7 +426,7 @@ export const PurchasingPage: React.FC = () => {
                       <th className="py-2.5 px-3 w-14">حذف</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/80">
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
                     {modalLines.map((line, idx) => {
                       const selectedItem = rawMaterialsList.find(i => i.id === line.itemId) || rawMaterialsList[0];
                       const query = line.itemSearchText.trim().toLowerCase();
@@ -454,11 +454,11 @@ export const PurchasingPage: React.FC = () => {
                                 setModalLines(copy);
                               }}
                               placeholder="ابحث بالاسم أو الكود..."
-                              className="w-full px-3 py-1.5 bg-[#171922] border border-zinc-700 rounded-lg font-bold text-xs outline-none text-zinc-100 focus:border-amber-500"
+                              className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-bold text-xs outline-none text-zinc-100 focus:border-amber-500"
                             />
 
                             {line.isDropdownOpen && (
-                              <div className="absolute z-50 top-full right-0 w-full bg-[#171922] border border-zinc-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto mt-1 text-xs">
+                              <div className="absolute z-50 top-full right-0 w-full bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto mt-1 text-xs">
                                 {searchResults.map(item => (
                                   <div
                                     key={item.id}
@@ -469,7 +469,7 @@ export const PurchasingPage: React.FC = () => {
                                       copy[idx].isDropdownOpen = false;
                                       setModalLines(copy);
                                     }}
-                                    className="p-2.5 px-3 hover:bg-amber-500/20 cursor-pointer flex justify-between items-center border-b border-zinc-800"
+                                    className="p-2.5 px-3 hover:bg-amber-500/20 cursor-pointer flex justify-between items-center border-b border-slate-200 dark:border-zinc-800"
                                   >
                                     <span className="font-bold text-zinc-100">{item.itemName}</span>
                                     <span className="font-mono text-amber-400 font-bold">[{item.itemCode}]</span>
@@ -491,7 +491,7 @@ export const PurchasingPage: React.FC = () => {
                                   copy[idx].requestedQty = Number(e.target.value);
                                   setModalLines(copy);
                                 }}
-                                className="w-20 px-2 py-1 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-center text-amber-400"
+                                className="w-20 px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-amber-400"
                               />
                               <select
                                 value={line.selectedUnit}
@@ -500,7 +500,7 @@ export const PurchasingPage: React.FC = () => {
                                   copy[idx].selectedUnit = e.target.value;
                                   setModalLines(copy);
                                 }}
-                                className="px-1.5 py-1 bg-[#202330] border border-zinc-700 rounded-lg font-bold text-[11px] text-amber-300 outline-none"
+                                className="px-1.5 py-1 bg-[#202330] border border-slate-300 dark:border-zinc-700 rounded-lg font-bold text-[11px] text-amber-300 outline-none"
                               >
                                 {selectedItem.availableUnits.map(u => (
                                   <option key={u} value={u}>{u}</option>
@@ -519,7 +519,7 @@ export const PurchasingPage: React.FC = () => {
                                 copy[idx].notes = e.target.value;
                                 setModalLines(copy);
                               }}
-                              className="w-full px-2.5 py-1 bg-[#171922] border border-zinc-700 rounded-lg text-xs text-zinc-200"
+                              className="w-full px-2.5 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-200"
                             />
                           </td>
 
@@ -535,8 +535,8 @@ export const PurchasingPage: React.FC = () => {
                 </table>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl">إلغاء</button>
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl">إلغاء</button>
                 <button type="submit" className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md">🚀 إرسال طلب الشراء للمشتريات</button>
               </div>
             </form>
@@ -547,13 +547,13 @@ export const PurchasingPage: React.FC = () => {
       {/* Modal 2: توزيع وتخصيص المورد لكل صنف */}
       {showConvertModal && requestToConvert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
-          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-zinc-800">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-emerald-400">
                 <ArrowRightLeft className="w-4 h-4" />
                 <span>تحويل الطلب [{requestToConvert.orderNumber}] - تخصيص الموردين وتوليد أوامر التوريد</span>
               </h4>
-              <button onClick={() => setShowConvertModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowConvertModal(false)} className="text-slate-600 dark:text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -563,9 +563,9 @@ export const PurchasingPage: React.FC = () => {
                 💡 <strong>منظومة المشتريات:</strong> نظراً لأن طلب الشراء يحتوي على خامات متعددة، حدد أمام كل صنف المورد المعتمد له وسعر الوحدة، وسيقوم النظام آلياً بتفكيكها إلى أمر توريد منفصل لكل مورد ونقلها لشاشة أوامر التوريد فوراً.
               </div>
 
-              <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
                 <table className="w-full text-center">
-                  <thead className="bg-[#171a24] text-zinc-400">
+                  <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400">
                     <tr>
                       <th className="py-2.5 px-3 text-right" style={{ width: '28%' }}>الصنف المطلوب</th>
                       <th className="py-2.5 px-3 w-28">الكمية والوحدة</th>
@@ -574,7 +574,7 @@ export const PurchasingPage: React.FC = () => {
                       <th className="py-2.5 px-3">الإجمالي</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800">
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
                     {requestToConvert.lines.map((l) => {
                       const cur = convertLinesData.find(c => c.id === l.id);
                       const suppId = cur?.supplierId || 1;
@@ -596,7 +596,7 @@ export const PurchasingPage: React.FC = () => {
                                 const val = Number(e.target.value);
                                 setConvertLinesData(convertLinesData.map(c => c.id === l.id ? { ...c, supplierId: val } : c));
                               }}
-                              className="w-full px-2.5 py-1.5 bg-[#171922] border border-emerald-500/50 rounded-lg font-bold text-emerald-300 text-xs"
+                              className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-[#171922] border border-emerald-500/50 rounded-lg font-bold text-emerald-300 text-xs"
                             >
                               {suppliersList.map(s => (
                                 <option key={s.id} value={s.id}>{s.supplierName}</option>
@@ -613,7 +613,7 @@ export const PurchasingPage: React.FC = () => {
                                 const val = Number(e.target.value);
                                 setConvertLinesData(convertLinesData.map(c => c.id === l.id ? { ...c, unitPrice: val } : c));
                               }}
-                              className="w-full px-2 py-1 bg-[#171922] border border-zinc-700 rounded font-mono font-bold text-center text-zinc-100"
+                              className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded font-mono font-bold text-center text-zinc-100"
                             />
                           </td>
                           <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
@@ -626,8 +626,8 @@ export const PurchasingPage: React.FC = () => {
                 </table>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setShowConvertModal(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl">إلغاء</button>
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <button type="button" onClick={() => setShowConvertModal(false)} className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl">إلغاء</button>
                 <button
                   type="button"
                   onClick={handleConfirmAndNavigate}
@@ -649,3 +649,5 @@ export const PurchasesPage = PurchasingPage;
 export const PurchaseOrdersPage = PurchasingPage;
 export const PurchaseInvoicesPage = PurchasingPage;
 export default PurchasingPage;
+
+

@@ -1,145 +1,195 @@
-﻿import React, { useState, useEffect } from 'react';
-import {
-  LayoutGrid,
-  Store,
-  Building2,
-  Truck,
-  Factory,
-  ShoppingBag,
-  Home,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { useBranchContext } from '../../core/context/BranchContext';
-import { fetchBranchesPortalApi } from './branchesPortalApi';
-import type { ActiveBranchDto } from './branchesPortalApi';
+﻿import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. استيراد الموجه
+import { useApp } from '../../context/AppContext';
+import { Building2, Store, Warehouse, Plus, ArrowLeft, Trash2, X } from 'lucide-react';
+import type { BranchType } from '../../types/navigation';
 
-interface BranchesPortalPageProps {
-  onNavigate?: (tab: string) => void;
-}
+export const BranchesPortalPage = () => {
+  const { branches, activeBranch, switchBranch, isAddBranchModalOpen, setIsAddBranchModalOpen, addBranch, deleteBranch } = useApp();
+  const navigate = useNavigate(); // 2. تفعيل الموجه
 
-export const BranchesPortalPage: React.FC<BranchesPortalPageProps> = ({ onNavigate }) => {
-  const { setActiveBranchId, setActiveBranchName } = useBranchContext();
-  const [branches, setBranches] = useState<ActiveBranchDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // حالات النافذة المنبثقة
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchCode, setNewBranchCode] = useState('');
+  const [newBranchType, setNewBranchType] = useState<BranchType>('SHOWROOM');
+  const [newBranchIsProduction, setNewBranchIsProduction] = useState(false);
 
-  useEffect(() => {
-    loadBranches();
-  }, []);
-
-  const loadBranches = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const data = await fetchBranchesPortalApi();
-      setBranches(data);
-    } catch (ex: any) {
-      setErrorMessage(`تعذر الاتصال بالخادم: ${ex.message}`);
-    } finally {
-      setIsLoading(false);
+  const getBranchIcon = (type: string) => {
+    switch (type) {
+      case 'FACTORY': return <Building2 className="w-6 h-6" />;
+      case 'CENTRAL_WAREHOUSE': return <Warehouse className="w-6 h-6" />;
+      default: return <Store className="w-6 h-6" />;
     }
   };
 
-  const handleSelectBranch = (branch: ActiveBranchDto) => {
-    setActiveBranchId(branch.id);
-    setActiveBranchName(branch.nameAr);
-    if (onNavigate) {
-      onNavigate('sales');
-    }
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBranchName || !newBranchCode) return;
+    addBranch({ name: newBranchName, code: newBranchCode, type: newBranchType, isProductionHub: newBranchIsProduction });
+    setNewBranchName(''); 
+    setNewBranchCode('');
   };
 
-  const getBranchIcon = (code: string) => {
-    switch (code) {
-      case 'BRANCH1': return <Home className="w-6 h-6 text-indigo-400" />;
-      case 'BRANCH2':
-      case 'BRANCH10': return <Store className="w-6 h-6 text-sky-400" />;
-      case 'BRANCH7': return <ShoppingBag className="w-6 h-6 text-rose-400" />;
-      case 'BRANCH11': return <Truck className="w-6 h-6 text-blue-400" />;
-      case 'BRANCH12': return <Factory className="w-6 h-6 text-amber-400" />;
-      default: return <Building2 className="w-6 h-6 text-emerald-400" />;
-    }
-  };
-
-  const getBranchThemeBg = (code: string) => {
-    switch (code) {
-      case 'BRANCH1': return 'bg-indigo-950/40 border-indigo-800/40 hover:border-indigo-500';
-      case 'BRANCH11': return 'bg-blue-950/40 border-blue-800/40 hover:border-blue-500';
-      case 'BRANCH12': return 'bg-amber-950/30 border-amber-800/40 hover:border-amber-500';
-      case 'BRANCH7': return 'bg-rose-950/30 border-rose-800/40 hover:border-rose-500';
-      default: return 'bg-slate-900/60 border-slate-800 hover:border-slate-600';
-    }
+  // 3. دالة الدخول: تغير الفرع في الذاكرة + تنقل المستخدم للوحة الرئيسية
+  const handleEnterBranch = (branchId: string) => {
+    switchBranch(branchId);
+    navigate('/dashboard'); // قم بوضع المسار الصحيح للوحة التحكم الخاصة بك هنا
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans p-6" dir="rtl">
-      {/* الشريط العلوي */}
-      <header className="max-w-7xl mx-auto flex justify-between items-center pb-6 border-b border-slate-800/80 mb-8">
-        <div className="text-xs text-slate-400 font-medium">
-          نظام كيان ERP ⇦ بوابة التحكم وعزل نطاق الفروع المركزية
+    <div className="space-y-8 animate-in fade-in duration-300 relative">
+      {/* الترويسة وزر الإضافة */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-subtle)] shadow-sm">
+        <div className="text-center sm:text-right">
+          <h1 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-wider mb-1">
+            BRANCHES OPERATIONS
+          </h1>
+          <p className="text-sm font-bold text-amber-500">
+            KAYAN ENTERPRISE SYSTEM V2.0
+          </p>
+          <p className="text-xs text-[var(--text-secondary)] mt-2">
+            اضغط على أي فرع لتثبيت نطاق العمل الميداني والبدء الفوري بإصدار فواتير المبيعات والعمليات.
+          </p>
         </div>
-
+        
         <button
-          onClick={() => onNavigate?.('workspace')}
-          className="w-10 h-10 bg-slate-900 border border-slate-700/80 rounded-xl flex items-center justify-center text-indigo-400 hover:text-white hover:bg-slate-800 transition-all shadow-xs"
-          title="العودة لمساحة العمل"
+          onClick={() => setIsAddBranchModalOpen(true)}
+          className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 px-5 py-3 rounded-xl font-bold transition-all shadow-sm active:scale-95"
         >
-          <LayoutGrid className="w-5 h-5" />
+          <Plus className="w-5 h-5" />
+          إضافة فرع جديد
         </button>
-      </header>
+      </div>
 
-      {/* رأس الصفحة المركزي */}
-      <section className="text-center max-w-4xl mx-auto mb-10">
-        <h1 className="text-3xl font-black tracking-wider text-slate-100 uppercase">
-          BRANCHES OPERATIONS
-        </h1>
-        <p className="text-xs font-bold text-slate-500 tracking-widest mt-1 uppercase">
-          KAYAN ENTERPRISE SYSTEM V2.0
-        </p>
-        <p className="text-xs text-slate-400 mt-2 max-w-lg mx-auto">
-          اختر الفرع لتثبيت نطاق العمل والتحويل المباشر لعمليات وفواتير المبيعات الخاصة به.
-        </p>
-      </section>
+      {/* شبكة الفروع */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {branches.map((branch) => {
+          const isActive = activeBranch?.id === branch.id;
+          
+          return (
+            <div
+              key={branch.id}
+              onClick={() => handleEnterBranch(branch.id)} /* تم ربط دالة الدخول هنا */
+              className={`group relative p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center text-center overflow-hidden cursor-pointer
+                ${isActive 
+                  ? 'border-amber-500 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)] scale-[1.02]' 
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-amber-500/50 hover:shadow-lg hover:-translate-y-1'
+                }
+              `}
+            >
+              {/* زر الحذف */}
+              {!isActive && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); deleteBranch(branch.id); }}
+                  className="absolute top-3 left-3 p-2 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors z-10"
+                  title="حذف الفرع"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
 
-      {/* المحتوى وشبكة الكروت */}
-      <main className="max-w-7xl mx-auto">
-        {errorMessage && (
-          <div className="p-4 bg-rose-950/50 border border-rose-800 text-rose-300 rounded-2xl text-xs font-bold flex items-center gap-2 mb-6">
-            <AlertCircle className="w-4 h-4 text-rose-400" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
+              {isActive && (
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+              )}
 
-        {isLoading ? (
-          <div className="text-center py-16 text-slate-500 text-xs font-bold">
-            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            جاري تحميل شبكة فروع ومنافذ كيان...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {branches.map(branch => (
-              <div
-                key={branch.id}
-                onClick={() => handleSelectBranch(branch)}
-                className={`p-5 rounded-2xl border backdrop-blur-md cursor-pointer transition-all duration-200 hover:-translate-y-1 flex items-center justify-between shadow-lg ${getBranchThemeBg(branch.code)}`}
-              >
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-colors
+                ${isActive ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] group-hover:text-amber-500'}
+              `}>
+                {getBranchIcon(branch.type)}
+              </div>
+              
+              <h3 className={`font-bold text-lg mb-1 ${isActive ? 'text-amber-500' : 'text-[var(--text-primary)]'}`}>
+                {branch.name}
+              </h3>
+              
+              <div className="text-[10px] text-[var(--text-muted)] font-mono font-bold tracking-widest uppercase mb-6 bg-[var(--bg-app)] px-2 py-1 rounded">
+                ID: {branch.code}
+              </div>
+              
+              <div className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors
+                ${isActive 
+                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
+                  : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] group-hover:bg-amber-500/10 group-hover:text-amber-500'
+                }
+              `}>
+                {isActive ? (
+                  <>الدخول كـ نطاق نشط</>
+                ) : (
+                  <>
+                    اضغط للدخول <ArrowLeft className="w-3 h-3" />
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* نافذة إضافة فرع جديد */}
+      {isAddBranchModalOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface-elevated)]">
+              <h2 className="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-amber-500" /> إضافة منشأة / فرع جديد
+              </h2>
+              <button onClick={() => setIsAddBranchModalOpen(false)} className="text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddSubmit} className="p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">اسم الفرع (عربي)</label>
+                <input 
+                  type="text" required value={newBranchName} onChange={e => setNewBranchName(e.target.value)}
+                  className="w-full bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all"
+                  placeholder="مثال: معرض المنصورة الجديد"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-black text-white group-hover:text-indigo-300">
-                    {branch.nameAr}
-                  </h3>
-                  <span className="text-[11px] font-mono text-slate-400 mt-0.5 block">
-                    ID: {branch.code}
-                  </span>
+                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">كود الفرع (إنجليزي)</label>
+                  <input 
+                    type="text" required value={newBranchCode} onChange={e => setNewBranchCode(e.target.value)}
+                    className="w-full bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none uppercase transition-all"
+                    placeholder="e.g. BR-MAN"
+                  />
                 </div>
-
-                <div className="w-12 h-12 rounded-xl bg-slate-800/80 flex items-center justify-center border border-slate-700/60 shadow-inner">
-                  {getBranchIcon(branch.code)}
+                <div>
+                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">نوع المنشأة</label>
+                  <select 
+                    value={newBranchType} onChange={e => setNewBranchType(e.target.value as BranchType)}
+                    className="w-full bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all"
+                  >
+                    <option value="SHOWROOM">معرض بيع</option>
+                    <option value="FACTORY">مصنع</option>
+                    <option value="CENTRAL_WAREHOUSE">مخزن رئيسي</option>
+                  </select>
                 </div>
               </div>
-            ))}
+
+              <label className="flex items-center gap-3 cursor-pointer p-4 border border-[var(--border-subtle)] rounded-xl bg-[var(--bg-app)] hover:bg-[var(--bg-surface-elevated)] transition-colors">
+                <input 
+                  type="checkbox" checked={newBranchIsProduction} onChange={e => setNewBranchIsProduction(e.target.checked)}
+                  className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                />
+                <span className="text-sm font-bold text-[var(--text-primary)]">يحتوي على صالة إنتاج وميزان (MES)</span>
+              </label>
+
+              <div className="pt-3 flex gap-3">
+                <button type="submit" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-amber-500/20 active:scale-95">
+                  حفظ واعتماد الفرع
+                </button>
+                <button type="button" onClick={() => setIsAddBranchModalOpen(false)} className="flex-1 bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] font-bold py-3 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--bg-app)] transition-colors active:scale-95">
+                  إلغاء
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 };

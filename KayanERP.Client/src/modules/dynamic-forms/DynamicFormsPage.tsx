@@ -502,7 +502,7 @@ export const DynamicFormsPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4" dir="rtl">
           <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[95vh]">
             {/* ترويسة الأستوديو */}
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-zinc-800">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <div className="flex items-center gap-2">
                 <span className="text-base">🎨</span>
                 <h4 className="font-bold text-amber-400">أستوديو هندسة النماذج - Form Studio</h4>
@@ -998,3 +998,4 @@ export const DynamicFormsPage: React.FC = () => {
     </div>
   );
 };
+

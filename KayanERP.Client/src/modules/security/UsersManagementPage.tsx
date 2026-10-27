@@ -1,1035 +1,821 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  ShieldLock,
-  ArrowRight,
-  Sliders,
-  Users,
-  PlusCircle,
-  UserPlus,
-  Info,
-  CheckCircle2,
-  Key,
-  ShieldPlus,
-  UserX,
+  Shield,
+  ShieldCheck,
   UserCheck,
+  Users,
+  KeyRound,
+  Lock,
+  Unlock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  PlusCircle,
   Search,
-  X,
-  Layers,
+  Eye,
+  Settings,
+  Trash2,
+  Edit,
   Save,
   Check,
-  Building2,
-  Lock
+  X,
+  Layers,
+  ArrowRight,
+  Building,
+  UserPlus,
+  LayoutTemplate,
+  Sliders,
+  CheckSquare,
+  Square
 } from 'lucide-react';
-import { useAuth } from '../../core/auth/AuthContext';
-import {
-  fetchPermissionCatalogApi,
-  fetchRolesApi,
-  fetchUsersApi,
-  fetchEmployeesLookupApi,
-  saveRolePermissionsApi,
-  createRoleApi,
-  createUserApi,
-  toggleUserStatusApi,
-  saveUserCustomPermsApi,
-} from './securityApi';
-import type {
-  RoleDto,
-  UserRowDto,
-  EmployeeLookupDto,
-  PermissionGroupDto,
-} from './securityApi';
 
 interface Props {
   onNavigate?: (tab: string) => void;
 }
 
+export interface ButtonPermission {
+  id: string;
+  name: string;
+  screenName: string;
+  module: 'MES' | 'LOGISTICS' | 'SALES' | 'FINANCE' | 'QA' | 'PROCUREMENT' | 'HR' | 'SOS';
+}
+
+export interface RoleMatrixItem {
+  roleId: string;
+  roleName: string;
+  description: string;
+  usersCount: number;
+  permissions: { [permissionId: string]: { view: boolean; execute: boolean } };
+}
+
+export interface UserSecurityItem {
+  id: number;
+  username: string;
+  fullName: string;
+  workerCode: string;
+  department: string;
+  roleId: string;
+  roleName: string;
+  status: 'نشط' | 'معطل';
+  customOverridesCount: number;
+}
+
 export const UsersManagementPage: React.FC<Props> = ({ onNavigate }) => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'ROLES' | 'USERS'>('ROLES');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('matrix');
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showAddUserModal, setShowAddUserModal] = useState<boolean>(false);
+  const [showRoleStudioModal, setShowRoleStudioModal] = useState<boolean>(false);
 
-  // مصفوفة الأدوار والصلاحيات
-  const [rolesList, setRolesList] = useState<RoleDto[]>([]);
-  const [selectedRole, setSelectedRole] = useState<RoleDto | null>(null);
-  const [permissionCatalog, setPermissionCatalog] = useState<PermissionGroupDto[]>([]);
-  const [activePermissionsSet, setActivePermissionsSet] = useState<Set<string>>(new Set());
-  const [permSearchTerm, setPermSearchTerm] = useState<string>('');
+  // حالة استوديو تصميم الدور والقالب
+  const [studioRoleName, setStudioRoleName] = useState('');
+  const [studioRoleDesc, setStudioRoleDesc] = useState('');
+  const [studioPermissions, setStudioPermissions] = useState<{ [id: string]: { view: boolean; execute: boolean } }>({});
+  const [studioModuleFilter, setStudioModuleFilter] = useState<string>('ALL');
 
-  // سجل المستخدمين والعاملين
-  const [usersList, setUsersList] = useState<UserRowDto[]>([]);
-  const [employeesList, setEmployeesList] = useState<EmployeeLookupDto[]>([]);
+  // خريطة شاملة لكافة شاشات وأزرار المنظومة الصناعية
+  const systemActions: ButtonPermission[] = [
+    // 1. الإنتاج والتشغيل MES
+    { id: 'MES_VIEW_HUB', name: 'عرض غرفة عمليات الإنتاج (MES Hub)', screenName: 'غرفة عمليات MES', module: 'MES' },
+    { id: 'MES_CREATE_ORDER', name: 'زر (+ إصدار أمر تشغيل جديد)', screenName: 'غرفة عمليات MES', module: 'MES' },
+    { id: 'MES_EXECUTE_LOT', name: 'زر (تنفيذ وتقفيل اللوط ورصد الهالك)', screenName: 'غرفة عمليات MES', module: 'MES' },
+    { id: 'MES_SHIFT_ATTENDANCE', name: 'تسجيل واعتماد حضور عمال الوردية', screenName: 'إدارة الوردية', module: 'MES' },
+    { id: 'MES_COSTING_VIEW', name: 'استعراض تحليل تكلفة الصاج والدفعة', screenName: 'محرك التكاليف', module: 'MES' },
+    { id: 'MES_RECIPES_EDIT', name: 'تعديل وحفظ الوصفات المعيارية (BOM)', screenName: 'الوصفات المعيارية', module: 'MES' },
 
-  // Modals
-  const [showCreateRoleModal, setShowCreateRoleModal] = useState<boolean>(false);
-  const [newRoleDisplayName, setNewRoleDisplayName] = useState<string>('');
-  const [newRoleName, setNewRoleName] = useState<string>('');
-  const [newRoleDescription, setNewRoleDescription] = useState<string>('');
-  const [cloneFromRoleId, setCloneFromRoleId] = useState<number>(0);
+    // 2. المخازن وسلاسل الإمداد
+    { id: 'LOG_STOCK_CARD', name: 'عرض كارت الصنف والمسار التراكمي', screenName: 'كارت الصنف', module: 'LOGISTICS' },
+    { id: 'LOG_STOCK_EXCEL', name: 'زر (تصدير كشف الحركة Excel)', screenName: 'كارت الصنف', module: 'LOGISTICS' },
+    { id: 'LOG_TRANSFER_DISPATCH', name: 'إصدار إذن تحويل وصرف صواني للفروع', screenName: 'تحويلات الفروع', module: 'LOGISTICS' },
+    { id: 'LOG_TRANSFER_RECEIVE', name: 'استلام وتحريز بضاعة بالفرع ولجنة النزاع', screenName: 'تحويلات الفروع', module: 'LOGISTICS' },
+    { id: 'LOG_CRATES_TRACK', name: 'تتبع حركة ودوران الأسبات والصناديق', screenName: 'حركة الأسبات', module: 'LOGISTICS' },
 
-  const [showCreateUserModal, setShowCreateUserModal] = useState<boolean>(false);
-  const [newUsername, setNewUsername] = useState<string>('');
-  const [newUserPassword, setNewUserPassword] = useState<string>('');
-  const [newUserFullName, setNewUserFullName] = useState<string>('');
-  const [newUserDepartmentName, setNewUserDepartmentName] = useState<string>('');
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
-  const [selectedEmployeeCode, setSelectedEmployeeCode] = useState<string | null>(null);
-  const [newUserRoleId, setNewUserRoleId] = useState<number>(0);
+    // 3. المبيعات والفروع
+    { id: 'SALES_INVOICE_CREATE', name: 'زر (+ فاتورة مبيعات جديدة)', screenName: 'فواتير المبيعات', module: 'SALES' },
+    { id: 'SALES_INVOICE_PRINT', name: 'زر (طباعة / معاينة الفاتورة)', screenName: 'فواتير المبيعات', module: 'SALES' },
+    { id: 'SALES_DISCOUNT_OVERRIDE', name: 'منح خصومات استثنائية للعملاء', screenName: 'فواتير المبيعات', module: 'SALES' },
+    { id: 'SALES_BRANCH_LOCK', name: 'تغيير وتثبيت سياق الفرع المعزول', screenName: 'بوابة الفروع', module: 'SALES' },
 
-  const [showResetPassModal, setShowResetPassModal] = useState<boolean>(false);
-  const [targetUser, setTargetUser] = useState<UserRowDto | null>(null);
-  const [resetPassNew, setResetPassNew] = useState<string>('');
+    // 4. الإدارة المالية
+    { id: 'FIN_JOURNAL_POST', name: 'ترحيل قيود اليومية العامة', screenName: 'دفتر اليومية', module: 'FINANCE' },
+    { id: 'FIN_TREASURY_VOUCHER', name: 'إصدار سند قبض / صرف نقدي بالخزينة', screenName: 'الخزائن وسندات القبض', module: 'FINANCE' },
+    { id: 'FIN_STATEMENTS_VIEW', name: 'استعراض القوائم المالية والأرباح P&L', screenName: 'القوائم الختامية', module: 'FINANCE' },
 
-  const [showCustomPermsModal, setShowCustomPermsModal] = useState<boolean>(false);
-  const [userCustomPermsSet, setUserCustomPermsSet] = useState<Set<string>>(new Set());
+    // 5. الجودة والـ HACCP
+    { id: 'QA_INSPECT_APPROVE', name: 'اعتماد محضر فحص خامات الموردين', screenName: 'فحص الخامات', module: 'QA' },
+    { id: 'QA_FORMS_STUDIO', name: 'تصميم قوالب نماذج التفتيش الرقمية', screenName: 'Form Studio', module: 'QA' },
 
-  const [isSubmittingModal, setIsSubmittingModal] = useState<boolean>(false);
+    // 6. المشتريات
+    { id: 'PROC_PO_CREATE', name: 'إصدار أوامر الشراء والتعميد للموردين', screenName: 'أوامر الشراء', module: 'PROCUREMENT' },
 
-  const loadAllData = async () => {
-    setIsLoading(true);
-    try {
-      const [catalog, roles, users, employees] = await Promise.all([
-        fetchPermissionCatalogApi(),
-        fetchRolesApi(1),
-        fetchUsersApi(1),
-        fetchEmployeesLookupApi(1),
-      ]);
-      setPermissionCatalog(catalog);
-      setRolesList(roles);
-      setUsersList(users);
-      setEmployeesList(employees);
+    // 7. الموارد البشرية
+    { id: 'HR_EMPLOYEE_EDIT', name: 'تعديل بيانات العاملين واحتساب المرتبات', screenName: 'شؤون العاملين', module: 'HR' },
 
-      if (roles.length > 0) {
-        selectRole(roles[0]);
+    // 8. الطوارئ SOS
+    { id: 'SOS_TICKET_CLOSE', name: 'إغلاق بلاغ عطل حرج بالمعدات (SOS)', screenName: 'غرفة الطوارئ', module: 'SOS' }
+  ];
+
+  const [roles, setRoles] = useState<RoleMatrixItem[]>([
+    {
+      roleId: 'ROLE_ADMIN',
+      roleName: 'مدير عام المنظومة (صلاحيات كاملة)',
+      description: 'تحكم كامل في كافة موديلات وأزرار النظام بدون أي قيود',
+      usersCount: 1,
+      permissions: Object.fromEntries(systemActions.map(a => [a.id, { view: true, execute: true }]))
+    },
+    {
+      roleId: 'ROLE_CHEF',
+      roleName: 'مدير تشغيل وإنتاج المعمل (Chef)',
+      description: 'مسؤول غرفة عمليات التصنيع، طلب الخامات، وإصدار وتقفيل أوامر الإنتاج',
+      usersCount: 1,
+      permissions: {
+        'MES_VIEW_HUB': { view: true, execute: true },
+        'MES_CREATE_ORDER': { view: true, execute: true },
+        'MES_EXECUTE_LOT': { view: true, execute: true },
+        'MES_SHIFT_ATTENDANCE': { view: true, execute: true },
+        'MES_COSTING_VIEW': { view: true, execute: false },
+        'MES_RECIPES_EDIT': { view: true, execute: true },
+        'LOG_STOCK_CARD': { view: true, execute: false },
+        'LOG_TRANSFER_DISPATCH': { view: true, execute: false }
       }
-    } catch (err: any) {
-      setStatusMessage(`خطأ في جلب بيانات الحوكمة: ${err.message}`);
-    } finally {
-      setIsLoading(false);
+    },
+    {
+      roleId: 'ROLE_BRANCH_MGR',
+      roleName: 'مشرف فرع ومعرض حلويات',
+      description: 'مسؤول نقاط البيع، الفواتير، استلام صواني التام، وتتبع الأسبات',
+      usersCount: 2,
+      permissions: {
+        'SALES_INVOICE_CREATE': { view: true, execute: true },
+        'SALES_INVOICE_PRINT': { view: true, execute: true },
+        'SALES_DISCOUNT_OVERRIDE': { view: true, execute: false },
+        'LOG_TRANSFER_RECEIVE': { view: true, execute: true },
+        'LOG_CRATES_TRACK': { view: true, execute: true },
+        'LOG_STOCK_CARD': { view: true, execute: false },
+        'FIN_TREASURY_VOUCHER': { view: true, execute: true }
+      }
     }
+  ]);
+
+  const [users, setUsers] = useState<UserSecurityItem[]>([
+    {
+      id: 1,
+      username: 'admin',
+      fullName: 'أبو عادل (المدير العام والتنفيذي)',
+      workerCode: 'EMP-001',
+      department: 'الإدارة العليا والمصنع المركزي',
+      roleId: 'ROLE_ADMIN',
+      roleName: 'مدير عام المنظومة (صلاحيات كاملة)',
+      status: 'نشط',
+      customOverridesCount: 0
+    },
+    {
+      id: 2,
+      username: 'hossam_chef',
+      fullName: 'م. حسام الدين (مدير تشغيل المعمل)',
+      workerCode: 'EMP-014',
+      department: 'صالة تصنيع الحلويات الشرقية',
+      roleId: 'ROLE_CHEF',
+      roleName: 'مدير تشغيل وإنتاج المعمل',
+      status: 'نشط',
+      customOverridesCount: 0
+    },
+    {
+      id: 3,
+      username: 'ahmed_dkr',
+      fullName: 'أحمد السعيد (مشرف فرع دكرنس)',
+      workerCode: 'EMP-022',
+      department: 'معرض ومبيعات فرع دكرنس',
+      roleId: 'ROLE_BRANCH_MGR',
+      roleName: 'مشرف فرع ومعرض حلويات',
+      status: 'نشط',
+      customOverridesCount: 1
+    }
+  ]);
+
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('ROLE_ADMIN');
+  const [moduleFilter, setModuleFilter] = useState<string>('ALL');
+
+  const activeRole = roles.find(r => r.roleId === selectedRoleId) || roles[0];
+
+  // فتح مصمم القوالب لإنشاء قالب دور جديد من الصفر
+  const handleOpenStudio = () => {
+    setStudioRoleName('');
+    setStudioRoleDesc('');
+    // تهيئة مصفوفة فارغة
+    const initPerms: { [id: string]: { view: boolean; execute: boolean } } = {};
+    systemActions.forEach(act => {
+      initPerms[act.id] = { view: false, execute: false };
+    });
+    setStudioPermissions(initPerms);
+    setShowRoleStudioModal(true);
   };
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
+  // تبديل أزرار المصمم
+  const handleToggleStudioPerm = (actionId: string, type: 'view' | 'execute') => {
+    setStudioPermissions(prev => {
+      const current = prev[actionId] || { view: false, execute: false };
+      const nextVal = !current[type];
+      const updated = { ...current, [type]: nextVal };
 
-  const selectRole = (role: RoleDto) => {
-    setSelectedRole(role);
-    const set = new Set<string>();
-    if (role.permissions) {
-      role.permissions.split(',').forEach((p) => {
-        if (p.trim()) set.add(p.trim());
-      });
-    }
-    setActivePermissionsSet(set);
-  };
-
-  const togglePermission = (code: string) => {
-    setActivePermissionsSet((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(code)) updated.delete(code);
-      else updated.add(code);
-      return updated;
+      if (type === 'view' && !nextVal) {
+        updated.execute = false;
+      }
+      if (type === 'execute' && nextVal) {
+        updated.view = true;
+      }
+      return { ...prev, [actionId]: updated };
     });
   };
 
-  const selectAllPermissions = () => {
-    const all = new Set<string>();
-    permissionCatalog.forEach((group) => {
-      group.permissions.forEach((p) => all.add(p.code));
+  // إجراءات جماعية سريعة داخل مصمم القالب
+  const handleBulkSelect = (mode: 'ALL_FULL' | 'ALL_VIEW' | 'CLEAR') => {
+    const updated: { [id: string]: { view: boolean; execute: boolean } } = {};
+    systemActions.forEach(act => {
+      if (mode === 'ALL_FULL') updated[act.id] = { view: true, execute: true };
+      else if (mode === 'ALL_VIEW') updated[act.id] = { view: true, execute: false };
+      else updated[act.id] = { view: false, execute: false };
     });
-    setActivePermissionsSet(all);
+    setStudioPermissions(updated);
   };
 
-  const clearAllPermissions = () => {
-    setActivePermissionsSet(new Set());
-  };
-
-  const handleSaveRolePermissions = async () => {
-    if (!selectedRole) return;
-    setIsSaving(true);
-    try {
-      const arr = Array.from(activePermissionsSet);
-      await saveRolePermissionsApi(selectedRole.id, arr);
-      selectedRole.permissions = arr.join(',');
-      setStatusMessage(`✓ تم حفظ وتحديث مصفوفة أزرار (${selectedRole.displayName}) بنجاح.`);
-    } catch (err: any) {
-      setStatusMessage(`خطأ أثناء الحفظ: ${err.message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const filteredCatalog = useMemo(() => {
-    if (!permSearchTerm.trim()) return permissionCatalog;
-    const term = permSearchTerm.trim().toLowerCase();
-
-    return permissionCatalog
-      .map((g) => ({
-        ...g,
-        permissions: g.permissions.filter(
-          (p) =>
-            p.title.toLowerCase().includes(term) ||
-            p.description.toLowerCase().includes(term) ||
-            p.code.toLowerCase().includes(term)
-        ),
-      }))
-      .filter((g) => g.permissions.length > 0);
-  }, [permissionCatalog, permSearchTerm]);
-
-  // Modal 1: إنشاء دور
-  const handleSubmitCreateRole = async (e: React.FormEvent) => {
+  // حفظ القالب كدور وظيفي معتمد
+  const handleSaveStudioRole = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRoleDisplayName.trim()) {
-      setStatusMessage('يرجى كتابة اسم الدور بالعربية.');
+    if (!studioRoleName.trim()) {
+      alert('يرجى إدخال مسمى قالب الدور.');
       return;
     }
-    setIsSubmittingModal(true);
+
+    const newRoleId = `ROLE_TEMPLATE_${Date.now()}`;
+    const newRole: RoleMatrixItem = {
+      roleId: newRoleId,
+      roleName: studioRoleName.trim(),
+      description: studioRoleDesc.trim() || 'قالب دور مخصص ومصمم الشاشات والأزرار',
+      usersCount: 0,
+      permissions: studioPermissions
+    };
+
+    const updatedRoles = [...roles, newRole];
+    setRoles(updatedRoles);
+    setSelectedRoleId(newRoleId);
+    setShowRoleStudioModal(false);
+
     try {
-      let initialPerms: string[] = [];
-      if (cloneFromRoleId > 0) {
-        const source = rolesList.find((r) => r.id === cloneFromRoleId);
-        if (source?.permissions) initialPerms = source.permissions.split(',').map((p) => p.trim());
-      }
+      localStorage.setItem('kayan_roles_matrix', JSON.stringify(updatedRoles));
+    } catch (err) {}
 
-      await createRoleApi({
-        displayName: newRoleDisplayName.trim(),
-        name: newRoleName.trim() || 'CUSTOM_ROLE',
-        description: newRoleDescription.trim(),
-        permissions: initialPerms,
-      });
-
-      setShowCreateRoleModal(false);
-      setStatusMessage('✓ تم إنشاء الدور والمصفوفة بنجاح.');
-      await loadAllData();
-    } catch (err: any) {
-      setStatusMessage(`خطأ: ${err.message}`);
-    } finally {
-      setIsSubmittingModal(false);
-    }
+    setStatusMessage(`🎯 تم اعتماد وتثبيت قالب الدور [${newRole.roleName}] بكافة شاشاته وأزراره المحددة بنجاح.`);
+    setTimeout(() => setStatusMessage(null), 4000);
   };
 
-  // Modal 2: إنشاء مستخدم
-  const handleEmployeeSelect = (empId: number) => {
-    const emp = employeesList.find((x) => x.id === empId);
-    if (emp) {
-      setSelectedEmployeeId(emp.id);
-      setSelectedEmployeeCode(emp.EmployeeCode || emp.employeeCode);
-      setNewUserFullName(emp.FullName || emp.fullName);
-      setNewUserDepartmentName(emp.DepartmentName || emp.departmentName);
-      if (!newUsername) {
-        setNewUsername((emp.EmployeeCode || emp.employeeCode).toLowerCase());
-      }
-    }
+  const handleTogglePermission = (actionId: string, type: 'view' | 'execute') => {
+    setRoles(prevRoles =>
+      prevRoles.map(r => {
+        if (r.roleId !== selectedRoleId) return r;
+        const current = r.permissions[actionId] || { view: false, execute: false };
+        const updated = { ...current, [type]: !current[type] };
+        if (type === 'view' && !updated.view) updated.execute = false;
+        if (type === 'execute' && updated.execute) updated.view = true;
+        return {
+          ...r,
+          permissions: { ...r.permissions, [actionId]: updated }
+        };
+      })
+    );
   };
 
-  const handleSubmitCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUsername.trim() || !newUserPassword.trim()) {
-      setStatusMessage('اسم المستخدم وكلمة المرور مطلوبان.');
-      return;
-    }
-    setIsSubmittingModal(true);
+  const handleSaveMatrix = () => {
     try {
-      const roleObj = rolesList.find((r) => r.id === newUserRoleId) || rolesList[0];
-      await createUserApi({
-        username: newUsername.trim(),
-        password: newUserPassword.trim(),
-        fullName: newUserFullName.trim(),
-        departmentName: newUserDepartmentName.trim() || 'الإدارة العامة',
-        roleId: roleObj.id,
-        roleName: roleObj.displayName,
-        employeeId: selectedEmployeeId,
-        employeeCode: selectedEmployeeCode,
-      });
-
-      setShowCreateUserModal(false);
-      setStatusMessage('✓ تم إنشاء حساب المستخدم وربطه بالعامل بنجاح.');
-      await loadAllData();
-    } catch (err: any) {
-      setStatusMessage(`خطأ: ${err.message}`);
-    } finally {
-      setIsSubmittingModal(false);
+      localStorage.setItem('kayan_roles_matrix', JSON.stringify(roles));
+      setStatusMessage(`✅ تم حفظ وتطبيق مصفوفة الصلاحيات للدور [${activeRole.roleName}] بنجاح.`);
+      setTimeout(() => setStatusMessage(null), 3500);
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  // تفعيل / تعطيل المستخدم
-  const handleToggleUserStatus = async (userRow: UserRowDto) => {
-    try {
-      await toggleUserStatusApi(userRow.id, userRow.isActive);
-      userRow.isActive = !userRow.isActive;
-      setUsersList([...usersList]);
-      setStatusMessage(`✓ تم تحديث حالة حساب (${userRow.username}).`);
-    } catch (err: any) {
-      setStatusMessage(`خطأ: ${err.message}`);
-    }
-  };
+  const filteredActions = systemActions.filter(act => {
+    const matchesModule = moduleFilter === 'ALL' || act.module === moduleFilter;
+    const matchesSearch = !searchTerm || act.name.toLowerCase().includes(searchTerm.toLowerCase()) || act.screenName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesModule && matchesSearch;
+  });
 
-  // Modal 3: إعادة تعيين كلمة المرور
-  const handleSubmitResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!targetUser || !resetPassNew.trim()) return;
-    setIsSubmittingModal(true);
-    setTimeout(() => {
-      setShowResetPassModal(false);
-      setStatusMessage(`✓ تم تغيير كلمة المرور للمستخدم (${targetUser.username}) بنجاح.`);
-      setIsSubmittingModal(false);
-    }, 400);
-  };
-
-  // Modal 4: الصلاحيات الاستثنائية
-  const openCustomPermsModal = (u: UserRowDto) => {
-    setTargetUser(u);
-    const set = new Set<string>();
-    if (u.customPermissions) {
-      u.customPermissions.split(',').forEach((p) => {
-        if (p.trim()) set.add(p.trim());
-      });
-    }
-    setUserCustomPermsSet(set);
-    setShowCustomPermsModal(true);
-  };
-
-  const toggleUserCustomPerm = (code: string) => {
-    setUserCustomPermsSet((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(code)) updated.delete(code);
-      else updated.add(code);
-      return updated;
-    });
-  };
-
-  const handleSubmitSaveUserCustomPerms = async () => {
-    if (!targetUser) return;
-    setIsSubmittingModal(true);
-    try {
-      const arr = Array.from(userCustomPermsSet);
-      await saveUserCustomPermsApi(targetUser.id, arr);
-      targetUser.customPermissions = arr.join(',');
-      setShowCustomPermsModal(false);
-      setStatusMessage(`✓ تم حفظ الصلاحيات الاستثنائية للمستخدم (${targetUser.username}) بنجاح.`);
-    } catch (err: any) {
-      setStatusMessage(`خطأ: ${err.message}`);
-    } finally {
-      setIsSubmittingModal(false);
-    }
-  };
+  const studioFilteredActions = systemActions.filter(act => {
+    return studioModuleFilter === 'ALL' || act.module === studioModuleFilter;
+  });
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none overflow-x-hidden" dir="rtl">
-      {/* 1. الشريط العلوي */}
-      <header className="flex items-center justify-between px-6 py-3.5 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onNavigate && onNavigate('workspace')}
-            title="العودة لمساحة العمل المركزية"
-            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors"
-          >
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-base font-bold text-white leading-tight">مركز حوكمة الصلاحيات والأدوار الميدانية</h1>
-            <span className="text-[11px] text-slate-400">مصفوفة التحكم الصارم في أزرار وإجراءات المنظومة الصناعية</span>
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-slate-900 dark:text-zinc-100 transition-colors" dir="rtl">
+      
+      {/* الترويسة الرئيسية */}
+      <div className="bg-white dark:bg-[#0f1117] border border-slate-300 dark:border-zinc-800 shadow-sm dark:shadow-lg p-5 rounded-2xl mb-6 flex flex-wrap justify-between items-center gap-4 transition-colors">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-indigo-700 dark:text-amber-400 flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6 text-indigo-600 dark:text-amber-500" />
+              <span>إدارة المستخدمين ومصمم قوالب الأدوار الشامل (Role Template Studio)</span>
+            </h1>
+            <span className="bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 px-2.5 py-0.5 rounded-lg text-xs font-black">
+              الدور هو صانع القالب والشاشات
+            </span>
           </div>
+          <p className="text-xs font-bold text-slate-700 dark:text-zinc-400">
+            تصميم قوالب الأدوار لكل شاشة وزر بالمنظومة (View / Execute) وحفظها كقوالب تشغيل مستقلة.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-cyan-400">
-            <ShieldLock className="w-3.5 h-3.5 text-amber-400" />
-            <span>المستخدم الحالي: {user?.fullName} ({user?.role})</span>
-          </span>
-        </div>
-      </header>
-
-      {/* 2. شريط التبويبات وأزرار الإضافة السريعة */}
-      <div className="px-6 pt-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex bg-slate-200 dark:bg-zinc-900 p-1.5 rounded-2xl border border-slate-300 dark:border-zinc-800 gap-1.5">
           <button
-            onClick={() => setActiveTab('ROLES')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-              activeTab === 'ROLES'
-                ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]'
-                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            <span>مصفوفة صلاحيات الأدوار (Roles Matrix)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('USERS')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-              activeTab === 'USERS'
-                ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]'
-                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white'
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'users'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-700 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Users className="w-4 h-4" />
             <span>مستخدمو المنشأة والعاملين</span>
           </button>
-        </div>
 
-        <div>
-          {activeTab === 'ROLES' ? (
-            <button
-              onClick={() => {
-                setNewRoleDisplayName('');
-                setNewRoleName('');
-                setNewRoleDescription('');
-                setCloneFromRoleId(0);
-                setShowCreateRoleModal(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>إضافة دور / مصفوفة جديدة</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setNewUsername('');
-                setNewUserPassword('');
-                setNewUserFullName('');
-                setNewUserDepartmentName('');
-                setSelectedEmployeeId(null);
-                setSelectedEmployeeCode(null);
-                setNewUserRoleId(rolesList[0]?.id || 0);
-                setShowCreateUserModal(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>إضافة مستخدم مرتبط بعامل</span>
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('matrix')}
+            className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'matrix'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                : 'text-slate-700 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <KeyRound className="w-4 h-4" />
+            <span>مصفوفة صلاحيات الأدوار (Roles Matrix)</span>
+          </button>
         </div>
       </div>
 
-      {/* 3. رسائل التنبيه والإشعارات */}
       {statusMessage && (
-        <div className="px-6 pt-3">
-          <div className="p-3 bg-indigo-950/60 border border-indigo-800/80 rounded-xl text-xs flex items-center justify-between text-indigo-200">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>{statusMessage}</span>
-            </div>
-            <button onClick={() => setStatusMessage(null)} className="text-slate-400 hover:text-white font-bold">×</button>
-          </div>
+        <div className="mb-4 p-3 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 rounded-xl text-xs font-black flex justify-between items-center shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            {statusMessage}
+          </span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {/* 4. المحتوى التفاعلي */}
-      <main className="flex-1 p-6 overflow-y-auto">
-        {isLoading ? (
-          <div className="text-center py-16 text-slate-400 text-xs">
-            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <span>جاري قراءة بنود الحوكمة ومصفوفة الصلاحيات السحابية...</span>
+      {/* التبويب الأول: مستخدمو المنشأة */}
+      {activeTab === 'users' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-300 dark:border-zinc-800 shadow-sm flex flex-wrap justify-between items-center gap-3">
+            <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 rounded-xl font-bold text-xs">
+              إجمالي المستخدمين: {users.length}
+            </span>
+
+            <button
+              onClick={() => setShowAddUserModal(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ إضافة مستخدم مرتبط بعامل</span>
+            </button>
           </div>
-        ) : activeTab === 'ROLES' ? (
-          /* ======================================================== */
-          /* تبويب 1: مصفوفة صلاحيات الأدوار الوظيفية (ROLES MATRIX)    */
-          /* ======================================================== */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* قائمة الأدوار المتاحة */}
-            <div className="lg:col-span-4 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-4 shadow-xl flex flex-col h-[calc(100vh-210px)]">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
-                <span className="text-xs font-bold text-slate-200">الأدوار المعتمدة بالمنشأة</span>
-                <span className="bg-indigo-600 text-white text-[11px] px-2 py-0.5 rounded-full font-mono">
-                  {rolesList.length} أدوار
-                </span>
-              </div>
 
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {rolesList.map((r) => {
-                  const isSelected = selectedRole?.id === r.id;
-                  return (
-                    <div
-                      key={r.id}
-                      onClick={() => selectRole(r)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-indigo-600/15 border-indigo-500 text-white shadow-xs'
-                          : 'bg-slate-950/40 border-slate-800/80 text-slate-300 hover:bg-slate-800/60 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-xs font-bold ${isSelected ? 'text-indigo-400' : 'text-slate-200'}`}>
-                          {r.displayName}
-                        </span>
-                        <span className="bg-slate-900 text-slate-400 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono shrink-0">
-                          {r.usersCount} مستخدم
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 block truncate mt-1">{r.description || 'بدون وصف إضافي'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* شجرة ومصفوفة أزرار الدور المختار */}
-            <div className="lg:col-span-8 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex flex-col h-[calc(100vh-210px)]">
-              {selectedRole ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-800">
-                    <div>
-                      <h2 className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
-                        <Sliders className="w-4 h-4" />
-                        <span>ضبط صلاحيات: {selectedRole.displayName}</span>
-                      </h2>
-                      <span className="text-[11px] text-slate-400">حدد الأزرار المسموح لهذا الدور بالضغط عليها وتنفيذها</span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <div className="relative flex items-center">
-                        <Search className="absolute right-2.5 w-3.5 h-3.5 text-slate-500" />
-                        <input
-                          type="text"
-                          placeholder="بحث في الأزرار..."
-                          value={permSearchTerm}
-                          onChange={(e) => setPermSearchTerm(e.target.value)}
-                          className="pr-8 pl-3 py-1.5 bg-slate-950 border border-slate-700 text-slate-200 rounded-xl text-xs outline-none focus:border-indigo-500 w-44"
-                        />
-                      </div>
-
-                      <button
-                        onClick={selectAllPermissions}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl border border-slate-700 font-semibold text-xs"
-                      >
-                        تحديد الكل
-                      </button>
-
-                      <button
-                        onClick={clearAllPermissions}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl border border-slate-700 font-semibold text-xs"
-                      >
-                        إلغاء الكل
-                      </button>
-
-                      <button
-                        onClick={handleSaveRolePermissions}
-                        disabled={isSaving}
-                        className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-sm transition-colors text-xs disabled:opacity-50"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        <span>{isSaving ? 'جاري الحفظ...' : '✓ حفظ تعديلات الدور'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* مجموعات الصلاحيات */}
-                  <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-                    {filteredCatalog.map((group) => {
-                      const activeCount = group.permissions.filter((p) => activePermissionsSet.has(p.code)).length;
-                      return (
-                        <div key={group.groupCode} className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-xl">
-                          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/60">
-                            <span className="text-xs font-bold text-white">{group.groupName}</span>
-                            <span className="bg-slate-900 border border-slate-700 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-mono">
-                              {activeCount} / {group.permissions.length} مفعل
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {group.permissions.map((perm) => {
-                              const isChecked = activePermissionsSet.has(perm.code);
-                              return (
-                                <div
-                                  key={perm.code}
-                                  onClick={() => togglePermission(perm.code)}
-                                  className={`p-2.5 rounded-xl border cursor-pointer flex items-start gap-2.5 transition-all ${
-                                    isChecked
-                                      ? 'bg-indigo-600/15 border-indigo-500/60 text-white'
-                                      : 'bg-slate-900/60 border-slate-800/60 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    readOnly
-                                    className="w-4 h-4 mt-0.5 text-indigo-600 rounded bg-slate-950 border-slate-700 pointer-events-none"
-                                  />
-                                  <div className="flex-1">
-                                    <span className={`text-xs font-bold block ${isChecked ? 'text-indigo-300' : 'text-slate-300'}`}>
-                                      {perm.title}
-                                    </span>
-                                    <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
-                                      {perm.description}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          /* ======================================================== */
-          /* تبويب 2: مستخدمو المنشأة والعاملين المرتبطين             */
-          /* ======================================================== */
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
-              <div>
-                <h2 className="text-sm font-bold text-white">سجل مستخدمي المنشأة المستأجرة</h2>
-                <span className="text-[11px] text-slate-400">مراجعة رتب الموظفين، ربطهم بملفات العاملين، وتخصيص الصلاحيات</span>
-              </div>
-              <span className="bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1 rounded-xl text-xs font-mono">
-                إجمالي المستخدمين: {usersList.length}
-              </span>
-            </div>
-
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-300 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950/60 text-slate-400 font-bold border-b border-slate-800">
+              <table className="w-full text-center">
+                <thead className="bg-slate-200 dark:bg-[#171a24] text-slate-900 dark:text-zinc-100 border-b border-slate-300 dark:border-zinc-800 font-black">
                   <tr>
-                    <th className="py-3 px-4">#</th>
-                    <th className="py-3 px-4">اسم المستخدم</th>
-                    <th className="py-3 px-4">اسم العامل المرتبط</th>
-                    <th className="py-3 px-4 text-center">كود العامل</th>
-                    <th className="py-3 px-4">القسم / الصالة</th>
-                    <th className="py-3 px-4">الدور الوظيفي</th>
-                    <th className="py-3 px-4 text-center">الحالة</th>
-                    <th className="py-3 px-4 text-center">الصلاحيات الاستثنائية</th>
-                    <th className="py-3 px-4 text-center">إجراءات</th>
+                    <th className="py-3 px-3 w-12">#</th>
+                    <th className="py-3 px-3">اسم المستخدم</th>
+                    <th className="py-3 px-3 text-right">اسم العامل المرتبط</th>
+                    <th className="py-3 px-3">كود العامل</th>
+                    <th className="py-3 px-3 text-right">القسم / الصالة</th>
+                    <th className="py-3 px-3">الدور الوظيفي والقالب</th>
+                    <th className="py-3 px-3">الحالة</th>
+                    <th className="py-3 px-3">الصلاحيات الاستثنائية</th>
+                    <th className="py-3 px-3 w-28">إجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {usersList.map((u) => {
-                    const customCount = u.customPermissions ? u.customPermissions.split(',').filter(Boolean).length : 0;
-                    return (
-                      <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-4 font-mono text-slate-500">{u.id}</td>
-                        <td className="py-3 px-4 font-bold text-cyan-400 font-mono">{u.username}</td>
-                        <td className="py-3 px-4 text-slate-200">{u.fullName || '---'}</td>
-                        <td className="py-3 px-4 text-center">
-                          {u.employeeCode ? (
-                            <span className="bg-slate-950 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded font-mono text-[11px]">
-                              {u.employeeCode}
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 text-[11px]">غير مرتبط</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-slate-300">
-                            {u.departmentName || 'الإدارة العامة'}
+                <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 font-bold text-slate-900 dark:text-zinc-200">
+                  {users.map((u, idx) => (
+                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors">
+                      <td className="py-3 px-3 font-mono text-slate-600 dark:text-zinc-400">{idx + 1}</td>
+                      <td className="py-3 px-3 font-mono font-black text-indigo-700 dark:text-indigo-400">{u.username}</td>
+                      <td className="py-3 px-3 text-right font-black text-slate-950 dark:text-white">{u.fullName}</td>
+                      <td className="py-3 px-3 font-mono text-slate-700 dark:text-zinc-300">{u.workerCode}</td>
+                      <td className="py-3 px-3 text-right text-slate-700 dark:text-zinc-300">{u.department}</td>
+                      <td className="py-3 px-3">
+                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 rounded-lg text-[11px] font-black">
+                          {u.roleName}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 rounded-full text-[10px] font-black">
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {u.customOverridesCount > 0 ? (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 rounded font-black text-[10px]">
+                            {u.customOverridesCount} استثناء خاص
                           </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="bg-indigo-950/60 text-indigo-300 border border-indigo-800/50 px-2 py-0.5 rounded text-[11px] font-bold">
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            u.isActive
-                              ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
-                              : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
-                          }`}>
-                            {u.isActive ? 'نشط' : 'معطل'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {customCount > 0 ? (
-                            <span className="bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded text-[11px] font-bold font-mono">
-                              {customCount} استثناءات
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 text-[11px]">حسب الدور</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => openCustomPermsModal(u)}
-                              title="تخصيص صلاحيات أزرار خاصة"
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded-lg transition-colors"
-                            >
-                              <ShieldPlus className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setTargetUser(u);
-                                setResetPassNew('');
-                                setShowResetPassModal(true);
-                              }}
-                              title="تغيير كلمة المرور"
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded-lg transition-colors"
-                            >
-                              <Key className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleUserStatus(u)}
-                              title={u.isActive ? 'تعطيل الحساب' : 'تفعيل الحساب'}
-                              className={`p-1.5 border rounded-lg transition-colors ${
-                                u.isActive
-                                  ? 'bg-slate-800 hover:bg-rose-900/50 text-rose-400 border-slate-700'
-                                  : 'bg-slate-800 hover:bg-emerald-900/50 text-emerald-400 border-slate-700'
-                              }`}
-                            >
-                              {u.isActive ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        ) : (
+                          <span className="text-slate-500 dark:text-zinc-500 text-[11px]">قالب الدور المعتمد</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <button
+                          onClick={() => {
+                            setSelectedRoleId(u.roleId);
+                            setActiveTab('matrix');
+                          }}
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 rounded-lg border border-slate-300 dark:border-zinc-700 cursor-pointer"
+                          title="فحص وتعديل قالب الدور"
+                        >
+                          <Shield className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
-      </main>
-
-      {/* ======================================================== */}
-      {/* Modal 1: نافذة إنشاء دور جديد                             */}
-      {/* ======================================================== */}
-      {showCreateRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl text-xs">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-indigo-400" />
-                <span>إضافة دور وظيفي / مصفوفة جديدة</span>
-              </h3>
-              <button onClick={() => setShowCreateRoleModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitCreateRole} className="space-y-3.5">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">
-                  اسم الدور بالعربية <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثال: مسؤول خط تصنيع، كاشير فرع، أمين خامات"
-                  value={newRoleDisplayName}
-                  onChange={(e) => setNewRoleDisplayName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">كود الدور بالإنجليزية</label>
-                <input
-                  type="text"
-                  placeholder="مثال: LINE_SUPERVISOR"
-                  value={newRoleName}
-                  onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white font-mono rounded-xl outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">الوصف الوظيفي</label>
-                <textarea
-                  rows={2}
-                  placeholder="وصف مختصر للمسؤوليات الميدانية..."
-                  value={newRoleDescription}
-                  onChange={(e) => setNewRoleDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">نسخ صلاحيات مبدئية من دور آخر (اختياري)</label>
-                <select
-                  value={cloneFromRoleId}
-                  onChange={(e) => setCloneFromRoleId(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-indigo-500"
-                >
-                  <option value={0}>بدء بمصفوفة فارغة بدون صلاحيات</option>
-                  {rolesList.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      نسخ من: {r.displayName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateRoleModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingModal}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-                >
-                  حفظ الدور والمصفوفة
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* Modal 2: نافذة إنشاء مستخدم جديد مرتبط بعامل              */}
-      {/* ======================================================== */}
-      {showCreateUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl text-xs">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-emerald-400" />
-                <span>إضافة حساب مستخدم مرتبط بعامل</span>
-              </h3>
-              <button onClick={() => setShowCreateUserModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+      {/* التبويب الثاني: مصفوفة صلاحيات الأدوار واستوديو القوالب */}
+      {activeTab === 'matrix' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* قائمة الأدوار والقوالب المصممة */}
+          <div className="lg:col-span-4 space-y-3">
+            <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-300 dark:border-zinc-800 shadow-sm space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-black text-slate-800 dark:text-zinc-300">
+                  قوالب الأدوار المعتمدة ({roles.length}):
+                </span>
+                
+                {/* زر فتح مصمم القوالب المتكامل */}
+                <button
+                  onClick={handleOpenStudio}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                >
+                  <LayoutTemplate className="w-4 h-4" />
+                  <span>+ مصمم قالب دور جديد</span>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {roles.map(r => (
+                  <button
+                    key={r.roleId}
+                    onClick={() => setSelectedRoleId(r.roleId)}
+                    className={`w-full p-3.5 rounded-2xl border text-right transition-all cursor-pointer ${
+                      selectedRoleId === r.roleId
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 shadow-sm ring-1 ring-amber-500/50'
+                        : 'bg-slate-50 dark:bg-[#141620] border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <strong className="font-black text-xs block">{r.roleName}</strong>
+                      <span className="text-[10px] bg-slate-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full font-mono">
+                        {r.usersCount} مستخدم
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-2">
+                      {r.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
-
-            <form onSubmit={handleSubmitCreateUser} className="space-y-3.5">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">
-                  اختر العامل من السجل الرسمي <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  onChange={(e) => handleEmployeeSelect(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-emerald-500"
-                >
-                  <option value={0}>-- اختر العامل لملء البيانات تلقائياً --</option>
-                  {employeesList.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      [{emp.employeeCode || emp.EmployeeCode}] {emp.fullName || emp.FullName} ({emp.departmentName || emp.DepartmentName})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">اسم الموظف الكامل</label>
-                  <input
-                    type="text"
-                    value={newUserFullName}
-                    onChange={(e) => setNewUserFullName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">القسم / الصالة</label>
-                  <input
-                    type="text"
-                    value={newUserDepartmentName}
-                    onChange={(e) => setNewUserDepartmentName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">
-                    اسم المستخدم لتسجيل الدخول <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="مثال: ahmad_ali"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white font-mono rounded-xl outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">
-                    كلمة المرور الشخصية <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={newUserPassword}
-                    onChange={(e) => setNewUserPassword(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">
-                  الدور الوظيفي والمصفوفة المعتمدة <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={newUserRoleId}
-                  onChange={(e) => setNewUserRoleId(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-emerald-500"
-                >
-                  {rolesList.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.displayName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateUserModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingModal}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-                >
-                  إنشاء الحساب وتفعيله
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
 
-      {/* ======================================================== */}
-      {/* Modal 3: إعادة تعيين كلمة المرور                          */}
-      {/* ======================================================== */}
-      {showResetPassModal && targetUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-xs">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Key className="w-4 h-4 text-cyan-400" />
-                <span>تغيير كلمة المرور: {targetUser.username}</span>
-              </h3>
-              <button onClick={() => setShowResetPassModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitResetPassword} className="space-y-4">
+          {/* محرر القالب المباشر للشاشات والأزرار */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-300 dark:border-zinc-800 shadow-sm flex flex-wrap justify-between items-center gap-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">كلمة المرور الجديدة</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={resetPassNew}
-                  onChange={(e) => setResetPassNew(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl outline-none focus:border-cyan-500 font-mono"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowResetPassModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingModal}
-                  className="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-                >
-                  تحديث كلمة المرور
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* Modal 4: الصلاحيات الاستثنائية للمستخدم                   */}
-      {/* ======================================================== */}
-      {showCustomPermsModal && targetUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-6 shadow-2xl text-xs flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 shrink-0">
-              <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <ShieldPlus className="w-4 h-4 text-amber-400" />
-                  <span>صلاحيات استثنائية: {targetUser.fullName || targetUser.username}</span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 block">
+                  أنت الآن تخصص قالب شاشات وأزرار الدور:
+                </span>
+                <h3 className="text-base font-black text-indigo-700 dark:text-amber-400">
+                  {activeRole.roleName}
                 </h3>
-                <span className="text-[11px] text-slate-400">تمنح للمستخدم مباشرة وتتجاوز مصفوفة دوره الرسمي ({targetUser.role})</span>
               </div>
-              <button onClick={() => setShowCustomPermsModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={moduleFilter}
+                  onChange={(e) => setModuleFilter(e.target.value)}
+                  className="p-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-bold outline-none"
+                >
+                  <option value="ALL">كافة القطاعات</option>
+                  <option value="MES">الإنتاج والتصنيع (MES)</option>
+                  <option value="LOGISTICS">المخازن واللوجستيات</option>
+                  <option value="SALES">المبيعات والفروع</option>
+                  <option value="FINANCE">الإدارة المالية</option>
+                  <option value="QA">الجودة والـ HACCP</option>
+                  <option value="PROCUREMENT">المشتريات والموردين</option>
+                  <option value="HR">الموارد البشرية</option>
+                  <option value="SOS">الطوارئ والـ SOS</option>
+                </select>
+
+                <button
+                  onClick={handleSaveMatrix}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all active:scale-95"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>حفظ تعديلات القالب</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 my-2">
-              {permissionCatalog.map((group) => (
-                <div key={group.groupCode} className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
-                  <span className="text-xs font-bold text-white block mb-2 pb-1 border-b border-slate-800">
-                    {group.groupName}
-                  </span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {group.permissions.map((perm) => {
-                      const isCustom = userCustomPermsSet.has(perm.code);
+            <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-300 dark:border-zinc-800 shadow-sm overflow-hidden text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-slate-200 dark:bg-[#171a24] text-slate-900 dark:text-zinc-100 border-b border-slate-300 dark:border-zinc-800 font-black">
+                    <tr>
+                      <th className="py-3 px-4">الشاشة المستهدفة والزر</th>
+                      <th className="py-3 px-3">القطاع</th>
+                      <th className="py-3 px-3 text-center w-28">الرؤية بالشاشة (View)</th>
+                      <th className="py-3 px-3 text-center w-28">التنفيذ الفعلي (Execute)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 font-bold text-slate-800 dark:text-zinc-200">
+                    {filteredActions.map((act) => {
+                      const p = activeRole.permissions[act.id] || { view: false, execute: false };
                       return (
-                        <div
-                          key={perm.code}
-                          onClick={() => toggleUserCustomPerm(perm.code)}
-                          className={`p-2.5 rounded-xl border cursor-pointer flex items-start gap-2.5 transition-all ${
-                            isCustom
-                              ? 'bg-amber-500/15 border-amber-500 text-white'
-                              : 'bg-slate-900/60 border-slate-800/60 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isCustom}
-                            readOnly
-                            className="w-4 h-4 mt-0.5 text-amber-500 rounded bg-slate-950 border-slate-700 pointer-events-none"
-                          />
-                          <div className="flex-1">
-                            <span className={`text-xs font-bold block ${isCustom ? 'text-amber-300' : 'text-slate-300'}`}>
-                              {perm.title}
+                        <tr key={act.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="font-mono text-[10px] text-indigo-600 dark:text-amber-400 block mb-0.5">
+                              [شاشة: {act.screenName}]
                             </span>
-                            <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
-                              {perm.description}
+                            <span className="font-black text-slate-950 dark:text-white block text-sm">
+                              {act.name}
                             </span>
-                          </div>
-                        </div>
+                          </td>
+
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded text-[10px] font-mono font-bold">
+                              {act.module}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePermission(act.id, 'view')}
+                              className={`p-2 rounded-xl border transition-all cursor-pointer mx-auto flex items-center justify-center gap-1.5 ${
+                                p.view
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                  : 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-500/20 dark:text-rose-400'
+                              }`}
+                            >
+                              {p.view ? <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />}
+                              <span className="text-[10px] font-black">{p.view ? 'مرئي' : 'مخفي'}</span>
+                            </button>
+                          </td>
+
+                          <td className="py-3 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePermission(act.id, 'execute')}
+                              disabled={!p.view}
+                              className={`p-2 rounded-xl border transition-all mx-auto flex items-center justify-center gap-1.5 ${
+                                !p.view
+                                  ? 'opacity-30 cursor-not-allowed bg-slate-200 dark:bg-zinc-800'
+                                  : (p.execute
+                                      ? 'bg-indigo-100 text-indigo-900 border-indigo-400 dark:bg-indigo-500/20 dark:text-indigo-300 cursor-pointer'
+                                      : 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-500/20 dark:text-amber-400 cursor-pointer')
+                              }`}
+                            >
+                              {p.execute ? <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+                              <span className="text-[10px] font-black">{p.execute ? 'مفعل' : 'معطل'}</span>
+                            </button>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowCustomPermsModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmitSaveUserCustomPerms}
-                disabled={isSubmittingModal}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-              >
-                حفظ الصلاحيات الاستثنائية
-              </button>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* استوديو تصميم قالب الدور الشامل (The Master Role Studio Modal) */}
+      {showRoleStudioModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#11131c] border-2 border-indigo-500/40 rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden transition-all text-slate-900 dark:text-zinc-100 max-h-[92vh] flex flex-col" dir="rtl">
+            
+            {/* الترويسة الرئيسية للاستوديو */}
+            <div className="p-4 bg-slate-100 dark:bg-[#181b26] border-b border-slate-300 dark:border-zinc-700 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <LayoutTemplate className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    مصمم قوالب الأدوار الميداني (Role & Screen Template Studio)
+                  </h3>
+                  <p className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold">
+                    ابنِ قالباً مخصصاً بالكامل وحدد الشاشات والأزرار المسموحة لمستخدمي هذا الدور
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowRoleStudioModal(false)}
+                className="p-1 rounded-lg text-slate-600 hover:text-slate-950 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStudioRole} className="p-6 overflow-y-auto space-y-5 text-xs font-bold flex-1">
+              
+              {/* بيانات القالب الأساسية */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-[#161824] p-4 rounded-2xl border border-slate-300 dark:border-zinc-700">
+                <div>
+                  <label className="block text-slate-800 dark:text-zinc-300 mb-1">
+                    مسمى قالب الدور الوظيفي <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={studioRoleName}
+                    onChange={(e) => setStudioRoleName(e.target.value)}
+                    placeholder="مثال: مسؤول مبيعات وتوزيع فرع خارجي"
+                    className="w-full p-2.5 bg-white dark:bg-[#1f2334] border border-slate-300 dark:border-zinc-600 rounded-xl text-slate-900 dark:text-zinc-100 font-black outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-800 dark:text-zinc-300 mb-1">
+                    توصيف نطاق عمل القالب
+                  </label>
+                  <input
+                    type="text"
+                    value={studioRoleDesc}
+                    onChange={(e) => setStudioRoleDesc(e.target.value)}
+                    placeholder="مثال: يقتصر على تحرير فواتير المعرض واستلام صواني الحلويات فقط"
+                    className="w-full p-2.5 bg-white dark:bg-[#1f2334] border border-slate-300 dark:border-zinc-600 rounded-xl text-slate-900 dark:text-zinc-100 font-medium outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* شريط الإجراءات والفلترة السريعة للقالب */}
+              <div className="flex flex-wrap justify-between items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-200 dark:border-indigo-800/40">
+                <div className="flex items-center gap-2">
+                  <span className="text-indigo-900 dark:text-indigo-300 font-black">فلترة القطاع:</span>
+                  <select
+                    value={studioModuleFilter}
+                    onChange={(e) => setStudioModuleFilter(e.target.value)}
+                    className="p-1.5 bg-white dark:bg-[#1a1d2b] border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold outline-none"
+                  >
+                    <option value="ALL">كافة القطاعات ({systemActions.length} إجراء)</option>
+                    <option value="MES">الإنتاج والتشغيل MES</option>
+                    <option value="LOGISTICS">المخازن وسلاسل الإمداد</option>
+                    <option value="SALES">المبيعات والفروع</option>
+                    <option value="FINANCE">الإدارة المالية</option>
+                    <option value="QA">الجودة والـ HACCP</option>
+                  </select>
+                </div>
+
+                {/* أزرار الضبط السريع */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSelect('ALL_FULL')}
+                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold cursor-pointer"
+                  >
+                    تفعيل الكل (كامل)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSelect('ALL_VIEW')}
+                    className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[11px] font-bold cursor-pointer"
+                  >
+                    رؤية فقط (View Only)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSelect('CLEAR')}
+                    className="px-2.5 py-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-300 rounded-lg text-[11px] font-bold cursor-pointer"
+                  >
+                    تفريغ القالب
+                  </button>
+                </div>
+              </div>
+
+              {/* جدول شاشات وأزرار القالب المصمم */}
+              <div className="border border-slate-300 dark:border-zinc-700 rounded-2xl overflow-hidden">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-200 dark:bg-[#181b26] text-slate-900 dark:text-zinc-100 border-b border-slate-300 dark:border-zinc-700 font-black">
+                    <tr>
+                      <th className="py-2.5 px-3">الشاشة والزر المرتبط</th>
+                      <th className="py-2.5 px-3">القطاع</th>
+                      <th className="py-2.5 px-3 text-center w-28">ظهور الشاشة والزر</th>
+                      <th className="py-2.5 px-3 text-center w-28">صلاحية التنفيذ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 font-bold text-slate-900 dark:text-zinc-200">
+                    {studioFilteredActions.map(act => {
+                      const p = studioPermissions[act.id] || { view: false, execute: false };
+                      return (
+                        <tr key={act.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40">
+                          <td className="py-2.5 px-3">
+                            <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 block">
+                              [{act.screenName}]
+                            </span>
+                            <span className="font-black text-slate-900 dark:text-white text-xs">
+                              {act.name}
+                            </span>
+                          </td>
+
+                          <td className="py-2.5 px-3">
+                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded text-[10px] font-mono">
+                              {act.module}
+                            </span>
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStudioPerm(act.id, 'view')}
+                              className={`p-1.5 rounded-lg border text-center font-bold text-[10px] w-20 mx-auto flex items-center justify-center gap-1 cursor-pointer ${
+                                p.view
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                  : 'bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:text-zinc-500 border-slate-300 dark:border-zinc-700'
+                              }`}
+                            >
+                              {p.view ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                              <span>{p.view ? 'مُفعّل' : 'مخفي'}</span>
+                            </button>
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStudioPerm(act.id, 'execute')}
+                              disabled={!p.view}
+                              className={`p-1.5 rounded-lg border text-center font-bold text-[10px] w-20 mx-auto flex items-center justify-center gap-1 ${
+                                !p.view
+                                  ? 'opacity-30 cursor-not-allowed bg-slate-200 dark:bg-zinc-800'
+                                  : (p.execute
+                                      ? 'bg-indigo-100 text-indigo-900 border-indigo-400 dark:bg-indigo-500/20 dark:text-indigo-300 cursor-pointer'
+                                      : 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-500/20 dark:text-amber-400 cursor-pointer')
+                              }`}
+                            >
+                              {p.execute ? <Check className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                              <span>{p.execute ? 'تنفيذ' : 'معطل'}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* أزرار الحفظ والإغلاق */}
+              <div className="flex gap-2 pt-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowRoleStudioModal(false)}
+                  className="w-1/3 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-300 rounded-xl font-bold cursor-pointer transition-all"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>اعتماد وحفظ قالب الدور الجديد</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة إضافة مستخدم */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#11131c] border-2 border-slate-400 dark:border-zinc-700 rounded-3xl w-full max-w-xl shadow-2xl p-6 transition-all text-slate-900 dark:text-zinc-100" dir="rtl">
+            <div className="flex justify-between items-center border-b pb-3 mb-4">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">إضافة مستخدم جديد وربطه بقالب الدور</h3>
+              <button onClick={() => setShowAddUserModal(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-xs text-slate-500">اختر العامل وقم بربطه بأحد القوالب المعتمدة لتطبيق صلاحياته فوراً.</p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
+export default UsersManagementPage;

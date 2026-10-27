@@ -1027,8 +1027,8 @@ export const EmergencyTasksPage: React.FC<{ onNavigate?: (tab: string) => void }
       {/* 5. نافذة معاينة المرفقات المتنوعة (صوت / فيديو / صورة) */}
       {previewMedia && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4" dir="rtl">
-          <div className="bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-zinc-800 text-xs flex flex-col">
-            <div className="px-5 py-3.5 bg-zinc-900 text-white flex items-center justify-between border-b border-zinc-800">
+          <div className="bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col">
+            <div className="px-5 py-3.5 bg-zinc-900 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <span>معاينة مرفق البلاغ: {previewMedia.title}</span>
               </h4>
@@ -1042,19 +1042,19 @@ export const EmergencyTasksPage: React.FC<{ onNavigate?: (tab: string) => void }
                 <img
                   src={previewMedia.url}
                   alt="مرفق البلاغ"
-                  className="max-h-[480px] max-w-full rounded-xl object-contain border border-zinc-800 shadow-lg"
+                  className="max-h-[480px] max-w-full rounded-xl object-contain border border-slate-200 dark:border-zinc-800 shadow-lg"
                 />
               )}
 
               {previewMedia.type === 'VIDEO' && (
-                <video controls className="max-h-[480px] max-w-full rounded-xl border border-zinc-800 shadow-lg">
+                <video controls className="max-h-[480px] max-w-full rounded-xl border border-slate-200 dark:border-zinc-800 shadow-lg">
                   <source src={previewMedia.url} />
                   متصفحك لا يدعم تشغيل مقطع الفيديو المرفق.
                 </video>
               )}
 
               {previewMedia.type === 'AUDIO' && (
-                <div className="p-8 bg-zinc-900 rounded-2xl border border-zinc-800 w-full max-w-md space-y-4">
+                <div className="p-8 bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md space-y-4">
                   <div className="flex items-center justify-center gap-3 text-cyan-400">
                     <Mic className="w-8 h-8 animate-pulse" />
                     <span className="font-bold text-sm">تسجيل صوتي ميداني للعطل</span>
@@ -1067,7 +1067,7 @@ export const EmergencyTasksPage: React.FC<{ onNavigate?: (tab: string) => void }
               )}
             </div>
 
-            <div className="px-5 py-2.5 bg-zinc-900 border-t border-zinc-800 flex justify-end">
+            <div className="px-5 py-2.5 bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
               <button
                 onClick={() => setPreviewMedia(null)}
                 className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl"
@@ -1081,3 +1081,4 @@ export const EmergencyTasksPage: React.FC<{ onNavigate?: (tab: string) => void }
     </div>
   );
 };
+

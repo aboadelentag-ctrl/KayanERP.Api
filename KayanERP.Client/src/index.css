@@ -3,76 +3,50 @@
 @tailwind utilities;
 
 @layer base {
-  html.dark {
-    color-scheme: dark;
-    background-color: #000000 !important;
-  }
-  
-  html.dark body {
-    background-color: #000000 !important;
-    color: #f4f4f5 !important;
-  }
-
-  /* تحويل كافة الحاويات والكروت إلى السواد الفاحم الصافي ليلاً */
-  html.dark .bg-white {
-    background-color: #09090b !important;
-    color: #f4f4f5 !important;
-  }
-  
-  html.dark .bg-slate-50,
-  html.dark .bg-slate-100,
-  html.dark .bg-gray-50,
-  html.dark .bg-light {
-    background-color: #040405 !important;
-    color: #e4e4e7 !important;
+  :root {
+    /* الوضع النهاري - أبيض صناعي رصين ونظيف مع تباين رمادي/نحاسي */
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #f1f5f9;
+    --border-subtle: #e2e8f0;
+    --border-strong: #cbd5e1;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    
+    --brand-primary: #b45309; /* نحاسي ذهبي لحلويات أبو عادل */
+    --brand-primary-hover: #92400e;
+    --brand-accent: #0284c7;
+    --brand-success: #15803d;
+    --brand-danger: #b91c1c;
   }
 
-  html.dark .border,
-  html.dark .border-gray-200,
-  html.dark .border-slate-200,
-  html.dark .border-bottom,
-  html.dark .border-top {
-    border-color: #1e1e24 !important;
-  }
-
-  html.dark input,
-  html.dark select,
-  html.dark textarea {
-    background-color: #121216 !important;
-    color: #ffffff !important;
-    border-color: #27272a !important;
-  }
-
-  html.dark table tbody tr:hover {
-    background-color: #121217 !important;
-  }
-
-  html.dark thead {
-    background-color: #0e0e12 !important;
-    color: #a1a1aa !important;
-  }
-
-  html.dark .text-dark,
-  html.dark .text-gray-900,
-  html.dark .text-slate-900 {
-    color: #f4f4f5 !important;
-  }
-
-  html.dark .text-muted,
-  html.dark .text-gray-500,
-  html.dark .text-slate-500 {
-    color: #71717a !important;
+  .dark {
+    /* الوضع الليلي الملكي الفاحم */
+    --bg-app: #08090b;
+    --bg-surface: #0f1117;
+    --bg-surface-elevated: #171b26;
+    --border-subtle: #1e2433;
+    --border-strong: #2d3748;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --brand-primary: #f59e0b;
+    --brand-primary-hover: #d97706;
+    --brand-accent: #38bdf8;
+    --brand-success: #22c55e;
+    --brand-danger: #ef4444;
   }
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* إخفاء شريط التمرير الافتراضي */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 4px;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

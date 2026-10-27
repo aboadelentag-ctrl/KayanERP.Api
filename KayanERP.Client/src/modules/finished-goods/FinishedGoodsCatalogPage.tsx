@@ -333,7 +333,7 @@ export const FinishedGoodsCatalogPage: React.FC<{ onNavigate?: (tab: string) => 
                   <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
                     <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{item.itemCode}</td>
                     <td className="py-3 px-3 text-right">
-                      <span className="font-bold text-gray-900 dark:text-zinc-100 block">{item.itemName}</span>
+                      <span className="font-bold text-gray-900 dark:text-slate-900 dark:text-zinc-100 block">{item.itemName}</span>
                       <div className="flex gap-1 mt-0.5">
                         {item.isMerged && <span className="bg-cyan-500/10 text-cyan-600 text-[9px] px-1.5 py-0.2 rounded font-bold">مدمج</span>}
                         {item.isContainer && <span className="bg-amber-500/10 text-amber-600 text-[9px] px-1.5 py-0.2 rounded font-bold">حاوية</span>}
@@ -383,7 +383,7 @@ export const FinishedGoodsCatalogPage: React.FC<{ onNavigate?: (tab: string) => 
       {showWorkstationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
           <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-zinc-800">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <Settings className="w-4 h-4" />
                 <span>{isNewItemMode ? '➕ إضافة منتج تام جديد' : `⚙️ بطاقة المنتج: ${activeItem.itemName} (${activeItem.itemCode})`}</span>
@@ -729,3 +729,5 @@ export const FinishedGoodsCatalogPage: React.FC<{ onNavigate?: (tab: string) => 
     </div>
   );
 };
+
+

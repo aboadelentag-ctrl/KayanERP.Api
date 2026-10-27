@@ -378,7 +378,7 @@ export const MaterialReceiptPage: React.FC = () => {
       {showInspectionModal && selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
           <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-zinc-800">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <ClipboardCheck className="w-4 h-4" />
                 <span>محضر استلام وفحص جودة أمر الشراء: {selectedInvoice.orderNumber}</span>
@@ -558,3 +558,4 @@ export const MaterialReceiptPage: React.FC = () => {
     </div>
   );
 };
+

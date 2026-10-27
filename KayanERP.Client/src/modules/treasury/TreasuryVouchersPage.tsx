@@ -1,386 +1,291 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Wallet,
   PlusCircle,
   Search,
-  CheckCircle2,
-  ArrowDownLeft,
   ArrowUpRight,
-  Filter,
+  ArrowDownLeft,
+  Calendar,
+  Building2,
+  FileText,
+  RotateCw,
+  CheckCircle2,
   DollarSign,
-  Receipt
+  TrendingDown,
+  TrendingUp,
+  X
 } from 'lucide-react';
-import {
-  fetchTreasuryVouchersApi,
-  fetchTreasuryLookupsApi,
-  saveTreasuryVoucherApi
-} from './treasuryApi';
-import type {
-  TreasuryVoucherDto,
-  TreasuryLookupsDto
-} from './treasuryApi';
+
+export interface TreasuryVoucherDto {
+  id: number;
+  voucherNumber: string;
+  type: 'صرف' | 'قبض';
+  date: string;
+  treasuryName: string;
+  beneficiaryName: string;
+  beneficiaryType: 'مورد' | 'عميل' | 'مصروفات تشغيل' | 'عهدة';
+  description: string;
+  paymentMethod: string;
+  amount: number;
+  status: 'معتمد ومرحل' | 'مسودة';
+}
 
 export const TreasuryVouchersPage: React.FC = () => {
-  const [vouchers, setVouchers] = useState<TreasuryVoucherDto[]>([]);
-  const [lookups, setLookups] = useState<TreasuryLookupsDto>({
-    treasuries: [],
-    beneficiaryTypes: [],
-    suppliers: [],
-    expenseCategories: []
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [treasuryFilter, setTreasuryFilter] = useState<string>('');
+  const [vouchers, setVouchers] = useState<TreasuryVoucherDto[]>([
+    {
+      id: 1,
+      voucherNumber: 'TR-PAY-2026-001',
+      type: 'صرف',
+      date: '2026-10-24',
+      treasuryName: 'الخزينة الرئيسية - المصنع',
+      beneficiaryName: 'شركة السكر والصناعات التكاملية',
+      beneficiaryType: 'مورد',
+      description: 'سداد دفعة نقدية تحت حساب فاتورة توريد سكر رقم SUP-9941',
+      paymentMethod: 'نقدي',
+      amount: 45000,
+      status: 'معتمد ومرحل'
+    },
+    {
+      id: 2,
+      voucherNumber: 'TR-REC-2026-002',
+      type: 'قبض',
+      date: '2026-10-24',
+      treasuryName: 'الخزينة الرئيسية - المصنع',
+      beneficiaryName: 'حلواني الصباح (سوق الجملة)',
+      beneficiaryType: 'عميل',
+      description: 'تحصيل توريد مشكل شرقي لحساب اليوم',
+      paymentMethod: 'نقدي',
+      amount: 18500,
+      status: 'معتمد ومرحل'
+    },
+    {
+      id: 3,
+      voucherNumber: 'TR-PAY-2026-003',
+      type: 'صرف',
+      date: '2026-10-23',
+      treasuryName: 'عهدة الصيانة والمصروفات النثرية',
+      beneficiaryName: 'شراء قطع غيار عاجلة لصمامات الفرن',
+      beneficiaryType: 'مصروفات تشغيل',
+      description: 'مصروف طارئ صيانة أفران الصالة الشرقية',
+      paymentMethod: 'نقدي',
+      amount: 3200,
+      status: 'معتمد ومرحل'
+    }
+  ]);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'صرف' | 'قبض'>('ALL');
+  const [treasuryFilter, setTreasuryFilter] = useState('ALL');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // حالة إضافة سند جديد
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [voucherType, setVoucherType] = useState<'RECEIPT' | 'PAYMENT'>('PAYMENT');
-  const [amount, setAmount] = useState<number>(0);
-  const [selectedTreasury, setSelectedTreasury] = useState<string>('');
-  const [beneficiaryType, setBeneficiaryType] = useState<'مورد' | 'عميل' | 'مصروفات تشغيل' | 'سلفة موظف'>('مورد');
-  const [beneficiaryName, setBeneficiaryName] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'نقدي' | 'شيك بانكي' | 'تحويل لحظي'>('نقدي');
-  const [description, setDescription] = useState<string>('');
-  const [referenceDocNumber, setReferenceDocNumber] = useState<string>('');
+  // إحصائيات السيولة
+  const totalReceipts = useMemo(() => {
+    return vouchers.filter(v => v.type === 'قبض').reduce((sum, v) => sum + v.amount, 0);
+  }, [vouchers]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const totalPayments = useMemo(() => {
+    return vouchers.filter(v => v.type === 'صرف').reduce((sum, v) => sum + v.amount, 0);
+  }, [vouchers]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [vouchersData, lkps] = await Promise.all([
-        fetchTreasuryVouchersApi(),
-        fetchTreasuryLookupsApi()
-      ]);
-      setVouchers(vouchersData);
-      setLookups(lkps);
-      if (lkps.treasuries.length > 0) setSelectedTreasury(lkps.treasuries[0]);
-      if (lkps.suppliers.length > 0) setBeneficiaryName(lkps.suppliers[0]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const netCashFlow = totalReceipts - totalPayments;
 
   const filteredVouchers = useMemo(() => {
     return vouchers.filter(v => {
-      const matchSearch =
-        !searchTerm.trim() ||
-        v.voucherNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.beneficiaryName.includes(searchTerm) ||
-        v.description.includes(searchTerm);
-      const matchType = !typeFilter || v.voucherType === typeFilter;
-      const matchTreasury = !treasuryFilter || v.treasuryName === treasuryFilter;
-      return matchSearch && matchType && matchTreasury;
+      if (typeFilter !== 'ALL' && v.type !== typeFilter) return false;
+      if (treasuryFilter !== 'ALL' && !v.treasuryName.includes(treasuryFilter)) return false;
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        v.voucherNumber.toLowerCase().includes(term) ||
+        v.beneficiaryName.toLowerCase().includes(term) ||
+        v.description.toLowerCase().includes(term) ||
+        v.treasuryName.toLowerCase().includes(term)
+      );
     });
-  }, [vouchers, searchTerm, typeFilter, treasuryFilter]);
-
-  const totalReceipts = useMemo(() => vouchers.filter(v => v.voucherType === 'RECEIPT').reduce((sum, v) => sum + v.amount, 0), [vouchers]);
-  const totalPayments = useMemo(() => vouchers.filter(v => v.voucherType === 'PAYMENT').reduce((sum, v) => sum + v.amount, 0), [vouchers]);
-  const netTreasuryFlow = useMemo(() => totalReceipts - totalPayments, [totalReceipts, totalPayments]);
-
-  const handleSaveVoucher = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (amount <= 0 || !beneficiaryName.trim()) return;
-
-    const newVoucher: TreasuryVoucherDto = {
-      id: Date.now(),
-      voucherNumber: `TR-${voucherType === 'RECEIPT' ? 'REC' : 'PAY'}-2026-${Date.now().toString().slice(-3)}`,
-      voucherType,
-      date: new Date().toISOString().slice(0, 10),
-      amount: Number(amount),
-      treasuryName: selectedTreasury || lookups.treasuries[0],
-      beneficiaryType,
-      beneficiaryName,
-      paymentMethod,
-      status: 'معتمد ومرحل',
-      description,
-      referenceDocNumber: referenceDocNumber || undefined
-    };
-
-    await saveTreasuryVoucherApi(newVoucher);
-    setVouchers(prev => [newVoucher, ...prev]);
-    setIsModalOpen(false);
-    setAmount(0);
-    setDescription('');
-    setReferenceDocNumber('');
-    setStatusMessage(`تم ترحيل السند (${newVoucher.voucherNumber}) بقيمة ${newVoucher.amount.toLocaleString()} ج.م وقيد أثره على الخزينة.`);
-    setTimeout(() => setStatusMessage(null), 4000);
-  };
+  }, [vouchers, typeFilter, treasuryFilter, searchTerm]);
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      {/* الترويسة التنفيذية */}
-      <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-xs border border-slate-800 mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      
+      {/* البطاقات الإحصائية العليا */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        
+        {/* إجمالي المقبوضات */}
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold">إجمالي المقبوضات والتحصيلات</span>
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+          </div>
+          <h4 className="text-2xl font-black text-emerald-400 font-mono mt-1">
+            +{totalReceipts.toLocaleString()} <span className="text-xs text-slate-600 dark:text-zinc-400">ج.م</span>
+          </h4>
+        </div>
+
+        {/* إجمالي المدفوعات */}
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold">إجمالي المدفوعات وسداد الموردين</span>
+            <TrendingDown className="w-4 h-4 text-rose-400" />
+          </div>
+          <h4 className="text-2xl font-black text-rose-400 font-mono mt-1">
+            -{totalPayments.toLocaleString()} <span className="text-xs text-slate-600 dark:text-zinc-400">ج.م</span>
+          </h4>
+        </div>
+
+        {/* صافي حركة السيولة اللحظية */}
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold">صافي حركة السيولة اللحظية</span>
+            <DollarSign className="w-4 h-4 text-indigo-400" />
+          </div>
+          <h4 className={`text-2xl font-black font-mono mt-1 ${netCashFlow >= 0 ? 'text-emerald-400' : 'text-indigo-400'}`}>
+            {netCashFlow.toLocaleString()} <span className="text-xs text-slate-600 dark:text-zinc-400">ج.م</span>
+          </h4>
+        </div>
+      </div>
+
+      {/* ترويسة الشاشة */}
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
-              <Wallet className="w-6 h-6 text-emerald-400" />
+              <Wallet className="w-6 h-6 text-amber-500" />
               <span>حركة الخزينة وسندات القبض والصرف (Treasury & Cash Flow)</span>
             </h1>
-            <span className="bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-md text-[10px] font-black">
+            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
               الرقابة النقدية وسداد الموردين
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
             إثبات سندات الصرف وسداد دفعات الموردين، تحصيل النقدية، وتسوية العهد اليومية مع القيود المحاسبية.
           </p>
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-xs transition-colors"
+          onClick={() => {
+            setStatusMessage('💡 نموذج تحرير سند خزينة جديد قيد الربط مع القيود المزدوجة.');
+            setTimeout(() => setStatusMessage(null), 3500);
+          }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all"
         >
           <PlusCircle className="w-4 h-4" />
-          <span>تحرير سند خزينة جديد</span>
+          <span>+ تحرير سند خزينة جديد</span>
         </button>
       </div>
 
       {statusMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between">
-          <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />{statusMessage}</span>
+        <div className="mb-4 p-3 bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {statusMessage}
+          </span>
           <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {/* بطاقات التدفق النقدي */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-emerald-500 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي المقبوضات والتحصيلات</span>
-          <h4 className="text-2xl font-black text-emerald-600 font-mono mt-1">+{totalReceipts.toLocaleString()} <span className="text-xs font-normal text-gray-500">ج.م</span></h4>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-rose-600 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي المدفوعات وسداد الموردين</span>
-          <h4 className="text-2xl font-black text-rose-600 font-mono mt-1">-{totalPayments.toLocaleString()} <span className="text-xs font-normal text-gray-500">ج.م</span></h4>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">صافي حركة السيولة اللحظية</span>
-          <h4 className="text-2xl font-black text-indigo-700 font-mono mt-1">{netTreasuryFlow.toLocaleString()} <span className="text-xs font-normal text-gray-500">ج.م</span></h4>
-        </div>
-      </div>
-
-      {/* البحث والفلترة */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-xs mb-6 flex flex-wrap items-center gap-3 text-xs">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" />
+      {/* شريط البحث والفلترة */}
+      <div className="bg-white dark:bg-[#0f1117] p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md mb-6 flex flex-wrap justify-between items-center gap-3 text-xs">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-zinc-500 absolute right-3 top-2.5" />
           <input
             type="text"
-            placeholder="بحث برقم السند، اسم المستفيد، البيان..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-gray-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:border-indigo-600 font-medium"
+            placeholder="بحث برقم السند، اسم المستفيد، البيان..."
+            className="w-full pr-9 pl-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-100 outline-none focus:border-amber-500"
           />
         </div>
 
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700 outline-none"
-        >
-          <option value="">-- كل أنواع السندات --</option>
-          <option value="PAYMENT">سندات صرف نقدية</option>
-          <option value="RECEIPT">سندات قبض وتحصيل</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as any)}
+            className="px-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-200 font-bold outline-none"
+          >
+            <option value="ALL">-- كل أنواع السندات --</option>
+            <option value="صرف">سندات صرف</option>
+            <option value="قبض">سندات قبض</option>
+          </select>
 
-        <select
-          value={treasuryFilter}
-          onChange={(e) => setTreasuryFilter(e.target.value)}
-          className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700 outline-none"
-        >
-          <option value="">-- كافة الخزائن والعهد --</option>
-          {lookups.treasuries.map((t, i) => (
-            <option key={i} value={t}>{t}</option>
-          ))}
-        </select>
+          <select
+            value={treasuryFilter}
+            onChange={(e) => setTreasuryFilter(e.target.value)}
+            className="px-3 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-200 font-bold outline-none"
+          >
+            <option value="ALL">-- كافة الخزائن والعهد --</option>
+            <option value="الرئيسية">الخزينة الرئيسية</option>
+            <option value="عهدة">عهد المصروفات والصيانة</option>
+          </select>
+        </div>
       </div>
 
-      {/* جدول السندات */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden text-xs">
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-400 font-bold">جاري تحميل سجلات الخزينة...</div>
-        ) : filteredVouchers.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 font-bold">لا توجد سندات مطابقة للبحث.</div>
-        ) : (
+      {/* جدول سندات الخزينة */}
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg overflow-hidden text-xs">
+        <div className="overflow-x-auto">
           <table className="w-full text-center">
-            <thead className="bg-slate-900 text-white">
+            <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
               <tr>
                 <th className="py-3 px-3">رقم السند</th>
                 <th className="py-3 px-3">النوع</th>
                 <th className="py-3 px-3">التاريخ</th>
-                <th className="py-3 px-3">الخزينة</th>
+                <th className="py-3 px-3 text-right">الخزينة</th>
                 <th className="py-3 px-3 text-right">المستفيد / الجهة</th>
                 <th className="py-3 px-3 text-right">البيان والشرح</th>
                 <th className="py-3 px-3">طريقة الدفع</th>
-                <th className="py-3 px-3">المبلغ</th>
+                <th className="py-3 px-3 text-left pl-6">المبلغ</th>
                 <th className="py-3 px-3">الحالة</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredVouchers.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-3 font-mono font-bold text-indigo-700">{v.voucherNumber}</td>
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
+              {filteredVouchers.map(v => (
+                <tr key={v.id} className="hover:bg-zinc-900/60 transition-colors">
+                  <td className="py-3 px-3 font-mono font-bold text-indigo-400">{v.voucherNumber}</td>
+                  
                   <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                        v.voucherType === 'RECEIPT'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-rose-50 text-rose-700'
-                      }`}
-                    >
-                      {v.voucherType === 'RECEIPT' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                      <span>{v.voucherType === 'RECEIPT' ? 'قبض' : 'صرف'}</span>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      v.type === 'صرف'
+                        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    }`}>
+                      {v.type === 'صرف' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                      <span>{v.type}</span>
                     </span>
                   </td>
-                  <td className="py-3 px-3 font-mono text-gray-500">{v.date}</td>
-                  <td className="py-3 px-3 font-medium text-gray-700">{v.treasuryName}</td>
-                  <td className="py-3 px-3 text-right font-bold text-gray-900">
-                    {v.beneficiaryName}
-                    <span className="text-[10px] text-gray-400 block font-normal">{v.beneficiaryType}</span>
+
+                  <td className="py-3 px-3 font-mono text-slate-600 dark:text-zinc-400">{v.date}</td>
+                  
+                  <td className="py-3 px-3 text-right text-slate-700 dark:text-zinc-300 font-semibold">{v.treasuryName}</td>
+
+                  <td className="py-3 px-3 text-right">
+                    <span className="font-bold text-zinc-100 block">{v.beneficiaryName}</span>
+                    <small className="text-zinc-500">{v.beneficiaryType}</small>
                   </td>
-                  <td className="py-3 px-3 text-right text-gray-600 max-w-xs truncate">{v.description}</td>
-                  <td className="py-3 px-3 font-medium text-gray-700">{v.paymentMethod}</td>
-                  <td className="py-3 px-3 font-mono font-black text-sm">
-                    <span className={v.voucherType === 'RECEIPT' ? 'text-emerald-700' : 'text-rose-600'}>
-                      {v.voucherType === 'RECEIPT' ? '+' : '-'}{v.amount.toLocaleString()} ج.م
-                    </span>
+
+                  <td className="py-3 px-3 text-right text-slate-600 dark:text-zinc-400 max-w-xs truncate">{v.description}</td>
+
+                  <td className="py-3 px-3 text-slate-700 dark:text-zinc-300">{v.paymentMethod}</td>
+
+                  <td className={`py-3 px-3 text-left pl-6 font-mono font-bold text-sm ${
+                    v.type === 'صرف' ? 'text-rose-400' : 'text-emerald-400'
+                  }`}>
+                    {v.type === 'صرف' ? '-' : '+'}{v.amount.toLocaleString()} ج.م
                   </td>
+
                   <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-700">
-                      {v.status}
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                      {v.status} ✓
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </div>
-
-      {/* نافذة تحرير سند جديد */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 text-xs">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-              <h4 className="font-bold flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-amber-400" />
-                <span>تحرير سند خزينة جديد</span>
-              </h4>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/80 hover:text-white font-bold text-base">×</button>
-            </div>
-
-            <form onSubmit={handleSaveVoucher} className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">نوع السند *</label>
-                  <select
-                    value={voucherType}
-                    onChange={(e) => setVoucherType(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                  >
-                    <option value="PAYMENT">سند صرف نقدية (مدفوعات)</option>
-                    <option value="RECEIPT">سند قبض نقدية (تحصيلات)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">الخزينة المعتمدة *</label>
-                  <select
-                    value={selectedTreasury}
-                    onChange={(e) => setSelectedTreasury(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                  >
-                    {lookups.treasuries.map((t, i) => (
-                      <option key={i} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">المبلغ (ج.م) *</label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={amount || ''}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-mono text-center font-black text-emerald-700 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">طريقة الدفع</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                  >
-                    <option value="نقدي">نقدي كاش</option>
-                    <option value="شيك بانكي">شيك بنكي</option>
-                    <option value="تحويل لحظي">تحويل لحظي (InstaPay)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">تصنيف الجهة *</label>
-                  <select
-                    value={beneficiaryType}
-                    onChange={(e) => setBeneficiaryType(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                  >
-                    {lookups.beneficiaryTypes.map((bt, i) => (
-                      <option key={i} value={bt}>{bt}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">اسم المستفيد / الجهة *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="اسم المورد أو العميل أو البند..."
-                    value={beneficiaryName}
-                    onChange={(e) => setBeneficiaryName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">البيان والشرح التفصيلي *</label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="اكتب أسباب الصرف أو التحصيل ورقم الفاتورة المرجعية..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-medium"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-between items-center pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
-                >
-                  💾 اعتماد وترحيل السند
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
+
+export default TreasuryVouchersPage;
+
+

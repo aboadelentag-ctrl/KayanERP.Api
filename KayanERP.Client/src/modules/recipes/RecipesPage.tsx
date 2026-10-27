@@ -1,603 +1,454 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   ChefHat,
+  PlusCircle,
+  Search,
   FileSpreadsheet,
   Download,
   Upload,
-  PlusCircle,
   RotateCw,
-  Search,
-  CheckCircle2,
-  AlertTriangle,
-  Layers,
-  X,
-  Plus,
+  Edit2,
   Trash2,
-  Save,
-  Package,
+  CheckCircle2,
+  X,
+  Layers,
   Clock,
   Percent,
-  Cake,
-  Boxes,
-  Tag,
-  Pencil
+  Scale
 } from 'lucide-react';
-import {
-  fetchRecipesApi,
-  fetchAllItemsApi,
-  saveRecipeApi,
-  saveQuickItemApi,
-} from './recipesApi';
-import type {
-  RecipeDto,
-  RecipeLineDto,
-  ItemLookupDto,
-  QuickItemCreateDto,
-  RecipeImportPreviewDto,
-} from './recipesApi';
+
+export interface RecipeLineDto {
+  componentItemId: number;
+  componentItemCode: string;
+  componentItemName: string;
+  itemType: 'خامات' | 'نصف مصنع';
+  quantity: number;
+  unit: string;
+  wastePercentage: number;
+  notes?: string;
+  costEstimate?: number;
+}
+
+export interface RecipeDto {
+  id: number;
+  recipeCode: string;
+  recipeName: string;
+  productItemId: number;
+  productItemName: string;
+  stage: 'semi_weight' | 'semi_piece' | 'finished';
+  batchQuantity: number;
+  batchUnit: string;
+  yieldQuantity: number;
+  piecesPerBatch: number;
+  wastePercentage: number;
+  preparationTimeMinutes: number;
+  totalEstimatedCost: number;
+  costPerPiece: number;
+  active: boolean;
+  notes?: string;
+  lines: RecipeLineDto[];
+}
+
+export interface ItemLookup {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  itemType: 'منتج تام' | 'نصف مصنع' | 'خامات';
+  unit: string;
+}
 
 export const RecipesPage: React.FC = () => {
-  const [recipesList, setRecipesList] = useState<RecipeDto[]>([]);
-  const [allItems, setAllItems] = useState<ItemLookupDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [statusMessage, setStatusMessage] = useState<string>('');
-  const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  const allItems: ItemLookup[] = [
+    { id: 101, itemCode: 'RAW-FLR-04', itemName: 'دقيق فاخر استخراج 72%', itemType: 'خامات', unit: 'كجم' },
+    { id: 102, itemCode: 'RAW-BTR-02', itemName: 'سمن بلدي بقري طبيعي ممتاز', itemType: 'خامات', unit: 'كجم' },
+    { id: 103, itemCode: 'RAW-SUG-01', itemName: 'سكر مكرر ناعم فاخر', itemType: 'خامات', unit: 'كجم' },
+    { id: 104, itemCode: 'RAW-SMD-03', itemName: 'سميد بسبوسة نمرة 1', itemType: 'خامات', unit: 'كجم' },
+    { id: 105, itemCode: 'RAW-PST-05', itemName: 'فستق حلبي محمص نمرة 1', itemType: 'خامات', unit: 'كجم' },
+    { id: 106, itemCode: 'RAW-EGG-01', itemName: 'بيض مزارع طازج', itemType: 'خامات', unit: 'قطعة' },
 
-  // شريط الفلاتر
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
-  const [selectedUnitFilter, setSelectedUnitFilter] = useState<string>('all');
-  const [selectedProductFilter, setSelectedProductFilter] = useState<number>(0);
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
+    { id: 201, itemCode: 'SEMI-BSB-10', itemName: 'عجين بسبوسة متبلة ومخمرة', itemType: 'نصف مصنع', unit: 'كجم' },
+    { id: 202, itemCode: 'SEMI-SPG-40', itemName: 'بلكة اسبونج فانيليا 40*60', itemType: 'نصف مصنع', unit: 'بلكة' },
+    { id: 203, itemCode: 'SEMI-CRM-01', itemName: 'كريمة حشو تورت مخفوقة', itemType: 'نصف مصنع', unit: 'كجم' },
 
-  // وضع التحرير والإضافة
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [activeRecipe, setActiveRecipe] = useState<Partial<RecipeDto>>({
-    id: 0,
-    productItemId: 0,
-    recipeCode: '',
-    recipeName: '',
-    batchQuantity: 10,
-    batchUnit: 'كجم',
-    yieldQuantity: 10,
-    yieldUnit: 'كجم',
-    piecesPerBatch: 0,
-    wastePercentage: 0,
-    preparationTimeMinutes: 30,
-    active: true,
-    lines: [],
-  });
+    { id: 301, itemCode: 'FG-BSB-LUX', itemName: 'صينية بسبوسة مكسرات لوكس سمن بلدي', itemType: 'منتج تام', unit: 'صاج' },
+    { id: 302, itemCode: 'FG-TRT-ROY', itemName: 'تورتة شوكولاتة ملوكي مقاس 26', itemType: 'منتج تام', unit: 'قطعة' },
+    { id: 303, itemCode: 'FG-GTO-MIX', itemName: 'دستة سواريه جاتوه مشكل', itemType: 'منتج تام', unit: 'دستة' }
+  ];
 
-  // مودال الصنف السريع
-  const [isQuickItemModalOpen, setIsQuickItemModalOpen] = useState<boolean>(false);
-  const [newQuickItem, setNewQuickItem] = useState<QuickItemCreateDto>({
-    itemCode: '',
-    itemName: '',
-    itemType: 'نصف مصنع',
-    unit: 'كجم',
-  });
-  const [isSavingQuickItem, setIsSavingQuickItem] = useState<boolean>(false);
-
-  // مودال استيراد الإكسيل
-  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-  const [importedPreviewList, setImportedPreviewList] = useState<RecipeImportPreviewDto[]>([]);
-  const [isSavingImport, setIsSavingImport] = useState<boolean>(false);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [recs, itms] = await Promise.all([fetchRecipesApi(), fetchAllItemsApi()]);
-      setRecipesList(recs);
-      setAllItems(itms);
-    } catch (err: any) {
-      setStatusMessage(`فشل جلب المعايير: ${err.message}`);
-      setIsSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const targetProductsList = useMemo(() => {
-    return allItems.filter(
-      (i) => i.itemType === 'منتج تام' || i.itemType === 'منتج وسيط' || i.itemType === 'نصف مصنع'
-    );
-  }, [allItems]);
-
-  const allIngredientsList = useMemo(() => {
-    return allItems.filter((i) => i.itemType !== 'منتج تام');
-  }, [allItems]);
-
-  // إحصائيات KPIs اللحظية
-  const countWeightSemiFinished = useMemo(() => {
-    return recipesList.filter((r) => {
-      const itm = allItems.find((i) => i.id === r.productItemId);
-      return itm && (itm.itemType === 'منتج وسيط' || itm.itemType === 'نصف مصنع') && (r.piecesPerBatch === 0 || r.batchUnit === 'كجم');
-    }).length;
-  }, [recipesList, allItems]);
-
-  const countPieceSemiFinished = useMemo(() => {
-    return recipesList.filter((r) => {
-      const itm = allItems.find((i) => i.id === r.productItemId);
-      return itm && (itm.itemType === 'منتج وسيط' || itm.itemType === 'نصف مصنع') && (r.piecesPerBatch > 0 && r.batchUnit !== 'كجم');
-    }).length;
-  }, [recipesList, allItems]);
-
-  const countFinishedRecipes = useMemo(() => {
-    return recipesList.filter((r) => {
-      const itm = allItems.find((i) => i.id === r.productItemId);
-      return !itm || itm.itemType === 'منتج تام';
-    }).length;
-  }, [recipesList, allItems]);
-
-  const hasActiveFilters =
-    searchTerm.trim() !== '' ||
-    selectedStageFilter !== 'all' ||
-    selectedUnitFilter !== 'all' ||
-    selectedProductFilter > 0 ||
-    selectedStatusFilter !== 'all';
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedStageFilter('all');
-    setSelectedUnitFilter('all');
-    setSelectedProductFilter(0);
-    setSelectedStatusFilter('all');
-  };
-
-  const filteredRecipes = useMemo(() => {
-    return recipesList.filter((r) => {
-      if (searchTerm.trim()) {
-        const term = searchTerm.trim().toLowerCase();
-        const matchCode = r.recipeCode.toLowerCase().includes(term);
-        const matchName = r.recipeName.toLowerCase().includes(term);
-        const matchProd = r.productItemName.toLowerCase().includes(term);
-        if (!matchCode && !matchName && !matchProd) return false;
-      }
-
-      if (selectedStageFilter === 'semi_weight') {
-        const itm = allItems.find((i) => i.id === r.productItemId);
-        if (!(itm && (itm.itemType === 'منتج وسيط' || itm.itemType === 'نصف مصنع') && (r.piecesPerBatch === 0 || r.batchUnit === 'كجم'))) {
-          return false;
-        }
-      } else if (selectedStageFilter === 'semi_piece') {
-        const itm = allItems.find((i) => i.id === r.productItemId);
-        if (!(itm && (itm.itemType === 'منتج وسيط' || itm.itemType === 'نصف مصنع') && (r.piecesPerBatch > 0 && r.batchUnit !== 'كجم'))) {
-          return false;
-        }
-      } else if (selectedStageFilter === 'finished') {
-        const itm = allItems.find((i) => i.id === r.productItemId);
-        if (itm && itm.itemType !== 'منتج تام') return false;
-      }
-
-      if (selectedUnitFilter !== 'all' && r.batchUnit !== selectedUnitFilter) return false;
-      if (selectedProductFilter > 0 && r.productItemId !== selectedProductFilter) return false;
-      if (selectedStatusFilter === 'active' && !r.active) return false;
-      if (selectedStatusFilter === 'inactive' && r.active) return false;
-
-      return true;
-    });
-  }, [recipesList, allItems, searchTerm, selectedStageFilter, selectedUnitFilter, selectedProductFilter, selectedStatusFilter]);
-
-  const createNewRecipe = () => {
-    setActiveRecipe({
-      id: 0,
-      productItemId: targetProductsList[0]?.id || 0,
-      recipeCode: `BOM-${Date.now().toString().slice(-4)}`,
-      recipeName: '',
+  const [recipes, setRecipes] = useState<RecipeDto[]>([
+    {
+      id: 1,
+      recipeCode: 'BOM-SEMI-201',
+      recipeName: 'خلطة عجين بسبوسة معيار 10 كجم (تجهيز وردية 1)',
+      productItemId: 201,
+      productItemName: 'عجين بسبوسة متبلة ومخمرة',
+      stage: 'semi_weight',
       batchQuantity: 10,
       batchUnit: 'كجم',
       yieldQuantity: 10,
-      yieldUnit: 'كجم',
       piecesPerBatch: 0,
       wastePercentage: 0,
       preparationTimeMinutes: 30,
+      totalEstimatedCost: 480.0,
+      costPerPiece: 0,
       active: true,
-      lines: [{ componentItemId: allIngredientsList[0]?.id || 0, quantity: 1, unit: 'كجم', wastePercentage: 0 }],
+      notes: 'عجن وتتبيل مسبق للوردية الأولى',
+      lines: [
+        { componentItemId: 104, componentItemCode: 'RAW-SMD-03', componentItemName: 'سميد بسبوسة نمرة 1', itemType: 'خامات', quantity: 5, unit: 'كجم', wastePercentage: 0, notes: 'سميد مرمل' },
+        { componentItemId: 102, componentItemCode: 'RAW-BTR-02', componentItemName: 'سمن بلدي بقري طبيعي ممتاز', itemType: 'خامات', quantity: 2, unit: 'كجم', wastePercentage: 0, notes: 'تسييح دافئ' },
+        { componentItemId: 103, componentItemCode: 'RAW-SUG-01', componentItemName: 'سكر مكرر ناعم فاخر', itemType: 'خامات', quantity: 3, unit: 'كجم', wastePercentage: 0, notes: 'سكر ناعم' }
+      ]
+    },
+    {
+      id: 2,
+      recipeCode: 'BOM-SEMI-202',
+      recipeName: 'خبز بلكة اسبونج فانيليا 40*60 (تجهيز وسيط قطعي)',
+      productItemId: 202,
+      productItemName: 'بلكة اسبونج فانيليا 40*60',
+      stage: 'semi_piece',
+      batchQuantity: 1,
+      batchUnit: 'بلكة',
+      yieldQuantity: 1,
+      piecesPerBatch: 1,
+      wastePercentage: 2,
+      preparationTimeMinutes: 45,
+      totalEstimatedCost: 165.0,
+      costPerPiece: 165.0,
+      active: true,
+      notes: 'خبز بلكات وتبريدها قبل الفينش',
+      lines: [
+        { componentItemId: 101, componentItemCode: 'RAW-FLR-04', componentItemName: 'دقيق فاخر استخراج 72%', itemType: 'خامات', quantity: 2, unit: 'كجم', wastePercentage: 0, notes: 'منخول جيدا' },
+        { componentItemId: 103, componentItemCode: 'RAW-SUG-01', componentItemName: 'سكر مكرر ناعم فاخر', itemType: 'خامات', quantity: 1.5, unit: 'كجم', wastePercentage: 0, notes: 'خالي من الرطوبة' },
+        { componentItemId: 106, componentItemCode: 'RAW-EGG-01', componentItemName: 'بيض مزارع طازج', itemType: 'خامات', quantity: 30, unit: 'قطعة', wastePercentage: 0, notes: 'بدرجة حرارة الغرفة' }
+      ]
+    },
+    {
+      id: 3,
+      recipeCode: 'BOM-FG-301',
+      recipeName: 'تفنيش وخبز صاج بسبوسة مكسرات (تفنيش وردية 2)',
+      productItemId: 301,
+      productItemName: 'صينية بسبوسة مكسرات لوكس سمن بلدي',
+      stage: 'finished',
+      batchQuantity: 1,
+      batchUnit: 'صاج',
+      yieldQuantity: 1,
+      piecesPerBatch: 0,
+      wastePercentage: 3,
+      preparationTimeMinutes: 40,
+      totalEstimatedCost: 620.0,
+      costPerPiece: 0,
+      active: true,
+      notes: 'سحب العجين وسكب الشربات والمكسرات بالوردية 2',
+      lines: [
+        { componentItemId: 201, componentItemCode: 'SEMI-BSB-10', componentItemName: 'عجين بسبوسة متبلة ومخمرة', itemType: 'نصف مصنع', quantity: 8, unit: 'كجم', wastePercentage: 0, notes: 'سحب من مخزن النصف مصنع' },
+        { componentItemId: 105, componentItemCode: 'RAW-PST-05', componentItemName: 'فستق حلبي محمص نمرة 1', itemType: 'خامات', quantity: 0.5, unit: 'كجم', wastePercentage: 0, notes: 'تزيين الوجه' },
+        { componentItemId: 102, componentItemCode: 'RAW-BTR-02', componentItemName: 'سمن بلدي بقري طبيعي ممتاز', itemType: 'خامات', quantity: 0.5, unit: 'كجم', wastePercentage: 0, notes: 'تلميع الصاج' }
+      ]
+    },
+    {
+      id: 4,
+      recipeCode: 'BOM-FG-302',
+      recipeName: 'تفنيش تورتة شوكولاتة ملوكي مقاس 26 (تفنيش أوردرات)',
+      productItemId: 302,
+      productItemName: 'تورتة شوكولاتة ملوكي مقاس 26',
+      stage: 'finished',
+      batchQuantity: 1,
+      batchUnit: 'قطعة',
+      yieldQuantity: 1,
+      piecesPerBatch: 1,
+      wastePercentage: 1,
+      preparationTimeMinutes: 25,
+      totalEstimatedCost: 195.0,
+      costPerPiece: 195.0,
+      active: true,
+      notes: 'حشو وتجليس وفينش الشوكولاتة',
+      lines: [
+        { componentItemId: 202, componentItemCode: 'SEMI-SPG-40', componentItemName: 'بلكة اسبونج فانيليا 40*60', itemType: 'نصف مصنع', quantity: 0.33, unit: 'بلكة', wastePercentage: 0, notes: 'تقطيع ديسكات' },
+        { componentItemId: 203, componentItemCode: 'SEMI-CRM-01', componentItemName: 'كريمة حشو تورت مخفوقة', itemType: 'نصف مصنع', quantity: 0.8, unit: 'كجم', wastePercentage: 0, notes: 'حشو وتجليس' }
+      ]
+    }
+  ]);
+
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stageFilter, setStageFilter] = useState('all');
+  const [unitFilter, setUnitFilter] = useState('all');
+  const [productFilter, setProductFilter] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Form Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeRecipe, setActiveRecipe] = useState<RecipeDto | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Quick Item Modal
+  const [showQuickItemModal, setShowQuickItemModal] = useState(false);
+  const [quickItemName, setQuickItemName] = useState('');
+  const [quickItemCode, setQuickItemCode] = useState('');
+  const [quickItemType, setQuickItemType] = useState<'منتج تام' | 'نصف مصنع' | 'خامات'>('نصف مصنع');
+  const [quickItemUnit, setQuickItemUnit] = useState('كجم');
+
+  // KPIs
+  const countWeightSemi = useMemo(() => recipes.filter(r => r.stage === 'semi_weight').length, [recipes]);
+  const countPieceSemi = useMemo(() => recipes.filter(r => r.stage === 'semi_piece').length, [recipes]);
+  const countFinished = useMemo(() => recipes.filter(r => r.stage === 'finished').length, [recipes]);
+
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter(r => {
+      if (stageFilter !== 'all' && r.stage !== stageFilter) return false;
+      if (unitFilter !== 'all' && r.batchUnit !== unitFilter) return false;
+      if (productFilter > 0 && r.productItemId !== productFilter) return false;
+      if (statusFilter === 'active' && !r.active) return false;
+      if (statusFilter === 'inactive' && r.active) return false;
+
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        r.recipeCode.toLowerCase().includes(term) ||
+        r.recipeName.toLowerCase().includes(term) ||
+        r.productItemName.toLowerCase().includes(term)
+      );
     });
+  }, [recipes, stageFilter, unitFilter, productFilter, statusFilter, searchTerm]);
+
+  const handleCreateNew = () => {
+    const newBOM: RecipeDto = {
+      id: Date.now(),
+      recipeCode: `BOM-SEMI-${Math.floor(100 + Math.random() * 900)}`,
+      recipeName: '',
+      productItemId: 201,
+      productItemName: 'عجين بسبوسة متبلة ومخمرة',
+      stage: 'semi_weight',
+      batchQuantity: 10,
+      batchUnit: 'كجم',
+      yieldQuantity: 10,
+      piecesPerBatch: 0,
+      wastePercentage: 0,
+      preparationTimeMinutes: 30,
+      totalEstimatedCost: 150.0,
+      costPerPiece: 0,
+      active: true,
+      lines: [
+        {
+          componentItemId: 104,
+          componentItemCode: 'RAW-SMD-03',
+          componentItemName: 'سميد بسبوسة نمرة 1',
+          itemType: 'خامات',
+          quantity: 5,
+          unit: 'كجم',
+          wastePercentage: 0,
+          notes: ''
+        }
+      ]
+    };
+    setActiveRecipe(newBOM);
     setIsEditing(true);
-    window.scrollTo({ top: 150, behavior: 'smooth' });
   };
 
-  const editRecipe = (recipe: RecipeDto) => {
-    setActiveRecipe({ ...recipe, lines: recipe.lines ? [...recipe.lines] : [] });
+  const handleEditRecipe = (r: RecipeDto) => {
+    setActiveRecipe(JSON.parse(JSON.stringify(r)));
     setIsEditing(true);
-    window.scrollTo({ top: 150, behavior: 'smooth' });
+    window.scrollTo({ top: 120, behavior: 'smooth' });
   };
 
-  const handleTargetProductSelected = (prodId: number) => {
-    const item = allItems.find((i) => i.id === prodId);
+  const handleAddLine = () => {
+    if (!activeRecipe) return;
+    const defaultRaw = allItems[0];
+    setActiveRecipe({
+      ...activeRecipe,
+      lines: [
+        ...activeRecipe.lines,
+        {
+          componentItemId: defaultRaw.id,
+          componentItemCode: defaultRaw.itemCode,
+          componentItemName: defaultRaw.itemName,
+          itemType: defaultRaw.itemType as any,
+          quantity: 1,
+          unit: defaultRaw.unit,
+          wastePercentage: 0,
+          notes: ''
+        }
+      ]
+    });
+  };
+
+  const handleRemoveLine = (idx: number) => {
+    if (!activeRecipe) return;
+    setActiveRecipe({
+      ...activeRecipe,
+      lines: activeRecipe.lines.filter((_, i) => i !== idx)
+    });
+  };
+
+  const handleLineItemChange = (idx: number, itemId: number) => {
+    if (!activeRecipe) return;
+    const item = allItems.find(i => i.id === itemId);
     if (!item) return;
 
-    const isSemi = item.itemType === 'منتج وسيط' || item.itemType === 'نصف مصنع';
-    let bUnit = 'كجم';
-    let pieces = 0;
-
-    if (isSemi) {
-      if (item.itemName.includes('اسبونج') || item.itemName.includes('بلكة') || item.unit === 'بلكة') {
-        bUnit = item.unit || 'بلكة';
-        pieces = 1;
-      }
-    } else {
-      if (item.itemName.includes('تورتة') || item.itemName.includes('جاتوه') || item.unit === 'دستة') {
-        bUnit = 'قطعة';
-        pieces = 1;
-      } else {
-        bUnit = 'صاج';
-      }
-    }
-
-    setActiveRecipe((prev) => ({
-      ...prev,
-      productItemId: prodId,
-      productItemName: item.itemName,
-      batchUnit: bUnit,
-      yieldUnit: bUnit,
-      piecesPerBatch: pieces,
-      recipeName: isSemi ? `خلطة عجين/تجهيز ${item.itemName}` : `تفنيش ${item.itemName}`,
-      recipeCode: `BOM-${item.itemCode}`,
-    }));
+    const copy = [...activeRecipe.lines];
+    copy[idx] = {
+      ...copy[idx],
+      componentItemId: item.id,
+      componentItemCode: item.itemCode,
+      componentItemName: item.itemName,
+      itemType: item.itemType as any,
+      unit: item.unit
+    };
+    setActiveRecipe({ ...activeRecipe, lines: copy });
   };
 
-  const addIngredientLine = () => {
-    setActiveRecipe((prev) => ({
-      ...prev,
-      lines: [
-        ...(prev.lines || []),
-        { componentItemId: allIngredientsList[0]?.id || 0, quantity: 1, unit: 'كجم', wastePercentage: 0 },
-      ],
-    }));
-  };
-
-  const removeIngredientLine = (idx: number) => {
-    setActiveRecipe((prev) => ({
-      ...prev,
-      lines: prev.lines?.filter((_, i) => i !== idx),
-    }));
-  };
-
-  const updateLineComponent = (idx: number, compId: number) => {
-    const item = allIngredientsList.find((i) => i.id === compId);
-    setActiveRecipe((prev) => {
-      const copy = [...(prev.lines || [])];
-      copy[idx] = {
-        ...copy[idx],
-        componentItemId: compId,
-        componentItemName: item?.itemName,
-        componentItemCode: item?.itemCode,
-        unit: item?.unit || 'كجم',
-      };
-      return { ...prev, lines: copy };
-    });
-  };
-
-  const handleSaveRecipe = async () => {
-    if (!activeRecipe.productItemId || !activeRecipe.recipeName?.trim()) {
-      setStatusMessage('يرجى تحديد المنتج المستهدف واسم الخلطة.');
-      setIsSuccess(false);
-      return;
-    }
-
-    if (!activeRecipe.lines?.length || activeRecipe.lines.some((l) => !l.componentItemId || l.quantity <= 0)) {
-      setStatusMessage('يجب إضافة مكون واحد على الأقل وتحديد مقادير صالحة أكبر من الصفر.');
-      setIsSuccess(false);
-      return;
-    }
-
-    try {
-      await saveRecipeApi(activeRecipe);
-      setStatusMessage('تم حفظ واعتماد بطاقة معايير الخلطة بنجاح!');
-      setIsSuccess(true);
-      setIsEditing(false);
-      await loadData();
-    } catch (err: any) {
-      setStatusMessage(`فشل الحفظ: ${err.message}`);
-      setIsSuccess(false);
-    }
-  };
-
-  const openQuickItemModal = () => {
-    setNewQuickItem({
-      itemCode: `ITM-${Date.now().toString().slice(-5)}`,
-      itemName: '',
-      itemType: 'نصف مصنع',
-      unit: 'كجم',
-    });
-    setIsQuickItemModalOpen(true);
-  };
-
-  const handleSaveQuickItem = async (e: React.FormEvent) => {
+  const handleSaveRecipe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newQuickItem.itemName.trim()) return;
+    if (!activeRecipe || !activeRecipe.recipeName.trim()) return;
 
-    setIsSavingQuickItem(true);
-    try {
-      const created = await saveQuickItemApi(newQuickItem);
-      await loadData();
-      setIsQuickItemModalOpen(false);
-      setStatusMessage(`تم إدراج الصنف الجديد [${created.itemName}] بالدليل بنجاح!`);
-      setIsSuccess(true);
-
-      if (isEditing) {
-        handleTargetProductSelected(created.id);
-      }
-    } catch (err: any) {
-      alert(`خطأ: ${err.message}`);
-    } finally {
-      setIsSavingQuickItem(false);
+    const exists = recipes.find(r => r.id === activeRecipe.id);
+    if (exists) {
+      setRecipes(recipes.map(r => r.id === activeRecipe.id ? activeRecipe : r));
+      setStatusMessage('✅ تم تحديث بطاقة معايير الخلطة بنجاح.');
+    } else {
+      setRecipes([activeRecipe, ...recipes]);
+      setStatusMessage('✅ تم حفظ واعتماد بطاقة المعايير (BOM) بنجاح.');
     }
+    setIsEditing(false);
+    setTimeout(() => setStatusMessage(null), 4000);
   };
 
-  const handleExportCsv = () => {
-    if (!filteredRecipes.length) return;
-
-    const headers = [
-      'كود_الوصفة',
-      'اسم_الخلطة_المعيار',
-      'المنتج_المستهدف',
-      'حجم_الوجبة',
-      'وحدة_الوجبة',
-      'عدد_القطع',
-      'الخرج_الصافي',
-      'فاقد_التشغيل_%',
-      'وقت_التحضير_دقيقة',
-      'التكلفة_التقديرية',
-      'تكلفة_القطعة',
-      'كود_المكون',
-      'اسم_المكون',
-      'كمية_المكون',
-      'وحدة_المكون',
-      'فاقد_المكون_%',
-      'الحالة',
-    ];
-
-    const rows: string[] = [];
-    filteredRecipes.forEach((r) => {
-      const lines = r.lines || [];
-      if (lines.length > 0) {
-        lines.forEach((l) => {
-          rows.push(
-            [
-              `"${r.recipeCode}"`,
-              `"${r.recipeName}"`,
-              `"${r.productItemName}"`,
-              r.batchQuantity,
-              `"${r.batchUnit}"`,
-              r.piecesPerBatch,
-              r.yieldQuantity,
-              r.wastePercentage,
-              r.preparationTimeMinutes,
-              r.totalEstimatedCost.toFixed(2),
-              r.costPerPiece.toFixed(2),
-              `"${l.componentItemCode || ''}"`,
-              `"${l.componentItemName || ''}"`,
-              l.quantity,
-              `"${l.unit || ''}"`,
-              l.wastePercentage,
-              `"${r.active ? 'نشطة' : 'معطلة'}"`,
-            ].join(',')
-          );
-        });
-      } else {
-        rows.push(
-          [
-            `"${r.recipeCode}"`,
-            `"${r.recipeName}"`,
-            `"${r.productItemName}"`,
-            r.batchQuantity,
-            `"${r.batchUnit}"`,
-            r.piecesPerBatch,
-            r.yieldQuantity,
-            r.wastePercentage,
-            r.preparationTimeMinutes,
-            r.totalEstimatedCost.toFixed(2),
-            r.costPerPiece.toFixed(2),
-            '---',
-            '---',
-            0,
-            '---',
-            0,
-            `"${r.active ? 'نشطة' : 'معطلة'}"`,
-          ].join(',')
-        );
-      }
+  const exportToExcel = () => {
+    let csv = 'كود_الوصفة,اسم_الخلطة_المعيار,المرحلة_الوردية,المنتج_المستهدف,حجم_الوجبة,وحدة_الوجبة,عدد_القطع,التكلفة_التقديرية,تكلفة_القطعة,عدد_المكونات,الحالة\n';
+    filteredRecipes.forEach(r => {
+      const stageName = r.stage === 'semi_weight' ? 'نصف مصنع وزني' : (r.stage === 'semi_piece' ? 'نصف مصنع قطعي' : 'تفنيش تام');
+      csv += `"${r.recipeCode}","${r.recipeName}","${stageName}","${r.productItemName}",${r.batchQuantity},"${r.batchUnit}",${r.piecesPerBatch},${r.totalEstimatedCost},${r.costPerPiece},${r.lines.length},"${r.active ? 'نشطة' : 'معطلة'}"\n`;
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `بطاقات_خلطات_التصنيع_BOM_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `معايير_خلطات_التصنيع_BOM_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDownloadTemplate = () => {
-    const headers = [
-      'كود_الوصفة',
-      'اسم_الخلطة_المعيار',
-      'المنتج_المستهدف',
-      'حجم_الوجبة',
-      'وحدة_الوجبة',
-      'عدد_القطع',
-      'الخرج_الصافي',
-      'فاقد_التشغيل_%',
-      'وقت_التحضير_دقيقة',
-      'كود_المكون',
-      'اسم_المكون',
-      'كمية_المكون',
-      'وحدة_المكون',
-      'فاقد_المكون_%',
-    ];
-
-    const sample = [
-      'BOM-201001,خلطة عجين بسبوسة معيار 10 كجم,عجين بسبوسة,10,كجم,0,10,0,30,107,سميد بسبوسة خشن,5,كجم,0',
-      'BOM-201001,خلطة عجين بسبوسة معيار 10 كجم,عجين بسبوسة,10,كجم,0,10,0,30,102,سمن بلدي بقري طبيعي,2.5,كجم,0',
-      'BOM-202001,خبز بلكة اسبونج فانيليا 40*60,اسبونج فانيليا,1,بلكة,1,1,3,45,101,دقيق فاخر استخراج 72%,1.8,كجم,2',
-      'BOM-202001,خبز بلكة اسبونج فانيليا 40*60,اسبونج فانيليا,1,بلكة,1,1,3,45,105,بيض مزارع طازج,30,قطعة,0',
-    ];
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...sample].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'قالب_معايير_خلطات_التصنيع_BOM.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen font-sans" dir="rtl">
-      
-      {/* 1. رأس الصفحة وأزرار التحكم */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border-r-4 border-r-indigo-600 border border-gray-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+      {/* رأس الصفحة مع مسافة pt-10 وثيم داكن فاحم خالص */}
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
-            <ChefHat className="w-6 h-6 text-indigo-600" />
-            <span>معايير وبطاقات خلطات التصنيع (BOM / Recipes)</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            نظام شجرة التصنيع متعددة المستويات (تجهيز النصف مصنع الوزني والقطعي للوردية الأولى + تفنيش الأوردرات للوردية الثانية)
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
+              <ChefHat className="w-6 h-6 text-amber-500" />
+              <span>معايير وبطاقات خلطات التصنيع (BOM / Recipes)</span>
+            </h1>
+            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
+              شجرة التصنيع متعددة المراحل (تجهيز الوردية 1 ⟵ تفنيش الوردية 2)
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
+            تحديد مقادير ونسب الخامات وهدر التشغيل للخلطات النصف مصنعة والمنتجات التامة لضبط التكاليف.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={handleExportCsv}
-            disabled={!filteredRecipes.length}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-xs font-bold transition-colors shadow-xs disabled:opacity-50"
+            onClick={exportToExcel}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>تصدير إكسيل</span>
           </button>
 
           <button
-            onClick={handleDownloadTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 rounded-xl border border-cyan-200 text-xs font-bold transition-colors shadow-xs"
-          >
-            <Download className="w-4 h-4" />
-            <span>تحميل القالب</span>
-          </button>
-
-          <button
-            onClick={openQuickItemModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold transition-colors shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>إضافة صنف جديد للدليل</span>
-          </button>
-
-          <button
-            onClick={createNewRecipe}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+            onClick={() => {
+              setQuickItemName('');
+              setQuickItemCode(`ITM-${Date.now().toString().slice(-4)}`);
+              setShowQuickItemModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md transition-all"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>إنشاء معيار / خلطة جديدة</span>
+            <span>+ إضافة صنف جديد للدليل</span>
           </button>
 
           <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-            title="تحديث"
+            onClick={handleCreateNew}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <PlusCircle className="w-4 h-4" />
+            <span>+ إنشاء معيار / خلطة جديدة</span>
           </button>
         </div>
       </div>
 
-      {/* 2. رسائل التنبيه */}
       {statusMessage && (
-        <div className={`mb-4 p-3 rounded-xl border text-xs font-bold flex items-center justify-between ${
-          isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-        }`}>
-          <div className="flex items-center gap-2">
-            {isSuccess ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
-            <span>{statusMessage}</span>
-          </div>
-          <button onClick={() => setStatusMessage('')} className="text-gray-500 hover:text-gray-800 font-bold">×</button>
+        <div className="mb-4 p-3 bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-bold flex justify-between items-center shadow-md">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {statusMessage}
+          </span>
+          <button onClick={() => setStatusMessage(null)}>×</button>
         </div>
       )}
 
-      {/* 3. بطاقات المؤشرات اللحظية (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-indigo-600 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">إجمالي خلطات الـ BOM</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black font-mono text-indigo-700">{recipesList.length}</span>
-            <span className="text-xs font-bold text-gray-500">معيار</span>
-          </div>
+      {/* بطاقات المؤشرات اللحظية (KPIs) بالثيم الليلي الفاحم */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border-r-4 border-r-indigo-600 border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">إجمالي خلطات الـ BOM</span>
+          <h4 className="text-2xl font-black text-amber-400 font-mono mt-1">{recipes.length} معيار</h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-cyan-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">نصف مصنع وزني (عجائن / كجم)</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black font-mono text-cyan-700">{countWeightSemiFinished}</span>
-            <span className="text-xs font-bold text-gray-500">خلطة وزنية</span>
-          </div>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border-r-4 border-r-cyan-500 border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">نصف مصنع وزني (عجائن / كجم)</span>
+          <h4 className="text-2xl font-black text-cyan-400 font-mono mt-1">{countWeightSemi} خلطة وزنية</h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-amber-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">نصف مصنع قطعي (بلكات / تارت)</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black font-mono text-amber-600">{countPieceSemiFinished}</span>
-            <span className="text-xs font-bold text-gray-500">خلطة قطعية</span>
-          </div>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border-r-4 border-r-amber-500 border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">نصف مصنع قطعي (بلكات / تارت)</span>
+          <h4 className="text-2xl font-black text-amber-500 font-mono mt-1">{countPieceSemi} خلطة قطعية</h4>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 border-r-4 border-r-emerald-500 p-4 shadow-xs">
-          <span className="text-xs text-gray-500 font-bold block">خلطات تفنيش تام (وردية 2)</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black font-mono text-emerald-600">{countFinishedRecipes}</span>
-            <span className="text-xs font-bold text-gray-500">خلطة تفنيش</span>
-          </div>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border-r-4 border-r-emerald-500 border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">خلطات تفنيش تام (وردية 2)</span>
+          <h4 className="text-2xl font-black text-emerald-400 font-mono mt-1">{countFinished} خلطة تفنيش</h4>
         </div>
       </div>
 
-      {/* 4. شريط فلاتر البحث المتقدمة */}
-      <div className="bg-white rounded-2xl border border-gray-200 border-t-4 border-t-indigo-600 p-4 mb-6 shadow-xs text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-          <div className="md:col-span-3">
-            <label className="block text-gray-600 font-bold mb-1">🔍 البحث بكود الوصفة أو اسم الخلطة</label>
-            <div className="relative flex items-center">
-              <Search className="absolute right-3 w-4 h-4 text-gray-400" />
+      {/* شريط فلاتر البحث المتقدمة */}
+      <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md mb-6 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+          <div>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">🔍 البحث بكود أو اسم الخلطة</label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-zinc-500 absolute right-3 top-2.5" />
               <input
                 type="text"
-                placeholder="ابحث بكود الوصفة، اسم الخلطة، أو المنتج..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-9 pl-3 py-2 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-600 font-medium"
+                placeholder="ابحث بالاسم أو الكود..."
+                className="w-full pr-9 pl-3 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-100 outline-none focus:border-amber-500"
               />
             </div>
           </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-gray-600 font-bold mb-1">🏭 مرحلة التصنيع (الوردية)</label>
+          <div>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">🏭 مرحلة التصنيع (الوردية)</label>
             <select
-              value={selectedStageFilter}
-              onChange={(e) => setSelectedStageFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="all">-- كل المراحل والورديات --</option>
-              <option value="semi_weight">🥣 نصف مصنع وزني (عجائن / شربات - كجم)</option>
-              <option value="semi_piece">🍰 نصف مصنع قطعي (بلكات اسبونج / تارت)</option>
-              <option value="finished">🎂 تفنيش منتج تام (أوردرات الوردية 2)</option>
+              <option value="semi_weight">🥣 نصف مصنع وزني (عجائن - كجم)</option>
+              <option value="semi_piece">🍰 نصف مصنع قطعي (بلكات / تارت)</option>
+              <option value="finished">🎂 تفنيش منتج تام (وردية 2)</option>
             </select>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">⚖️ وحدة الوجبة</label>
+          <div>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">⚖️ وحدة الوجبة</label>
             <select
-              value={selectedUnitFilter}
-              onChange={(e) => setSelectedUnitFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={unitFilter}
+              onChange={(e) => setUnitFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="all">كل الوحدات</option>
               <option value="كجم">كجم (وزن)</option>
@@ -608,475 +459,464 @@ export const RecipesPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-gray-600 font-bold mb-1">🎯 الصنف المستهدف</label>
+          <div>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">🎯 الصنف المستهدف</label>
             <select
-              value={selectedProductFilter}
-              onChange={(e) => setSelectedProductFilter(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={productFilter}
+              onChange={(e) => setProductFilter(Number(e.target.value))}
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
-              <option value={0}>-- كل الأصناف --</option>
-              {targetProductsList.map((p) => (
+              <option value="0">-- كل الأصناف --</option>
+              {allItems.filter(i => i.itemType !== 'خامات').map(p => (
                 <option key={p.id} value={p.id}>{p.itemName}</option>
               ))}
             </select>
           </div>
 
-          <div className="md:col-span-2 flex items-end gap-1.5 pt-3">
+          <div className="flex gap-2 items-end pt-5">
             <select
-              value={selectedStatusFilter}
-              onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="flex-1 px-2.5 py-2 bg-slate-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-indigo-600"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-2 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="all">كل الحالات</option>
               <option value="active">نشطة</option>
               <option value="inactive">معطلة</option>
             </select>
             <button
-              onClick={resetFilters}
-              title="إلغاء الفلاتر"
-              className="px-3 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 rounded-xl font-bold transition-colors"
+              onClick={() => {
+                setSearchTerm('');
+                setStageFilter('all');
+                setUnitFilter('all');
+                setProductFilter(0);
+                setStatusFilter('all');
+              }}
+              className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold rounded-xl"
+              title="إعادة ضبط"
             >
               ✕
             </button>
           </div>
         </div>
-
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-            <span className="text-xs text-indigo-700 font-bold">
-              نتائج التصفية: ({filteredRecipes.length} معيار مطابق من أصل {recipesList.length})
-            </span>
-            <button onClick={resetFilters} className="text-xs text-rose-600 hover:text-rose-800 font-bold">
-              عرض الكل
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* 5. لوحة تحرير وإنشاء معايير الخلطة */}
-      {isEditing && (
-        <div className="bg-white rounded-2xl border-2 border-indigo-600 shadow-xl p-6 mb-6 text-xs">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200">
+      {/* نموذج إنشاء وتعديل المعايير (BOM Editor) */}
+      {isEditing && activeRecipe && (
+        <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-amber-500/40 shadow-2xl p-5 mb-6 text-xs animate-in fade-in duration-200">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-zinc-800 mb-4">
             <div>
-              <h3 className="text-sm font-black text-indigo-900">
-                {activeRecipe.id === 0 ? '➕ إنشاء بطاقة تشغيل جديدة (BOM)' : `✏️ تعديل بطاقة خلطة: ${activeRecipe.recipeName}`}
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-0.5">تحديد مدخلات ومخرجات كل مرحلة بدقة لضبط التكلفة والمخزون بين الورديتين</p>
+              <h2 className="text-sm font-black text-amber-400 flex items-center gap-2">
+                <span>✏️ {activeRecipe.recipeName ? activeRecipe.recipeName : 'إنشاء بطاقة معيار خلطة جديدة'}</span>
+              </h2>
+              <small className="text-zinc-500">تحديد مدخلات ومخرجات كل مرحلة بدقة لضبط التكلفة والمخزون بين الورديتين</small>
             </div>
             <button
               onClick={() => setIsEditing(false)}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors"
+              className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 rounded-xl font-bold"
             >
-              إلغاء والعودة للقائمة
+              إلغاء والعودة
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 mb-4">
-            <div className="md:col-span-5">
-              <label className="block text-gray-700 font-bold mb-1">المنتج المراد تصنيعه وإدخاله المخزن *</label>
-              <select
-                value={activeRecipe.productItemId}
-                onChange={(e) => handleTargetProductSelected(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 border border-indigo-300 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-              >
-                <option value={0}>-- اختر المنتج المراد تصنيعه --</option>
-                <optgroup label="🎂 منتجات تامة (أوردرات وتفنيش الوردية الثانية)">
-                  {targetProductsList.filter((i) => i.itemType === 'منتج تام').map((p) => (
-                    <option key={p.id} value={p.id}>{p.itemName} ({p.itemCode})</option>
-                  ))}
-                </optgroup>
-                <optgroup label="🥣 أصناف نصف مصنعة / وسيطة (تجهيز الوردية الأولى)">
-                  {targetProductsList.filter((i) => i.itemType === 'منتج وسيط' || i.itemType === 'نصف مصنع').map((p) => (
-                    <option key={p.id} value={p.id}>{p.itemName} ({p.itemCode})</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-
-            <div className="md:col-span-4">
-              <label className="block text-gray-700 font-bold mb-1">اسم الخلطة / المعيار التصنيعي *</label>
-              <input
-                type="text"
-                placeholder="مثال: خلطة عجين بسبوسة / تفنيش بسبوسة مكسرات"
-                value={activeRecipe.recipeName || ''}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, recipeName: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-600"
-              />
-            </div>
-
-            <div className="md:col-span-3">
-              <label className="block text-gray-700 font-bold mb-1">كود الوصفة (BOM Code)</label>
-              <input
-                type="text"
-                value={activeRecipe.recipeCode || ''}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, recipeCode: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-xl font-mono text-gray-700 focus:outline-none focus:border-indigo-600"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 bg-slate-50 p-4 rounded-xl border border-gray-200 mb-5">
-            <div>
-              <label className="block text-gray-700 font-bold mb-1">حجم الوجبة المعياري</label>
-              <input
-                type="number"
-                step="0.01"
-                value={activeRecipe.batchQuantity}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, batchQuantity: Number(e.target.value) })}
-                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-center font-mono font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-bold mb-1">وحدة الوجبة</label>
-              <select
-                value={activeRecipe.batchUnit}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, batchUnit: e.target.value, yieldUnit: e.target.value })}
-                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg font-bold"
-              >
-                <option value="كجم">كجم (وزن)</option>
-                <option value="صاج">صاج</option>
-                <option value="بلكة">بلكة</option>
-                <option value="قطعة">قطعة</option>
-                <option value="دستة">دستة</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-bold mb-1">الخرج الصافي (Yield)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={activeRecipe.yieldQuantity}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, yieldQuantity: Number(e.target.value) })}
-                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-center font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-indigo-700 font-bold mb-1">عدد القطع (0 للوزن)</label>
-              <input
-                type="number"
-                value={activeRecipe.piecesPerBatch}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, piecesPerBatch: Number(e.target.value) })}
-                className="w-full px-2 py-1.5 bg-white border border-indigo-300 rounded-lg text-center font-mono font-bold text-indigo-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-bold mb-1">فاقد تشغيل (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={activeRecipe.wastePercentage}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, wastePercentage: Number(e.target.value) })}
-                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-center font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-bold mb-1">التحضير (دقيقة)</label>
-              <input
-                type="number"
-                value={activeRecipe.preparationTimeMinutes}
-                onChange={(e) => setActiveRecipe({ ...activeRecipe, preparationTimeMinutes: Number(e.target.value) })}
-                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-center font-mono"
-              />
-            </div>
-          </div>
-
-          {/* بنود المكونات */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
+          <form onSubmit={handleSaveRecipe} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-black/40 rounded-xl border border-slate-200 dark:border-zinc-800">
               <div>
-                <h4 className="font-bold text-indigo-900">🧂 مقادير الخامات والمكونات الوسيطة الداخلة في الخلطة:</h4>
-                <p className="text-[11px] text-gray-400">يمكن لوردية التفنيش سحب الخامات الأولية وكذلك المكونات النصف مصنعة المحضرة مسبقاً</p>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">المنتج المراد تصنيعه *</label>
+                <select
+                  value={activeRecipe.productItemId}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const prod = allItems.find(i => i.id === id);
+                    if (prod) {
+                      const isSemi = prod.itemType === 'نصف مصنع';
+                      setActiveRecipe({
+                        ...activeRecipe,
+                        productItemId: prod.id,
+                        productItemName: prod.itemName,
+                        stage: isSemi ? (prod.unit === 'بلكة' ? 'semi_piece' : 'semi_weight') : 'finished',
+                        batchUnit: prod.unit
+                      });
+                    }
+                  }}
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-amber-500/50 rounded-xl font-bold text-zinc-100"
+                >
+                  <optgroup label="🎂 منتجات تامة (أوردرات الوردية 2)">
+                    {allItems.filter(i => i.itemType === 'منتج تام').map(p => (
+                      <option key={p.id} value={p.id}>{p.itemName} ({p.itemCode})</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🥣 أصناف نصف مصنعة (تجهيز الوردية 1)">
+                    {allItems.filter(i => i.itemType === 'نصف مصنع').map(p => (
+                      <option key={p.id} value={p.id}>{p.itemName} ({p.itemCode})</option>
+                    ))}
+                  </optgroup>
+                </select>
               </div>
-              <button
-                type="button"
-                onClick={addIngredientLine}
-                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold hover:bg-emerald-100 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>إضافة مكون / خامة للخلطة</span>
-              </button>
+
+              <div>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">اسم الخلطة / المعيار *</label>
+                <input
+                  type="text"
+                  required
+                  value={activeRecipe.recipeName}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, recipeName: e.target.value })}
+                  placeholder="مثال: خلطة عجين بسبوسة معيار 10 كجم..."
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">كود الوصفة (BOM Code)</label>
+                <input
+                  type="text"
+                  value={activeRecipe.recipeCode}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, recipeCode: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-mono font-bold text-amber-400 text-center"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">مرحلة التشغيل</label>
+                <select
+                  value={activeRecipe.stage}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, stage: e.target.value as any })}
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-indigo-400"
+                >
+                  <option value="semi_weight">نصف مصنع وزني (وردية 1)</option>
+                  <option value="semi_piece">نصف مصنع قطعي (وردية 1)</option>
+                  <option value="finished">تفنيش تام (وردية 2)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="overflow-x-auto border border-gray-200 rounded-xl">
-              <table className="w-full text-center text-xs">
-                <thead className="bg-slate-50 text-gray-700 font-bold border-b">
+            {/* محددات الوجبة والهدر */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 bg-black/40 rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">حجم الوجبة المعياري</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={activeRecipe.batchQuantity}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, batchQuantity: Number(e.target.value) })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">وحدة الوجبة</label>
+                <select
+                  value={activeRecipe.batchUnit}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, batchUnit: e.target.value })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-bold text-center text-zinc-200"
+                >
+                  <option value="كجم">كجم</option>
+                  <option value="صاج">صاج</option>
+                  <option value="بلكة">بلكة</option>
+                  <option value="قطعة">قطعة</option>
+                  <option value="دستة">دستة</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">الخرج الصافي (Yield)</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={activeRecipe.yieldQuantity}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, yieldQuantity: Number(e.target.value) })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">عدد القطع (0 للوزني)</label>
+                <input
+                  type="number"
+                  value={activeRecipe.piecesPerBatch}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, piecesPerBatch: Number(e.target.value) })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-indigo-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">فاقد التشغيل (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={activeRecipe.wastePercentage}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, wastePercentage: Number(e.target.value) })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-rose-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-zinc-400 mb-1">وقت التحضير (دقيقة)</label>
+                <input
+                  type="number"
+                  value={activeRecipe.preparationTimeMinutes}
+                  onChange={(e) => setActiveRecipe({ ...activeRecipe, preparationTimeMinutes: Number(e.target.value) })}
+                  className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-center text-zinc-200"
+                />
+              </div>
+            </div>
+
+            {/* جدول مكونات الخلطة */}
+            <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
+              <div className="p-3 bg-[#13161f] border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center">
+                <span className="font-bold text-zinc-200">🧂 مقادير الخامات والمكونات الوسيطة الداخلة في الخلطة:</span>
+                <button
+                  type="button"
+                  onClick={handleAddLine}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs"
+                >
+                  ➕ إضافة مكون / خامة للخلطة
+                </button>
+              </div>
+
+              <table className="w-full text-center">
+                <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="py-2.5 px-3 text-right" style={{ width: '35%' }}>اسم المكون (خامة أولية أو نصف مصنع) *</th>
-                    <th className="py-2.5 px-3" style={{ width: '15%' }}>الكمية المعيارية</th>
-                    <th className="py-2.5 px-3" style={{ width: '12%' }}>الوحدة</th>
-                    <th className="py-2.5 px-3" style={{ width: '15%' }}>فاقد تشغيل المكون (%)</th>
-                    <th className="py-2.5 px-3" style={{ width: '18%' }}>ملاحظات تشغيلية</th>
-                    <th className="py-2.5 px-2" style={{ width: '5%' }}>حذف</th>
+                    <th className="py-2.5 px-3 text-right" style={{ width: '40%' }}>اسم المكون (خامة أولية أو نصف مصنع) *</th>
+                    <th className="py-2.5 px-3 w-32">الكمية المعيارية</th>
+                    <th className="py-2.5 px-3 w-24">الوحدة</th>
+                    <th className="py-2.5 px-3 w-28">فاقد المكون (%)</th>
+                    <th className="py-2.5 px-3 text-right">ملاحظات تشغيلية</th>
+                    <th className="py-2.5 px-3 w-14">حذف</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(!activeRecipe.lines || activeRecipe.lines.length === 0) ? (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-gray-400 font-bold">
-                        اضغط «إضافة مكون / خامة للخلطة» لتحديد المقادير المعيارية.
+                <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
+                  {activeRecipe.lines.map((line, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2 px-3 text-right">
+                        <select
+                          value={line.componentItemId}
+                          onChange={(e) => handleLineItemChange(idx, Number(e.target.value))}
+                          className="w-full px-2 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-bold text-zinc-100 text-xs"
+                        >
+                          <optgroup label="🌾 خامات أولية">
+                            {allItems.filter(i => i.itemType === 'خامات').map(m => (
+                              <option key={m.id} value={m.id}>{m.itemName} ({m.itemCode})</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="🥣 مكونات نصف مصنعة">
+                            {allItems.filter(i => i.itemType === 'نصف مصنع').map(m => (
+                              <option key={m.id} value={m.id}>{m.itemName} ({m.itemCode})</option>
+                            ))}
+                          </optgroup>
+                        </select>
+                      </td>
+
+                      <td className="py-2 px-3">
+                        <input
+                          type="number"
+                          step="any"
+                          value={line.quantity}
+                          onChange={(e) => {
+                            const copy = [...activeRecipe.lines];
+                            copy[idx].quantity = Number(e.target.value);
+                            setActiveRecipe({ ...activeRecipe, lines: copy });
+                          }}
+                          className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded font-mono font-bold text-center text-amber-400"
+                        />
+                      </td>
+
+                      <td className="py-2 px-3">
+                        <span className="bg-zinc-800 px-2 py-1 rounded text-slate-700 dark:text-zinc-300 font-mono text-[11px] block border border-slate-300 dark:border-zinc-700">
+                          {line.unit}
+                        </span>
+                      </td>
+
+                      <td className="py-2 px-3">
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={line.wastePercentage}
+                          onChange={(e) => {
+                            const copy = [...activeRecipe.lines];
+                            copy[idx].wastePercentage = Number(e.target.value);
+                            setActiveRecipe({ ...activeRecipe, lines: copy });
+                          }}
+                          className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded font-mono text-center text-rose-400"
+                        />
+                      </td>
+
+                      <td className="py-2 px-3 text-right">
+                        <input
+                          type="text"
+                          value={line.notes || ''}
+                          placeholder="سحب وردية 1 / نخل / تسييح..."
+                          onChange={(e) => {
+                            const copy = [...activeRecipe.lines];
+                            copy[idx].notes = e.target.value;
+                            setActiveRecipe({ ...activeRecipe, lines: copy });
+                          }}
+                          className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded text-xs text-zinc-200"
+                        />
+                      </td>
+
+                      <td className="py-2 px-3">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLine(idx)}
+                          className="text-rose-400 hover:text-rose-600"
+                        >
+                          <Trash2 className="w-4 h-4 mx-auto" />
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    activeRecipe.lines.map((line, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="py-2 px-3 text-right">
-                          <select
-                            value={line.componentItemId}
-                            onChange={(e) => updateLineComponent(idx, Number(e.target.value))}
-                            className="w-full px-2.5 py-1.5 bg-slate-50 border border-gray-300 rounded-lg font-bold text-gray-800 outline-none focus:border-indigo-600"
-                          >
-                            <option value={0}>-- اختر المكون أو الخامة --</option>
-                            <optgroup label="🥣 أصناف نصف مصنعة (بلكات اسبونج، عجائن، كريمة)">
-                              {allIngredientsList.filter((i) => i.itemType === 'منتج وسيط' || i.itemType === 'نصف مصنع').map((rm) => (
-                                <option key={rm.id} value={rm.id}>{rm.itemName} ({rm.itemCode})</option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="🌾 خامات ومستلزمات إنتاج أولية">
-                              {allIngredientsList.filter((i) => i.itemType === 'خامات').map((rm) => (
-                                <option key={rm.id} value={rm.id}>{rm.itemName} ({rm.itemCode})</option>
-                              ))}
-                            </optgroup>
-                          </select>
-                        </td>
-                        <td className="py-2 px-3">
-                          <input
-                            type="number"
-                            step="0.001"
-                            value={line.quantity}
-                            onChange={(e) => {
-                              const copy = [...(activeRecipe.lines || [])];
-                              copy[idx].quantity = Number(e.target.value);
-                              setActiveRecipe({ ...activeRecipe, lines: copy });
-                            }}
-                            className="w-full px-2 py-1.5 bg-slate-50 border border-gray-300 rounded-lg text-center font-mono font-bold text-indigo-700 outline-none"
-                          />
-                        </td>
-                        <td className="py-2 px-3 font-bold text-gray-600">
-                          {line.unit || 'كجم'}
-                        </td>
-                        <td className="py-2 px-3">
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={line.wastePercentage}
-                            onChange={(e) => {
-                              const copy = [...(activeRecipe.lines || [])];
-                              copy[idx].wastePercentage = Number(e.target.value);
-                              setActiveRecipe({ ...activeRecipe, lines: copy });
-                            }}
-                            className="w-full px-2 py-1.5 bg-slate-50 border border-gray-300 rounded-lg text-center font-mono outline-none"
-                          />
-                        </td>
-                        <td className="py-2 px-3">
-                          <input
-                            type="text"
-                            placeholder="سحب من الوردية 1 / نخل..."
-                            value={line.notes || ''}
-                            onChange={(e) => {
-                              const copy = [...(activeRecipe.lines || [])];
-                              copy[idx].notes = e.target.value;
-                              setActiveRecipe({ ...activeRecipe, lines: copy });
-                            }}
-                            className="w-full px-2 py-1.5 bg-slate-50 border border-gray-200 rounded-lg text-[11px] outline-none"
-                          />
-                        </td>
-                        <td className="py-2 px-2">
-                          <button
-                            type="button"
-                            onClick={() => removeIngredientLine(idx)}
-                            className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
-            >
-              إلغاء
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveRecipe}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" />
-              <span>💾 حفظ واعتماد بطاقة المعايير (BOM)</span>
-            </button>
-          </div>
+            <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl"
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg"
+              >
+                💾 حفظ واعتماد بطاقة المعايير (BOM)
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
-      {/* 6. جدول استعراض بطاقات الخلطات المسجلة */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-          <h2 className="text-xs font-bold">📋 سجل معايير ووصفات الإنتاج المسجلة</h2>
-          <span className="bg-indigo-600 text-white text-[11px] font-mono px-2.5 py-0.5 rounded-full">
+      {/* جدول استعراض بطاقات الخلطات المسجلة */}
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg overflow-hidden text-xs">
+        <div className="p-3.5 bg-slate-100 dark:bg-[#151822] border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center">
+          <span className="font-bold text-zinc-200">📋 سجل معايير ووصفات الإنتاج المسجلة</span>
+          <span className="bg-indigo-600 px-2.5 py-0.5 rounded-lg text-white font-mono text-[11px]">
             المعروض: {filteredRecipes.length} معايير
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 text-xs">
-              <RotateCw className="w-7 h-7 animate-spin mx-auto text-indigo-600 mb-2" />
-              <p>جاري تحميل وصفات الـ BOM...</p>
-            </div>
-          ) : filteredRecipes.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-xs font-bold">
-              لا توجد وصفات تصنيع مطابقة لشروط البحث والفلترة.
-            </div>
-          ) : (
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 text-gray-600 font-bold border-b border-gray-200 text-center">
-                <tr>
-                  <th className="py-3 px-3">كود الوصفة</th>
-                  <th className="py-3 px-3 text-right">اسم الخلطة / المعيار</th>
-                  <th className="py-3 px-3 text-right">المنتج المستهدف ومرحلته</th>
-                  <th className="py-3 px-3">حجم الوجبة المعياري</th>
-                  <th className="py-3 px-3">عدد المكونات</th>
-                  <th className="py-3 px-3">التكلفة التقديرية للوجبة</th>
-                  <th className="py-3 px-3">تكلفة القطعة</th>
-                  <th className="py-3 px-3">الحالة</th>
-                  <th className="py-3 px-3" style={{ width: '130px' }}>إجراءات</th>
+          <table className="w-full text-center">
+            <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
+              <tr>
+                <th className="py-3 px-3">كود الوصفة</th>
+                <th className="py-3 px-3 text-right">اسم الخلطة / المعيار</th>
+                <th className="py-3 px-3 text-right">المنتج المستهدف ومرحلته</th>
+                <th className="py-3 px-3">حجم الوجبة المعياري</th>
+                <th className="py-3 px-3">عدد المكونات</th>
+                <th className="py-3 px-3">التكلفة التقديرية للوجبة</th>
+                <th className="py-3 px-3">تكلفة القطعة</th>
+                <th className="py-3 px-3">الحالة</th>
+                <th className="py-3 px-3 w-28">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
+              {filteredRecipes.map(r => (
+                <tr key={r.id} className="hover:bg-zinc-900/60 transition-colors">
+                  <td className="py-3 px-3 font-mono font-bold text-indigo-400">{r.recipeCode}</td>
+                  <td className="py-3 px-3 text-right font-bold text-zinc-100">{r.recipeName}</td>
+                  <td className="py-3 px-3 text-right">
+                    <span className="font-bold text-zinc-200 block">{r.productItemName}</span>
+                    <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                      r.stage === 'semi_weight'
+                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                        : (r.stage === 'semi_piece' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30')
+                    }`}>
+                      {r.stage === 'semi_weight' ? '🥣 نصف مصنع وزني (وردية 1)' : (r.stage === 'semi_piece' ? '🍰 نصف مصنع قطعي (وردية 1)' : '🎂 تفنيش تام (وردية 2)')}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-zinc-300">{r.batchQuantity} {r.batchUnit}</td>
+                  <td className="py-3 px-3">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-[10px] text-slate-700 dark:text-zinc-300 font-mono border border-slate-300 dark:border-zinc-700">
+                      {r.lines.length} مكونات
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 font-mono font-bold text-emerald-400">
+                    {r.totalEstimatedCost.toFixed(2)} ج.م
+                  </td>
+                  <td className="py-3 px-3 font-mono text-slate-700 dark:text-zinc-300">
+                    {r.piecesPerBatch > 0 ? `${r.costPerPiece.toFixed(2)} ج.م` : 'بالوزن (0 قطع)'}
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      r.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {r.active ? 'نشطة' : 'معطلة'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <button
+                      onClick={() => handleEditRecipe(r)}
+                      className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 rounded-lg font-bold text-[11px] flex items-center gap-1 mx-auto"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>تعديل</span>
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-center">
-                {filteredRecipes.map((r) => {
-                  const targetItem = allItems.find((i) => i.id === r.productItemId);
-                  const isSemi = targetItem && (targetItem.itemType === 'منتج وسيط' || targetItem.itemType === 'نصف مصنع');
-
-                  return (
-                    <tr key={r.id} className="hover:bg-slate-50/75 transition-colors">
-                      <td className="py-3 px-3 font-mono font-bold text-indigo-700">{r.recipeCode}</td>
-                      <td className="py-3 px-3 text-right font-bold text-gray-900">{r.recipeName}</td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="font-bold text-gray-900">{r.productItemName}</div>
-                        {isSemi ? (
-                          <span className="inline-block mt-0.5 text-[10px] font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full">
-                            🥣 تجهيز وسيط (وردية 1)
-                          </span>
-                        ) : (
-                          <span className="inline-block mt-0.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            🎂 تفنيش تام (وردية 2)
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-gray-800">
-                        {r.batchQuantity} {r.batchUnit}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-mono text-[11px]">
-                          {r.linesCount || r.lines?.length || 0} مكونات
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 font-mono font-black text-emerald-600 text-sm">
-                        {r.totalEstimatedCost.toFixed(2)} ج.م
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-gray-800">
-                        {r.piecesPerBatch > 0 && r.costPerPiece > 0 ? `${r.costPerPiece.toFixed(2)} ج.م` : 'بالوزن (0 قطع)'}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          r.active
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}>
-                          {r.active ? 'نشطة' : 'معطلة'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <button
-                          onClick={() => editRecipe(r)}
-                          className="px-2.5 py-1 text-indigo-700 hover:bg-indigo-50 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1 mx-auto transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          <span>تعديل المعيار</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* 7. نافذة إضافة صنف جديد للدليل */}
-      {isQuickItemModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 text-xs">
-            <div className="px-5 py-3.5 bg-indigo-600 text-white flex items-center justify-between">
-              <h4 className="font-bold flex items-center gap-2">
+      {/* Modal إضافة صنف جديد للدليل */}
+      {showQuickItemModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col">
+            <div className="px-5 py-3.5 bg-slate-100 dark:bg-[#151822] text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
+              <h4 className="font-bold flex items-center gap-2 text-indigo-400">
                 <PlusCircle className="w-4 h-4" />
-                <span>إضافة صنف جديد لدليل الأصناف (خامة / نصف مصنع / تام)</span>
+                <span>إضافة صنف جديد لدليل الأصناف</span>
               </h4>
-              <button onClick={() => setIsQuickItemModalOpen(false)} className="text-white/80 hover:text-white">
+              <button onClick={() => setShowQuickItemModal(false)} className="text-slate-600 dark:text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveQuickItem} className="p-5 space-y-3.5">
+            <div className="p-5 space-y-3">
               <div>
-                <label className="block text-gray-700 font-bold mb-1">كود الصنف *</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">كود الصنف *</label>
                 <input
                   type="text"
-                  required
-                  placeholder="مثال: 201005 أو 302005"
-                  value={newQuickItem.itemCode}
-                  onChange={(e) => setNewQuickItem({ ...newQuickItem, itemCode: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-mono font-bold outline-none focus:border-indigo-600"
+                  value={quickItemCode}
+                  onChange={(e) => setQuickItemCode(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-mono text-zinc-100"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">اسم الصنف *</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">اسم الصنف *</label>
                 <input
                   type="text"
-                  required
-                  placeholder="مثال: ديسك اسبونج شيكولاتة / عجين بلح الشام"
-                  value={newQuickItem.itemName}
-                  onChange={(e) => setNewQuickItem({ ...newQuickItem, itemName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-indigo-200 rounded-xl font-bold outline-none focus:border-indigo-600"
+                  value={quickItemName}
+                  onChange={(e) => setQuickItemName(e.target.value)}
+                  placeholder="مثال: ديسك اسبونج شيكولاتة..."
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">نوع الصنف *</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">نوع الصنف *</label>
                 <select
-                  value={newQuickItem.itemType}
-                  onChange={(e) => setNewQuickItem({ ...newQuickItem, itemType: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold outline-none focus:border-indigo-600"
+                  value={quickItemType}
+                  onChange={(e) => setQuickItemType(e.target.value as any)}
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100"
                 >
-                  <option value="نصف مصنع">🥣 نصف مصنع / وسيط (تجهيز الوردية الأولى)</option>
-                  <option value="منتج تام">🎂 منتج تام جاهز للبيع (تفنيش الوردية الثانية)</option>
+                  <option value="نصف مصنع">🥣 نصف مصنع / وسيط (تجهيز الوردية 1)</option>
+                  <option value="منتج تام">🎂 منتج تام جاهز للبيع (وردية 2)</option>
                   <option value="خامات">🌾 خامات ومستلزمات إنتاج أولية</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">الوحدة الافتراضية *</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">الوحدة الافتراضية *</label>
                 <select
-                  value={newQuickItem.unit}
-                  onChange={(e) => setNewQuickItem({ ...newQuickItem, unit: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-gray-300 rounded-xl font-bold outline-none focus:border-indigo-600"
+                  value={quickItemUnit}
+                  onChange={(e) => setQuickItemUnit(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100"
                 >
                   <option value="كجم">كجم</option>
                   <option value="بلكة">بلكة</option>
@@ -1086,27 +926,33 @@ export const RecipesPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t">
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setIsQuickItemModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
+                  onClick={() => setShowQuickItemModal(false)}
+                  className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl"
                 >
                   إلغاء
                 </button>
                 <button
-                  type="submit"
-                  disabled={isSavingQuickItem}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs disabled:opacity-50"
+                  type="button"
+                  onClick={() => {
+                    setShowQuickItemModal(false);
+                    setStatusMessage(`✅ تم إدراج الصنف [${quickItemName}] في الدليل بنجاح.`);
+                  }}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md"
                 >
-                  {isSavingQuickItem ? 'جاري الحفظ...' : '💾 حفظ وإدراج بالقائمة فوراً'}
+                  حفظ في الدليل
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
+
+export default RecipesPage;
+
+

@@ -197,28 +197,28 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
   const completedCount = orders.filter(o => o.status?.includes('مستلم') || o.status?.includes('مكتمل')).length;
 
   return (
-    <div className="p-6 pt-10 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
       {/* البطاقات العليا بالوضع الليلي الفاحم الصافي */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md">
-          <span className="text-[11px] text-zinc-400 font-bold block">إجمالي تعاقدات أوامر الشراء</span>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">إجمالي تعاقدات أوامر الشراء</span>
           <h4 className="text-2xl font-black text-amber-400 font-mono mt-1">
-            {totalAmountSum.toLocaleString()} <span className="text-xs text-zinc-400">ج.م</span>
+            {totalAmountSum.toLocaleString()} <span className="text-xs text-slate-600 dark:text-zinc-400">ج.م</span>
           </h4>
         </div>
 
-        <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md">
-          <span className="text-[11px] text-zinc-400 font-bold block">أوامر معتمدة قيد التوريد</span>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">أوامر معتمدة قيد التوريد</span>
           <h4 className="text-2xl font-black text-amber-500 font-mono mt-1">{pendingCount} أوامر جارية</h4>
         </div>
 
-        <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md">
-          <span className="text-[11px] text-zinc-400 font-bold block">شحنات اكتمل استلامها</span>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">شحنات اكتمل استلامها</span>
           <h4 className="text-2xl font-black text-emerald-400 font-mono mt-1">{completedCount} أوامر مسلمة</h4>
         </div>
 
-        <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md">
-          <span className="text-[11px] text-zinc-400 font-bold block">شهادات COA المعتمدة</span>
+        <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md">
+          <span className="text-[11px] text-slate-600 dark:text-zinc-400 font-bold block">شهادات COA المعتمدة</span>
           <h4 className="text-2xl font-black text-rose-400 font-mono mt-1">مطابقة للمواصفات</h4>
         </div>
       </div>
@@ -234,7 +234,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
       )}
 
       {/* ترويسة الشاشة */}
-      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-black text-indigo-400 flex items-center gap-2">
@@ -245,16 +245,16 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
               المرحلة التنفيذية للموردين
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
             دورة إصدار أوامر الشراء المعتمدة، وتوثيق شهادات التحليل المخبري لمطابقة خامات الحلويات.
           </p>
         </div>
       </div>
 
       {/* جدول أوامر التوريد للموردين */}
-      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800 shadow-lg overflow-hidden text-xs">
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg overflow-hidden text-xs">
         <table className="w-full text-center">
-          <thead className="bg-[#151822] text-zinc-400 border-b border-zinc-800">
+          <thead className="bg-slate-100 dark:bg-[#151822] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
             <tr>
               <th className="py-3 px-3">رقم أمر الشراء</th>
               <th className="py-3 px-3 text-right">المورد والبيان</th>
@@ -265,7 +265,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
               <th className="py-3 px-3">إجراء الاستلام (GMP)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/80">
+          <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
             {orders.map(o => {
               const isReceived = o.status?.includes('مستلم') || o.status?.includes('مكتمل');
               return (
@@ -275,7 +275,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                     <span className="font-bold text-zinc-100 block">{o.supplierName}</span>
                     <small className="text-zinc-500">{o.details}</small>
                   </td>
-                  <td className="py-3 px-3 font-mono text-zinc-400">{o.issueDate}</td>
+                  <td className="py-3 px-3 font-mono text-slate-600 dark:text-zinc-400">{o.issueDate}</td>
                   <td className="py-3 px-3 font-mono text-indigo-300">{o.expectedDate}</td>
                   <td className="py-3 px-3 font-mono font-bold text-emerald-400">
                     {Number(o.totalAmount).toLocaleString()} ج.م
@@ -313,13 +313,13 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
       {/* Modal: محضر الفحص الفني والاستلام المخزني الرسمي (مطابق تماماً لكود MaterialReceipt.razor) */}
       {showInspectionModal && selectedOrderForGmp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
-          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-[#161a25] text-white flex items-center justify-between border-b border-zinc-800">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
+            <div className="px-5 py-3.5 bg-[#161a25] text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <span>محضر استلام وفحص جودة أمر الشراء: {selectedOrderForGmp.poNumber}</span>
               </h4>
-              <button onClick={() => setShowInspectionModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowInspectionModal(false)} className="text-slate-600 dark:text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -332,13 +332,13 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
               )}
 
               {/* بيانات محضر الاستلام والـ QC */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3.5 bg-black/40 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3.5 bg-black/40 rounded-xl border border-slate-200 dark:border-zinc-800">
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">مستودع التسكين الفعلي *</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">مستودع التسكين الفعلي *</label>
                   <select
                     value={targetWarehouseId}
                     onChange={(e) => setTargetWarehouseId(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 bg-[#171922] border border-emerald-500/40 rounded-lg font-bold text-zinc-100 text-xs"
+                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-[#171922] border border-emerald-500/40 rounded-lg font-bold text-zinc-100 text-xs"
                   >
                     {warehousesList.map(w => (
                       <option key={w.id} value={w.id}>{w.name}</option>
@@ -347,44 +347,44 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">رقم شهادة التحليل (COA)</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">رقم شهادة التحليل (COA)</label>
                   <input
                     type="text"
                     value={coaNumber}
                     onChange={(e) => setCoaNumber(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-indigo-400 text-xs"
+                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-indigo-400 text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">اسم مفتش الجودة</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">اسم مفتش الجودة</label>
                   <input
                     type="text"
                     value={inspectorName}
                     onChange={(e) => setInspectorName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-[#171922] border border-zinc-700 rounded-lg font-bold text-zinc-200 text-xs"
+                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-bold text-zinc-200 text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-bold mb-1">كود المفتش</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">كود المفتش</label>
                   <input
                     type="text"
                     value={inspectorCode}
                     onChange={(e) => setInspectorCode(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-[#171922] border border-zinc-700 rounded-lg font-mono font-bold text-zinc-200 text-xs"
+                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-lg font-mono font-bold text-zinc-200 text-xs"
                   />
                 </div>
               </div>
 
               {/* مطابقة بنود الشحنة والكميات واللوطات */}
-              <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
-                <div className="p-3 bg-[#13161f] border-b border-zinc-800">
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-[#0a0c10]">
+                <div className="p-3 bg-[#13161f] border-b border-slate-200 dark:border-zinc-800">
                   <h6 className="font-bold text-zinc-200 m-0">مطابقة بنود الشحنة والكميات الواردة:</h6>
                 </div>
 
                 <table className="w-full text-center">
-                  <thead className="bg-[#171a24] text-zinc-400">
+                  <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400">
                     <tr>
                       <th className="py-2.5 px-3 text-right" style={{ width: '22%' }}>الصنف</th>
                       <th className="py-2.5 px-3">المتبقي بالطلب</th>
@@ -395,14 +395,14 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                       <th className="py-2.5 px-3 text-right">قرار الجودة / الملاحظات</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800">
+                  <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
                     {inspectionLines.map((item, idx) => (
                       <tr key={item.itemId}>
                         <td className="py-2.5 px-3 text-right font-bold text-zinc-100">
                           {item.itemName}
                           <small className="block font-mono text-zinc-500">{item.itemCode}</small>
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-zinc-400">
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-600 dark:text-zinc-400">
                           {item.remainingQuantity} {item.unit}
                         </td>
                         <td className="py-2.5 px-3">
@@ -418,7 +418,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                               copy[idx].acceptedQuantity = val;
                               setInspectionLines(copy);
                             }}
-                            className="w-full px-2 py-1 bg-[#171922] border border-emerald-500/60 rounded font-mono font-bold text-center text-emerald-400"
+                            className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-emerald-500/60 rounded font-mono font-bold text-center text-emerald-400"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -434,7 +434,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                               copy[idx].rejectedQuantity = val;
                               setInspectionLines(copy);
                             }}
-                            className="w-full px-2 py-1 bg-[#171922] border border-rose-500/60 rounded font-mono font-bold text-center text-rose-400"
+                            className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-rose-500/60 rounded font-mono font-bold text-center text-rose-400"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -447,7 +447,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                               copy[idx].batchNumber = val;
                               setInspectionLines(copy);
                             }}
-                            className="w-full px-2 py-1 bg-[#171922] border border-zinc-700 rounded font-mono font-bold text-center text-zinc-200 text-xs"
+                            className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded font-mono font-bold text-center text-zinc-200 text-xs"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -460,7 +460,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                               copy[idx].expiryDate = val;
                               setInspectionLines(copy);
                             }}
-                            className="w-full px-2 py-1 bg-[#171922] border border-zinc-700 rounded font-mono font-bold text-center text-zinc-200 text-xs"
+                            className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded font-mono font-bold text-center text-zinc-200 text-xs"
                           />
                         </td>
                         <td className="py-2.5 px-3 text-right">
@@ -473,7 +473,7 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                               copy[idx].rejectionReason = val;
                               setInspectionLines(copy);
                             }}
-                            className="w-full px-2 py-1 bg-[#171922] border border-zinc-700 rounded text-xs text-zinc-200"
+                            className="w-full px-2 py-1 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded text-xs text-zinc-200"
                           />
                         </td>
                       </tr>
@@ -482,11 +482,11 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
                 </table>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setShowInspectionModal(false)}
-                  className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl"
+                  className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl"
                 >
                   إلغاء
                 </button>
@@ -508,3 +508,5 @@ export const PurchaseOrdersQualityPage: React.FC = () => {
 };
 
 export default PurchaseOrdersQualityPage;
+
+

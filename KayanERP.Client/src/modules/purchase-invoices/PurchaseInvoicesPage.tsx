@@ -185,8 +185,8 @@ export const PurchasesPage: React.FC = () => {
       case 'PENDING_PROCUREMENT': return 'bg-amber-500/10 text-amber-500 border border-amber-500/30';
       case 'CONVERTED_TO_PO': return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
       case 'PARTIALLY_RECEIVED': return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30';
-      case 'CLOSED': return 'bg-zinc-800 text-zinc-300 border border-zinc-700';
-      default: return 'bg-zinc-800 text-zinc-400';
+      case 'CLOSED': return 'bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700';
+      default: return 'bg-zinc-800 text-slate-600 dark:text-zinc-400';
     }
   };
 
@@ -541,7 +541,7 @@ export const PurchasesPage: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
           <div className="bg-white dark:bg-[#0c0d11] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-zinc-800">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-amber-400">
                 <ShoppingCart className="w-4 h-4" />
                 <span>طلب شراء واحتياج أصناف جديد (للصالات والمخازن)</span>
@@ -901,3 +901,5 @@ export const PurchasesPage: React.FC = () => {
 export const PurchaseOrdersPage = PurchasesPage;
 export const PurchaseInvoicesPage = PurchasesPage;
 export default PurchasesPage;
+
+

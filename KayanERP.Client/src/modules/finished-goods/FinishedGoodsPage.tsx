@@ -1512,3 +1512,4 @@ export const FinishedGoodsPage: React.FC<FinishedGoodsPageProps> = () => {
     </div>
   );
 };
+

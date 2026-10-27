@@ -266,9 +266,9 @@ export const SupplierPricesPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 pt-10 min-h-screen font-sans bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
+    <div className="p-6 pt-10 min-h-screen font-sans bg-slate-100 dark:bg-[#08090b] text-zinc-100 transition-colors" dir="rtl">
       {/* ترويسة الصفحة مع مسافة علوية pt-10 وأزرار واضحة */}
-      <div className="bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-white dark:bg-[#0f1117] p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-zinc-800 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-black text-amber-400 flex items-center gap-2">
@@ -279,7 +279,7 @@ export const SupplierPricesPage: React.FC = () => {
               إدارة تعاقدات الخامات والتسعير
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
             إدارة عروض وأسعار التوريد للأصناف وربطها بالموردين المعتمدين ومدة التوريد.
           </p>
         </div>
@@ -322,15 +322,15 @@ export const SupplierPricesPage: React.FC = () => {
       )}
 
       {/* بطاقة تسجيل / تعديل سعر توريد جديد */}
-      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800 shadow-lg p-5 mb-6">
-        <div className="flex justify-between items-center pb-3 border-b border-zinc-800 mb-4">
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg p-5 mb-6">
+        <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-zinc-800 mb-4">
           <h2 className="text-sm font-black text-amber-400 flex items-center gap-2">
             <span>{editId > 0 ? '✏️ تعديل سعر توريد مسجل' : '➕ تسجيل سعر توريد جديد'}</span>
           </h2>
           {editId > 0 && (
             <button
               onClick={resetForm}
-              className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold"
+              className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 rounded-lg text-xs font-bold"
             >
               إلغاء التعديل
             </button>
@@ -340,11 +340,11 @@ export const SupplierPricesPage: React.FC = () => {
         <form onSubmit={handleSavePrice} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div>
-              <label className="block text-zinc-300 font-bold mb-1">المورد *</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">المورد *</label>
               <select
                 value={formSupplierId}
                 onChange={(e) => setFormSupplierId(Number(e.target.value))}
-                className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
               >
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -353,11 +353,11 @@ export const SupplierPricesPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-zinc-300 font-bold mb-1">الصنف / الخامة *</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">الصنف / الخامة *</label>
               <select
                 value={formItemId}
                 onChange={(e) => setFormItemId(Number(e.target.value))}
-                className="w-full px-2.5 py-2 bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-amber-500/40 rounded-xl font-bold text-zinc-100 outline-none"
               >
                 {rawMaterials.map(m => (
                   <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>
@@ -366,7 +366,7 @@ export const SupplierPricesPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-zinc-300 font-bold mb-1">سعر التوريد * (ج.م)</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">سعر التوريد * (ج.م)</label>
               <input
                 type="number"
                 step="any"
@@ -374,41 +374,41 @@ export const SupplierPricesPage: React.FC = () => {
                 required
                 value={formPrice}
                 onChange={(e) => setFormPrice(Number(e.target.value))}
-                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-emerald-400 outline-none text-center"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-mono font-bold text-emerald-400 outline-none text-center"
               />
             </div>
 
             <div>
-              <label className="block text-zinc-300 font-bold mb-1">مدة التوريد (أيام)</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">مدة التوريد (أيام)</label>
               <input
                 type="number"
                 min="1"
                 value={formDeliveryDays}
                 onChange={(e) => setFormDeliveryDays(Number(e.target.value))}
-                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-center text-zinc-100 outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-mono font-bold text-center text-zinc-100 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-zinc-300 font-bold mb-1">تاريخ السريان</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">تاريخ السريان</label>
               <input
                 type="date"
                 value={formEffectiveDate}
                 onChange={(e) => setFormEffectiveDate(e.target.value)}
-                className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-mono font-bold text-zinc-100 outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-mono font-bold text-zinc-100 outline-none"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
             <div className="md:col-span-2">
-              <label className="block text-zinc-300 font-bold mb-1">ملاحظات العرض / شروط التسليم</label>
+              <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">ملاحظات العرض / شروط التسليم</label>
               <input
                 type="text"
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
                 placeholder="مثال: شامل النقل والتوصيل حتى مخزن مصنع أبو عادل..."
-                className="w-full px-3 py-2 bg-[#171922] border border-zinc-700 rounded-xl text-zinc-200 outline-none"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-200 outline-none"
               />
             </div>
 
@@ -438,10 +438,10 @@ export const SupplierPricesPage: React.FC = () => {
       </div>
 
       {/* شريط فلاتر البحث المتقدمة */}
-      <div className="bg-[#0f1117] p-4 rounded-2xl border border-zinc-800 shadow-md mb-6 text-xs">
+      <div className="bg-white dark:bg-[#0f1117] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-md mb-6 text-xs">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-zinc-400 font-bold mb-1">🔍 بحث بالاسم أو الملاحظات</label>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">🔍 بحث بالاسم أو الملاحظات</label>
             <div className="relative">
               <Search className="w-4 h-4 text-zinc-500 absolute right-3 top-2.5" />
               <input
@@ -449,17 +449,17 @@ export const SupplierPricesPage: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ابحث باسم المورد، الخامة، أو شروط العرض..."
-                className="w-full pr-9 pl-3 py-2 bg-[#171922] border border-zinc-700 rounded-xl text-zinc-100 outline-none"
+                className="w-full pr-9 pl-3 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl text-zinc-100 outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-zinc-400 font-bold mb-1">🏢 فلترة بالمورد</label>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">🏢 فلترة بالمورد</label>
             <select
               value={supplierFilter}
               onChange={(e) => setSupplierFilter(Number(e.target.value))}
-              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="0">-- كل الموردين --</option>
               {suppliers.map(s => (
@@ -469,11 +469,11 @@ export const SupplierPricesPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-zinc-400 font-bold mb-1">📦 فلترة بالصنف / الخامة</label>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">📦 فلترة بالصنف / الخامة</label>
             <select
               value={itemFilter}
               onChange={(e) => setItemFilter(Number(e.target.value))}
-              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="0">-- كل الأصناف والخامات --</option>
               {rawMaterials.map(m => (
@@ -483,11 +483,11 @@ export const SupplierPricesPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-zinc-400 font-bold mb-1">⭐ التفضيل</label>
+            <label className="block text-slate-600 dark:text-zinc-400 font-bold mb-1">⭐ التفضيل</label>
             <select
               value={preferenceFilter}
               onChange={(e) => setPreferenceFilter(e.target.value)}
-              className="w-full px-2.5 py-2 bg-[#171922] border border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
+              className="w-full px-2.5 py-2 bg-slate-50 dark:bg-[#171922] border border-slate-300 dark:border-zinc-700 rounded-xl font-bold text-zinc-100 outline-none"
             >
               <option value="all">كل العروض</option>
               <option value="preferred">⭐ مورد مفضل فقط</option>
@@ -498,8 +498,8 @@ export const SupplierPricesPage: React.FC = () => {
       </div>
 
       {/* جدول سجل الأسعار وعروض التوريد المسجلة */}
-      <div className="bg-[#0f1117] rounded-2xl border border-zinc-800 shadow-lg overflow-hidden text-xs">
-        <div className="p-3.5 bg-[#151822] border-b border-zinc-800 flex justify-between items-center">
+      <div className="bg-white dark:bg-[#0f1117] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-lg overflow-hidden text-xs">
+        <div className="p-3.5 bg-slate-100 dark:bg-[#151822] border-b border-slate-200 dark:border-zinc-800 flex justify-between items-center">
           <span className="font-bold text-zinc-200">📋 سجل الأسعار وعروض التوريد المسجلة</span>
           <span className="bg-indigo-600 px-2.5 py-0.5 rounded-lg text-white font-mono text-[11px]">
             المعروض: {filteredPrices.length} عرض
@@ -508,7 +508,7 @@ export const SupplierPricesPage: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-center">
-            <thead className="bg-[#171a24] text-zinc-400 border-b border-zinc-800">
+            <thead className="bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
               <tr>
                 <th className="py-3 px-3 text-right">المورد</th>
                 <th className="py-3 px-3 text-right">الصنف / المادة الخام</th>
@@ -521,29 +521,29 @@ export const SupplierPricesPage: React.FC = () => {
                 <th className="py-3 px-3 w-32">إجراء</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/80">
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/80">
               {filteredPrices.map(row => (
                 <tr key={row.id} className="hover:bg-zinc-900/60 transition-colors">
                   <td className="py-3 px-3 text-right font-bold text-zinc-100">{row.supplierName}</td>
                   <td className="py-3 px-3 text-right font-bold text-indigo-400">{row.itemName}</td>
                   <td className="py-3 px-3">
-                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-[10px] text-zinc-300 border border-zinc-700">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-[10px] text-slate-700 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700">
                       {row.unit}
                     </span>
                   </td>
                   <td className="py-3 px-3 font-mono font-bold text-emerald-400 text-sm">
                     {row.price.toLocaleString(undefined, { minimumFractionDigits: 2 })} ج.م
                   </td>
-                  <td className="py-3 px-3 font-mono text-zinc-300">{row.deliveryDays} يوم</td>
-                  <td className="py-3 px-3 font-mono text-zinc-400">{row.effectiveDate}</td>
+                  <td className="py-3 px-3 font-mono text-slate-700 dark:text-zinc-300">{row.deliveryDays} يوم</td>
+                  <td className="py-3 px-3 font-mono text-slate-600 dark:text-zinc-400">{row.effectiveDate}</td>
                   <td className="py-3 px-3">
                     <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                      row.isPreferred ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-zinc-400'
+                      row.isPreferred ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-slate-600 dark:text-zinc-400'
                     }`}>
                       {row.isPreferred ? '⭐ مورد مفضل' : 'بديل'}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-right text-zinc-400 max-w-xs truncate">{row.notes || '-'}</td>
+                  <td className="py-3 px-3 text-right text-slate-600 dark:text-zinc-400 max-w-xs truncate">{row.notes || '-'}</td>
                   <td className="py-3 px-3">
                     <div className="flex justify-center items-center gap-2">
                       <button
@@ -572,13 +572,13 @@ export const SupplierPricesPage: React.FC = () => {
       {/* نافذة استيراد عروض الأسعار من إكسيل */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" dir="rtl">
-          <div className="bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-zinc-800 text-xs flex flex-col">
-            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-zinc-800">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 text-xs flex flex-col">
+            <div className="px-5 py-3.5 bg-emerald-900/60 text-white flex items-center justify-between border-b border-slate-200 dark:border-zinc-800">
               <h4 className="font-bold flex items-center gap-2 text-emerald-400">
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>استيراد عروض أسعار التوريد من ملف إكسيل</span>
               </h4>
-              <button onClick={() => setIsImportModalOpen(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setIsImportModalOpen(false)} className="text-slate-600 dark:text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -588,20 +588,20 @@ export const SupplierPricesPage: React.FC = () => {
                 يتعرف النظام تلقائياً على أعمدة السعر والخامة والمورد من الملف المرفوع سواء تم تصديره من المنظومة أو من ملف خارجي.
               </div>
 
-              <div className="p-4 border border-dashed border-zinc-700 rounded-xl bg-[#171922] text-center space-y-2">
-                <label className="block text-zinc-300 font-bold mb-1">اختر ملف الإكسيل / CSV من جهازك:</label>
+              <div className="p-4 border border-dashed border-slate-300 dark:border-zinc-700 rounded-xl bg-slate-50 dark:bg-[#171922] text-center space-y-2">
+                <label className="block text-slate-700 dark:text-zinc-300 font-bold mb-1">اختر ملف الإكسيل / CSV من جهازك:</label>
                 <input
                   type="file"
                   accept=".csv"
-                  className="text-xs text-zinc-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:text-white file:font-bold hover:file:bg-indigo-500"
+                  className="text-xs text-slate-600 dark:text-zinc-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:text-white file:font-bold hover:file:bg-indigo-500"
                 />
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsImportModalOpen(false)}
-                  className="px-4 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl"
+                  className="px-4 py-2 bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold rounded-xl"
                 >
                   إلغاء
                 </button>
@@ -625,3 +625,5 @@ export const SupplierPricesPage: React.FC = () => {
 };
 
 export default SupplierPricesPage;
+
+
